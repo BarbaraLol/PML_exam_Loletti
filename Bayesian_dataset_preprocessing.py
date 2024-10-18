@@ -38,6 +38,8 @@ from pyro.distributions import Normal, Categorical
 from pyro.infer import SVI, Trace_ELBO
 from pyro.optim import Adam
 
+import gc
+
 # Ensure GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -102,7 +104,17 @@ def compute_spectrogram(y, sr):
     return torch.tensor(spectrogram, dtype=torch.float32).to(device)
 
 
-def audio_spectrograms(output_dataset):
+def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_stuff.txt"):
+    # Setting the checkpoints' saving process
+    processed_files = set()
+    if os.path.exists(checkpoint_file):
+        with open(checkpoint_file, "r") as f:
+            processed_files = set(f.read().splitlines())
+    else:
+        # creation of the checkpoint file if it doesn't exist
+        with open(checkpoint_file, "w") as f:
+            pass
+
     # Get a list of all audio files in the directory
     audio_files = [os.path.join(output_dataset, f) for f in os.listdir(output_dataset) if f.endswith('.wav')]
 
@@ -116,84 +128,89 @@ def audio_spectrograms(output_dataset):
 
     #Loop through all the files
     for audio_file in audio_files:
-        # Load the audio file
-        y, sampling_rate = librosa.load(audio_file, sr=None)
+        if audio_file not in processed_files:
+            # Load the audio file
+            y, sampling_rate = librosa.load(audio_file, sr=None)
 
-        # Step n°1
-        # It's either I choose a dynamic trimming process...
-        # rmse = librosa.feature.rms(y=y, frame_length=256, hop_length=64)[0]
+            # Step n°1
+            # It's either I choose a dynamic trimming process...
+            # rmse = librosa.feature.rms(y=y, frame_length=256, hop_length=64)[0]
 
-        # Debug: print the RMSE values and check their range
-        #print("RMSE values (first 10):", rmse[:10])
-        
-        #specs = librosa.power_to_db(rmse**2, ref=np.max) 
+            # Debug: print the RMSE values and check their range
+            #print("RMSE values (first 10):", rmse[:10])
+            
+            #specs = librosa.power_to_db(rmse**2, ref=np.max) 
 
-        # top_db = int(min(specs)) - 2
-        # ...or a static one
-        ytrim, _ = librosa.effects.trim(y, frame_length=256, hop_length=64, top_db=55)
+            # top_db = int(min(specs)) - 2
+            # ...or a static one
+            ytrim, _ = librosa.effects.trim(y, frame_length=256, hop_length=64, top_db=55)
 
-        trimmed_duration = librosa.get_duration(y=ytrim, sr=sampling_rate)
+            trimmed_duration = librosa.get_duration(y=ytrim, sr=sampling_rate)
 
-        # Step n°2
-        # Extract the base name of the audio file (without extension)
-        base_name = os.path.splitext(os.path.basename(audio_file))[0]
+            # Step n°2
+            # Extract the base name of the audio file (without extension)
+            base_name = os.path.splitext(os.path.basename(audio_file))[0]
 
-        chunk_duration = 20 # Every chunck is 20sec long
-        # Get number of samples for 20 seconds
-        buffer = int(chunk_duration * sampling_rate)
+            chunk_duration = 20 # Every chunck is 20sec long
+            # Get number of samples for 20 seconds
+            buffer = int(chunk_duration * sampling_rate)
 
-        audio_length = len(ytrim)
-        audio_done = 0 # Tracks the alredy prcessed portion of the audio
-        counter = 1
+            audio_length = len(ytrim)
+            audio_done = 0 # Tracks the alredy prcessed portion of the audio
+            counter = 1
 
-        while audio_done < audio_length:
-            # Check if the chunck duration is actually contained inside the audio
-            if buffer > (audio_length - audio_done):
-                buffer = audio_length - audio_done
+            while audio_done < audio_length:
+                # Check if the chunck duration is actually contained inside the audio
+                if buffer > (audio_length - audio_done):
+                    buffer = audio_length - audio_done
 
-            # Check the duration of the current chunk
-            chunk_duration_sec = librosa.get_duration(y=ytrim[audio_done : (audio_done + buffer)], sr=sampling_rate)
-            # Skip chunks less than 20 seconds
-            if chunk_duration_sec < 20:
-                break  # Exit the loop if no more valid chunks
+                # Check the duration of the current chunk
+                chunk_duration_sec = librosa.get_duration(y=ytrim[audio_done : (audio_done + buffer)], sr=sampling_rate)
+                # Skip chunks less than 20 seconds
+                if chunk_duration_sec < 20:
+                    break  # Exit the loop if no more valid chunks
 
-            segments = ytrim[audio_done : (audio_done + buffer)]
+                segments = ytrim[audio_done : (audio_done + buffer)]
 
-            # Step n°3
-            segment_spectrogram = compute_spectrogram(segments, sampling_rate)
+                # Step n°3
+                segment_spectrogram = compute_spectrogram(segments, sampling_rate)
 
-            # Saving the spectrogram with its corresponding lable
-            segment_spectrogram_name = f"{base_name}_segment_{counter}.pt"
-            segment_spectrogram_path = os.path.join(save_dir, segment_spectrogram_name)
-            # Extracting the type of call
-            call_type = base_name.split('_')[0]
+                # Saving the spectrogram with its corresponding lable
+                segment_spectrogram_name = f"{base_name}_segment_{counter}.pt"
+                segment_spectrogram_path = os.path.join(save_dir, segment_spectrogram_name)
+                # Extracting the type of call
+                call_type = base_name.split('_')[0]
 
-            # Save the normalized spectrogram and its corresponding label as a Torch tensor
-            data = {
-                'spectrogram': torch.tensor(segment_spectrogram, dtype=torch.float32),
-                'label': call_type
-            }
-            torch.save(data, segment_spectrogram_path)
+                # Save the normalized spectrogram and its corresponding label as a Torch tensor
+                data = {
+                    'spectrogram': torch.tensor(segment_spectrogram, dtype=torch.float32),
+                    'label': call_type
+                }
+                torch.save(data, segment_spectrogram_path)
 
-            # Save the spectrogram as an image (.png)
-            image_file_name = f"{base_name}_segment_{counter}.png"
-            image_file_path = os.path.join(spectrogram_dir, image_file_name)
+                # Save the spectrogram as an image (.png)
+                image_file_name = f"{base_name}_segment_{counter}.png"
+                image_file_path = os.path.join(spectrogram_dir, image_file_name)
 
-            plt.figure(figsize=(10, 4))
-            librosa.display.specshow(segment_spectrogram, sr=sampling_rate, hop_length=int(buffer / 2), x_axis='time', y_axis='log', cmap='viridis')
-            plt.colorbar(format='%+2.0f dB')
-            plt.title(f'Spectrogram of {base_name}_segment_{counter}')
-            plt.tight_layout()
-            plt.savefig(image_file_path)  # Save the spectrogram as an image file
-            plt.close()  # Close the plot to free up memory
+                plt.figure(figsize=(10, 4))
+                librosa.display.specshow(segment_spectrogram.cpu().numpy(), sr=sampling_rate, hop_length=int(buffer / 2), x_axis='time', y_axis='log', cmap='viridis')
+                plt.colorbar(format='%+2.0f dB')
+                plt.title(f'Spectrogram of {base_name}_segment_{counter}')
+                plt.tight_layout()
+                plt.savefig(image_file_path)  # Save the spectrogram as an image file
+                plt.close()  # Close the plot to free up memory
 
-            counter += 1
-            audio_done += buffer # Update the position in the audio
+                counter += 1
+                audio_done += buffer # Update the position in the audio
 
-        # Explicitly delete variables to free memory
-        del y, ytrim, segment_spectrogram, segments
-        torch.cuda.empty_cache()  # Clears GPU cache to free GPU memory
-        gc.collect()  # Collects garbage to free CPU memory
+            # Saving processed file to checkpoint
+            with open(checkpoint_file, "a") as f:
+                f.write(audio_file + "\n")
+
+            # Explicitly delete variables to free memory
+            del y, ytrim, segment_spectrogram, segments
+            torch.cuda.empty_cache()  # Clears GPU cache to free GPU memory
+            gc.collect()  # Collects garbage to free CPU memory
 
 print ("Starting processing the dataset")
 
