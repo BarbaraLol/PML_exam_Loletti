@@ -104,7 +104,7 @@ def compute_spectrogram(y, sr):
     return torch.tensor(spectrogram, dtype=torch.float32).to(device)
 
 
-def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_stuff.txt"):
+def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.txt"):
     # Setting the checkpoints' saving process
     processed_files = set()
     if os.path.exists(checkpoint_file):
