@@ -38,11 +38,6 @@ from pyro.distributions import Normal, Categorical
 from pyro.infer import SVI, Trace_ELBO
 from pyro.optim import Adam
 
-# Setting the input and output folders
-# implementare funzione per prendere solo input e produrre cartella di output rinominandola come l'input ed eliminando la cartella in input
-input_dataset = './Chicks_Automatic_Detection_dataset_2/Registrazioni/'
-# output_dataset = './Chicks_Automatic_Detection_dataset_2/dt_Registrazioni_modificate/'
-output_dataset = './Chicks_Automatic_Detection_dataset_2/Registrazioni_prova/'
 
 # Function to save the model 
 def save_checkpoint(model, optimizer, epoch, loss, accuracy, filename='bnn_checkpoint.pth'):
@@ -168,7 +163,7 @@ class BNN(nn.Module):
 
 # Dataset loading
 # Define the list of file paths
-file_path = './Chicks_Automatic_Detection_dataset/dt_Registrazioni_modificato/audio_spectrograms'
+file_path = './Chicks_Automatic_Detection/audio_segments/'
 file_paths = [os.path.join(file_path, f) for f in os.listdir(file_path) if f.endswith('.pt')]
 
 # Encode labels as integers
