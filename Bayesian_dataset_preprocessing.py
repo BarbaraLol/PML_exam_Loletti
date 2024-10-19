@@ -13,6 +13,8 @@ import numpy as np
 # For reproducibility
 np.random.seed(33)
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')                              # In order to avoid GUI related issues when using Matplotlib while multithreading
 import matplotlib.pyplot as plt
 
 import librosa                                     # To manage the audio files
@@ -132,6 +134,13 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
             # Load the audio file
             y, sampling_rate = librosa.load(audio_file, sr=None)
 
+            # Resample the audio to a uniform sampling rate (e.g., 44.1 kHz)
+            target_sr = 48000  # You can set this to any desired uniform rate (e.g., 44100 or 48000 Hz)
+            if sampling_rate != target_sr:  # Only resample if the original sampling rate is different
+                y = librosa.resample(y, orig_sr=sampling_rate, target_sr=target_sr)
+                sampling_rate = target_sr
+                print(f"Resampled {audio_file} to {target_sr} Hz")
+
             # Step n°1
             # It's either I choose a dynamic trimming process...
             # rmse = librosa.feature.rms(y=y, frame_length=256, hop_length=64)[0]
@@ -163,14 +172,17 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
                 # Check if the chunck duration is actually contained inside the audio
                 if buffer > (audio_length - audio_done):
                     buffer = audio_length - audio_done
+                
+                # Extracting the next chunck from the audio
+                segments = ytrim[audio_done : (audio_done + buffer)]
 
                 # Check the duration of the current chunk
-                chunk_duration_sec = librosa.get_duration(y=ytrim[audio_done : (audio_done + buffer)], sr=sampling_rate)
+                chunk_duration_sec = librosa.get_duration(y=segments, sr=sampling_rate)
+                # print(f"Chunk duration (segment {counter}) for {audio_file}: {chunk_duration_sec:.2f} seconds")
+
                 # Skip chunks less than 20 seconds
                 if chunk_duration_sec < 20:
                     break  # Exit the loop if no more valid chunks
-
-                segments = ytrim[audio_done : (audio_done + buffer)]
 
                 # Step n°3
                 segment_spectrogram = compute_spectrogram(segments, sampling_rate)
@@ -183,7 +195,7 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
 
                 # Save the normalized spectrogram and its corresponding label as a Torch tensor
                 data = {
-                    'spectrogram': torch.tensor(segment_spectrogram, dtype=torch.float32),
+                    'spectrogram': segment_spectrogram.clone().detach(),
                     'label': call_type
                 }
                 torch.save(data, segment_spectrogram_path)
@@ -193,7 +205,8 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
                 image_file_path = os.path.join(spectrogram_dir, image_file_name)
 
                 plt.figure(figsize=(10, 4))
-                librosa.display.specshow(segment_spectrogram.cpu().numpy(), sr=sampling_rate, hop_length=int(buffer / 2), x_axis='time', y_axis='log', cmap='viridis')
+                #plt.xlim([0, 20])  # Force the x-axis to show exactly 20 seconds
+                librosa.display.specshow(segment_spectrogram.cpu().numpy(), x_axis='time', y_axis='log', cmap='viridis')
                 plt.colorbar(format='%+2.0f dB')
                 plt.title(f'Spectrogram of {base_name}_segment_{counter}')
                 plt.tight_layout()

@@ -131,6 +131,13 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
         # Load the audio file
         y, sampling_rate = librosa.load(audio_file, sr=None)
 
+        # Resample the audio to a uniform sampling rate (e.g., 44.1 kHz)
+        target_sr = 48000  # You can set this to any desired uniform rate (e.g., 44100 or 48000 Hz)
+        if sampling_rate != target_sr:  # Only resample if the original sampling rate is different
+            y = librosa.resample(y, orig_sr=sampling_rate, target_sr=target_sr)
+            sampling_rate = target_sr
+            print(f"Resampled {audio_file} to {target_sr} Hz")
+
         # Step n°1
         # It's either I choose a dynamic trimming process...
         # rmse = librosa.feature.rms(y=y, frame_length=256, hop_length=64)[0]
@@ -162,10 +169,13 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
             # Check if the chunck duration is actually contained inside the audio
             if buffer > (audio_length - audio_done):
                 buffer = audio_length - audio_done
+            
+            # Extracting the next chunck from the audio
+            segments = ytrim[audio_done : (audio_done + buffer)]
 
             # Check the duration of the current chunk
-            chunk_duration_sec = librosa.get_duration(y=ytrim[audio_done : (audio_done + buffer)], sr=sampling_rate)
-            print("chunck duration: ", chunk_duration)
+            chunk_duration_sec = librosa.get_duration(y=segments, sr=sampling_rate)
+            # print(f"Chunk duration (segment {counter}) for {audio_file}: {chunk_duration_sec:.2f} seconds")
             # Skip chunks less than 20 seconds
             if chunk_duration_sec < 20:
                 break  # Exit the loop if no more valid chunks
@@ -219,6 +229,7 @@ def spectrograms_plotting(output_dataset, save_dir, spectrogram_dir, checkpoint_
             
             # Plot the spectrogram
             plt.figure(figsize=(10, 4))
+            #plt.xlim([0, 20])  # Force the x-axis to show exactly 20 seconds
             librosa.display.specshow(spectrogram.cpu().numpy(), x_axis='time', y_axis='log', cmap='viridis')
             plt.colorbar(format='%+2.0f dB')
             plt.tight_layout()
