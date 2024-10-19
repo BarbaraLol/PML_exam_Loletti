@@ -165,6 +165,7 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
 
             # Check the duration of the current chunk
             chunk_duration_sec = librosa.get_duration(y=ytrim[audio_done : (audio_done + buffer)], sr=sampling_rate)
+            print("chunck duration: ", chunk_duration)
             # Skip chunks less than 20 seconds
             if chunk_duration_sec < 20:
                 break  # Exit the loop if no more valid chunks
