@@ -173,7 +173,7 @@ class SpectrogramDataset(Dataset):
         for y in self.file_paths:
             data = torch.load(y)
             spectrogram = data['spectrogram'].numpy().reshape(-1, 1) # Normalizing the single spectrogram
-            all_spectrograms.appen(spectrogram)
+            all_spectrograms.append(spectrogram)
         
         all_spectrograms = np.concatenate(all_spectrograms, axis = 0)
         self.scaler = StandardScaler().fit(all_spectrograms) # Fitting tha scaler on the entire dataset
@@ -193,7 +193,7 @@ class SpectrogramDataset(Dataset):
     # Possible use of some data augmentation techniques in order to avoid overfitting
 
 # First step: dataset loading by defining a list of file paths
-file_path = './Chicks_Automatic_Detection/audio_segments/'
+file_path = './Chicks_Automatic_Detection/Registrazioni/audio_segments/'
 file_paths = [os.path.join(file_path, f) for f in os.listdir(file_path) if f.endswith('.pt')]
 
 # Encode labels as integers
