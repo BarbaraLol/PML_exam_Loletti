@@ -9,6 +9,8 @@
 #!pip install torch.utils
 #!pip install pyro-ppl
 
+import csv
+
 import numpy as np
 # For reproducibility
 np.random.seed(33)
@@ -130,7 +132,7 @@ class BNN(nn.Module):
 
     # Second layer weight distribution priors
     fc2w_mu = torch.randn_like(self.fc2.weight)
-    fc2w_sigma = torch.randn_like(self,fc2.weight)
+    fc2w_sigma = torch.randn_like(self.fc2.weight)
     fc2w_mu_param = pyro.param("fc2w_mu", fc2w_mu)
     fc2w_sigma_param = softplus(pyro.param("fc2w_sigma", fc2w_sigma))
     fc2w_prior = Normal(loc=fc2w_mu_param, scale=fc2w_sigma_param).to_event(1)
@@ -161,8 +163,36 @@ class BNN(nn.Module):
 
     return lifted_module()
 
-# Dataset loading
-# Define the list of file paths
+class SpectrogramDataset(Dataset):
+    def __init__(self, file_paths, label_encoder):
+        self.file_paths = file_paths
+        self.label_encoder = label_encoder
+
+        # Initializing the scaler and fitting it on all spectrograms contained into the trainig dataset
+        all_spectrograms = []
+        for y in self.file_paths:
+            data = torch.load(y)
+            spectrogram = data['spectrogram'].numpy().reshape(-1, 1) # Normalizing the single spectrogram
+            all_spectrograms.appen(spectrogram)
+        
+        all_spectrograms = np.concatenate(all_spectrograms, axis = 0)
+        self.scaler = StandardScaler().fit(all_spectrograms) # Fitting tha scaler on the entire dataset
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def __getitem__(self, idx):
+        data = torch.load(self.file_paths[idx])
+        spectrogram, label = data['spectrogram'], data['label']
+        spectrogram = spectrogram.numpy().reshape(-1, 1) # Done to flatten the spectrogram
+        spectrogram = torch.tensor(spectrogram).reshape(128, 64) # Reshaping back after the scaling process
+
+        # Encode the label as an integer
+        encoded_label = self.label_encoder.transform([label])[0]
+        return spectrogram, torch.tensor(encoded_label, dtype=torch.long)
+    # Possible use of some data augmentation techniques in order to avoid overfitting
+
+# First step: dataset loading by defining a list of file paths
 file_path = './Chicks_Automatic_Detection/audio_segments/'
 file_paths = [os.path.join(file_path, f) for f in os.listdir(file_path) if f.endswith('.pt')]
 
@@ -178,56 +208,48 @@ for fp in file_paths:
 
 label_encoder.fit(all_labels)
 
-class SpectrogramDataset(Dataset):
-    def __init__(self, file_paths, label_encoder):
-        self.file_paths = file_paths
-        self.label_encoder = label_encoder
-        self.scaler = StandardScaler()
-
-    def __len__(self):
-        return len(self.file_paths)
-
-    def __getitem__(self, idx):
-        data = torch.load(self.file_paths[idx])
-        spectrogram, label = data['spectrogram'], data['label']
-        spectrogram = spectrogram.numpy().reshape(-1, 1) # Done to flatten the spectrogram
-        spectrogram = self.scaler.fit_transform(spectrogram) # To normalize the spectrogram
-        spectrogram = torch.tensor(spectrogrma).reshape(128, 64) # Reshaping back after the scaling process
-        # Encode the label as an integer
-        encoded_label = self.label_encoder.transform([label])[0]
-        return spectrogram, torch.tensor(encoded_label, dtype=torch.long)
-    # Possible use of some data augmentation techniques in order to avoid overfitting
-
-# Actually loading the dataset
+# Creating the dataset instance
 dataset = SpectrogramDataset(file_paths, label_encoder)
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 # Splittong the data into train, test and validation sets
 train_size = int(0.7*len(dataset))
 validation_size = int(0.15*len(dataset))
 test_size = len(dataset) - train_size - validation_size
-train_dataset, test_dataset, validation_dataset = random_split(dataset, [train_size, test_size, validation_size])
+train_dataset, validation_dataset, test_dataset = random_split(dataset, [train_size, validation_size, test_size])
 
 # Creating the data loaders
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+validation_loader = DataLoader(validation_dataset, batch_size=128, shuffle=False)
 
 # Training and validation phase
 # Function to log values to a text file after each epoch
-def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, model, filename='epoch_logs.txt'):
-    with open(filename, 'a') as f:
-        f.write(f"Epoch {epoch+1}:\n")
-        f.write(f"Train Loss: {avg_epoch_loss:.4f}, Train Accuracy: {avg_epoch_accuracy:.4f}\n")
-        f.write(f"Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {avg_val_accuracy:.4f}\n")
-        f.write("Weight and Bias Distributions:\n")
+def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, model, filename='epoch_logs.csv'):
+    # Checking if the file actually exists
+    file_exists = os.path.isfile(filename)
+
+    # If the file doesn't exist, write the header
+    if not file_exists:
+        writer.writerow(['Epoch', 'Train Loss', 'Train Accuracy', 'Validation Loss', 'Validation Accuracy'])
         
-        # Log weight and bias distributions from Pyro parameters
-        pyro_param_store = pyro.get_param_store()
-        for name in pyro_param_store.get_all_param_names():
-            param_value = pyro_param_store[name].detach().cpu().numpy()
-            f.write(f"{name}: {param_value}\n")
-        f.write("\n")
+
+    with open(filename, mode = 'a', newline = '') as f:
+        writer = csv.writer(f)
+
+        # Write the data for the current epoch
+        writer.writerow([epoch+1, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy])
+
+    # f.write(f"Epoch {epoch+1}:\n")
+    # f.write(f"Train Loss: {avg_epoch_loss:.4f}, Train Accuracy: {avg_epoch_accuracy:.4f}\n")
+    # f.write(f"Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {avg_val_accuracy:.4f}\n")
+    # f.write("Weight and Bias Distributions:\n")
+        
+    # # Log weight and bias distributions from Pyro parameters
+    # pyro_param_store = pyro.get_param_store()
+    # for name in pyro_param_store.get_all_param_names():
+    #     param_value = pyro_param_store[name].detach().cpu().numpy()
+    #     f.write(f"{name}: {param_value}\n")
+    # f.write("\n")
 
 # Training step
 print("Starting training")
@@ -250,7 +272,14 @@ svi = SVI(BNN_model.model, BNN_model.guide, optim, loss=Trace_ELBO())
 # Load checkpoint if available
 start_epoch, _, _ = load_checkpoint(BNN_model, optimizer)
 
-num_epoch = 20 # Maybe more(?)
+num_epoch = 100 # Maybe more(?)
+
+# Check if logs directory exists, if not create it
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Define the log file name
+log_file = os.path.join('logs', 'training_logs.csv')
 
 # Create a logs directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -301,6 +330,6 @@ for epoch in range(start_epoch, num_epoch):
     log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, BNN_model, filename=log_file)
 
     # Save checkpoint at the end of each epoch
-    save_checkpoint(BNN_model, optim, epoch, avg_epoch_loss, avg_epoch_accuracy)
+    save_checkpoint(BNN_model, optimizer, epoch, avg_epoch_loss, avg_epoch_accuracy)
     
 print("Training completed")
