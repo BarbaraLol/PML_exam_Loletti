@@ -12,8 +12,8 @@ from train_utils import save_checkpoint, load_checkpoint, calculate_accuracy, lo
 
 # First step: dataset loading by defining a list of file paths
 # data_dir = './Chicks_Automatic_Detection_dataset/audio_segments/'
-data_dir = './Chicks_Automatic_Detection_dataset/Registrazioni_prova/audio_segments/'
-num_epoch = 100 
+data_dir = './Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
+num_epoch = 250 
 batch_size = 128
 
 # Loading and processing the data

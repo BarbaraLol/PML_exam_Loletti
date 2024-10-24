@@ -36,7 +36,8 @@ class SpectrogramDataset(Dataset):
 
 def load_file_path(data_dir):
     file_paths = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.pt')]
-
+    return file_paths
+    
 def encode_lables(file_paths):
     all_labels = []
 
