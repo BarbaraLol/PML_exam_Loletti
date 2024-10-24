@@ -52,7 +52,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Setting the input and output folders
 # implementare funzione per prendere solo input e produrre cartella di output rinominandola come l'input ed eliminando la cartella in input
 input_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni/'
-output_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni_prova/'
+output_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni/'
 
 
 # Change the file name and location
