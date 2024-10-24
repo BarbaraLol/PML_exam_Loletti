@@ -24,6 +24,7 @@ import threading                                   # To menage different process
 import queue
 
 import os
+import shutil                                      # For deleting the files and folders
 
 import pickle
 
@@ -51,7 +52,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Setting the input and output folders
 # implementare funzione per prendere solo input e produrre cartella di output rinominandola come l'input ed eliminando la cartella in input
 input_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni/'
-# output_dataset = './Chicks_Automatic_Detection_dataset_2/dt_Registrazioni_modificate/'
 output_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni_prova/'
 
 
@@ -78,6 +78,13 @@ def file_name(input_dataset, output_dataset):
                 # Move and rename the file
                 os.rename(current_file_path, new_file_path)
                 print(f"Moved and renamed: {current_file_path} -> {new_file_path}")
+
+    # Deleting the folder with the unnecessary stuff
+    for item in os.listdir(output_dataset):
+        item_path = os.path.join(output_dataset, item)
+        if os.path.isdir(item_path):
+            shutil.rmtree(item_path)  # Remove the folder and its contents
+            print(f"Deleted folder and its contents: {item_path}")
 
 
 # Checking and creating the directories to save the spectrograms
@@ -184,6 +191,7 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
 
             # Step n°3
             segment_spectrogram = compute_spectrogram(segments, sampling_rate)
+            print(segment_spectrogram.shape)
 
             # Saving the spectrogram with its corresponding lable
             segment_spectrogram_name = f"{base_name}_segment_{counter}.pt"
