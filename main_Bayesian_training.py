@@ -7,7 +7,7 @@ import pyro
 from pyro.optim import Adam
 from pyro.infer import SVI, Trace_ELBO
 from data_loading import SpectrogramDataset, load_file_path, encode_lables
-from train_utils import save_checkpoint, load_checkpoint, calculate_accuracy, log_epoch_data
+from train_utils import save_checkpoint, load_checkpoint, calculate_accuracy, log_epoch_data, ensuring_log_directory
 
 
 # First step: dataset loading by defining a list of file paths
