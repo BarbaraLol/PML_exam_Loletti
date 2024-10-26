@@ -1,0 +1,633 @@
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P13_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P02_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P07_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P11_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P09_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P07_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P9_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P09_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P9_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P08_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P06_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P9_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P9_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P07__B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P15_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P9_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P9_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P16_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P19_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P03_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P9_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P06_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P05_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P10_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P13_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P06_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P17_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P18_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P17_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P02_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P16_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P17_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P04_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P01_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P08_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_p20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P15_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P03_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P08_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P04_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P03_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P20_g3_pt3.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P13_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P13_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P16_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P01_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P01_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P04_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P19_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P08_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P12_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P9_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P9_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P03_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P07_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P10_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P08_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P04_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P14_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P03_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P03_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P09_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P04_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P09_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P03_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P09_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P08_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P12_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P9_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P10_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P06_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P13_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P15_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P08_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P03_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P07_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P19_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P02_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P08_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P06_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P19_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P02_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 06_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P08__B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P9_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P09_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P07_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P03_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P05_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P02_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P02_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P01_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P03_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P09_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P19_g3_pt3.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P07_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P15_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P14_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P07_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 03_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P16_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P04_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P9_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P16_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P07_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P07_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P05_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P9_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_p19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P02_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P08_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P04_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P09_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_p9_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P06_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P09_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P9_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P04_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P14_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P03_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P01_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P19_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P05_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P08_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P15_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P9_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P05_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_p20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P20_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P08_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P09_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P18_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P14_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 08_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P09_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P01_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 03_P12_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_p9_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P09_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 10_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P19_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P19_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P19_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P09_g3_pt3.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 04_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P12__B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P13__B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 12_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 04_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P09_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P03_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 03_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 06_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P10_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P09_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P9_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P01_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 02_P20_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P10_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P11_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 10_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P05_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P09_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P2_g2_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P10_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 12_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P13_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P9_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P15_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 09_P19_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P01_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 07_P13_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 05_P3_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P16_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 05_P19_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 11_P19_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 08_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 11_P12_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P13_B06.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_Low noise audio_P17_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P14_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 10_P05_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 12_P19_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_High noise audio_P05_B05.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 07_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 04_P13_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P20_B03.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P09_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 02_P20_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 09_P09_B04.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 06_P09_g3_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Contact calls_No playback_Giorno 01_P03_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 08_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_P4_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 09_P5_g1_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 05_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 07_p19_g4_food.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 01_P04_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 11_P02_B02.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Brood calls_Giorno 02_P14_B01.wav
+./Chicks_Automatic_Detection_dataset/Registrazioni/Pleasure calls_Giorno 01_P05_g1_food.wav

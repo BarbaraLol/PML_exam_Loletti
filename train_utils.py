@@ -58,7 +58,7 @@ def ensuring_log_directory(log_dir='logs', log_filename_prefix='training_logs'):
     return os.path.join(log_dir, log_filename)
 
 # Function to add the values to a text file after each epoch
-def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, model, filename='training_logs.csv'):
+def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, filename='training_logs.csv'):
     # Checking if the file actually exists
     file_exists = os.path.isfile(filename)        
 
@@ -68,8 +68,8 @@ def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_
         if not file_exists:
             writer.writerow(['Epoch', 'Train Loss', 'Train Accuracy', 'Validation Loss', 'Validation Accuracy'])
 
-    # Write the data for the current epoch
-    writer.writerow([epoch+1, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy])
+        # Write the data for the current epoch
+        writer.writerow([epoch + 1, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy])
 
     # f.write(f"Epoch {epoch+1}:\n")
     # f.write(f"Train Loss: {avg_epoch_loss:.4f}, Train Accuracy: {avg_epoch_accuracy:.4f}\n")

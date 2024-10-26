@@ -26,10 +26,10 @@ class SpectrogramDataset(Dataset):
     def __getitem__(self, idx):
         data = torch.load(self.file_paths[idx])
         spectrogram, label = data['spectrogram'], data['label']
-        #spectrogram = spectrogram.numpy().reshape(-1, 1) # Done to flatten the spectrogram
+        spectrogram = spectrogram.numpy().reshape(-1, 1) # Done to flatten the spectrogram
         #spectrogram = torch.tensor(spectrogram).reshape(1025, 938) # Reshaping back after the scaling process
         # Flatten the spectrogram
-        spectrogram = spectrogram.view(-1)  # Flatten to a 1D vector
+        #spectrogram = spectrogram.view(-1)  # Flatten to a 1D vector
         # Altre modifiche
         
 

@@ -89,14 +89,14 @@ for epoch in range(start_epoch, num_epoch):
     print(f"Epoch {epoch+1}, Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {avg_val_accuracy:.4f}")
 
     # Log the epoch results
-    log_epoch_data(epoch, avg_train_loss, avg_train_accuracy, avg_val_loss, avg_val_accuracy, filename=log_file)
+    log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, filename=log_file)
 
     # Save checkpoint at the end of each epoch
     save_checkpoint(BNN_model, optimizer, epoch, avg_epoch_loss, avg_epoch_accuracy)
     
 # Log and save
-log_epoch_data(epoch, avg_train_loss, avg_train_accuracy, avg_val_loss, avg_val_accuracy)
-save_checkpoint(BNN_model, optimizer, epoch, avg_train_loss, avg_train_accuracy)
+log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy)
+save_checkpoint(BNN_model, optimizer, epoch, avg_epoch_loss, avg_epoch_accuracy)
 
 print("Training completed")
 

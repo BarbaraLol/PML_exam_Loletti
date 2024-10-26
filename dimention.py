@@ -2,7 +2,7 @@ import torch
 import os
 
 # Directory where your .pt files are located
-directory = './Chicks_Automatic_Detection_dataset/Registrazioni_prova/audio_segments/'
+directory = './Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
 
 # Expected dimensions
 expected_dimensions = torch.Size([1025, 938])

@@ -314,6 +314,6 @@ if __name__ == "__main__":
 
     # Run parallel audio processing with a specified number of workers
     # Set the 'workers' variable according to how many processes you want to execute in parallel
-    parallel_audio_processing(output_dataset, workers = 16) 
+    parallel_audio_processing(output_dataset, workers = 24) 
 
     print("Finish processing")
