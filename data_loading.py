@@ -51,3 +51,4 @@ def encode_lables(file_paths):
         all_labels.append(data['label'])
     
     return all_labels
+    
