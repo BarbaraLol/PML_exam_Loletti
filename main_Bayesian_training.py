@@ -58,8 +58,7 @@ start_epoch, _, _ = load_checkpoint(BNN_model, optimizer)
 
 for epoch in range(start_epoch, num_epoch):
     BNN_model.train()
-    epoch_loss = 0.0
-    epoch_accuracy = 0.0
+    epoch_loss, epoch_accuracy = 0.0, 0.0
 
     # Training loop
     for x_train, y_train in train_loader:
@@ -74,8 +73,7 @@ for epoch in range(start_epoch, num_epoch):
 
     # Validation step
     BNN_model.eval()
-    validation_loss = 0.0
-    validation_accuracy = 0.0
+    validation_loss, validation_accuracy = 0.0, 0.0
 
     with torch.no_grad():
         for x_val, y_val in validation_loader:

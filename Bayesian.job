@@ -6,8 +6,8 @@
 #SBATCH --ntasks=24                # Number of tasks 
 #SBATCH --mem=128G                 # Total memory (adapt to the node's capacity)
 #SBATCH --time=02:00:00            # Time limit (2 hours)
-#SBATCH --output=job_output_%j.txt # Output file
-#SBATCH --error=job_error_%j.txt   # Error file
+#SBATCH --output=./sbatches/job_output_%j.txt # Output file
+#SBATCH --error=./sbatches/job_error_%j.txt   # Error file
 
 # Load Python module or environment
 module load python/3.x             # Adjust for the specific version on your cluster
