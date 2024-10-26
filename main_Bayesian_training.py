@@ -49,8 +49,8 @@ svi = SVI(BNN_model.model, BNN_model.guide, Adam({"lr": 0.01}), loss=Trace_ELBO(
 
 ## Training and validation phase
 # Ensure the logs directory exists and get the log file path
-log_file = ensure_logs_directory(log_dir='logs', log_filename_prefix='training_logs')
-printf("Starting training")
+log_file = ensuring_log_directory(log_dir='logs', log_filename_prefix='training_logs')
+print("Starting training")
 
 # Training step
 # Load checkpoint if available

@@ -26,8 +26,12 @@ class SpectrogramDataset(Dataset):
     def __getitem__(self, idx):
         data = torch.load(self.file_paths[idx])
         spectrogram, label = data['spectrogram'], data['label']
-        spectrogram = spectrogram.numpy().reshape(-1, 1) # Done to flatten the spectrogram
-        spectrogram = torch.tensor(spectrogram).reshape(1025, 938) # Reshaping back after the scaling process
+        #spectrogram = spectrogram.numpy().reshape(-1, 1) # Done to flatten the spectrogram
+        #spectrogram = torch.tensor(spectrogram).reshape(1025, 938) # Reshaping back after the scaling process
+        # Flatten the spectrogram
+        spectrogram = spectrogram.view(-1)  # Flatten to a 1D vector
+        # Altre modifiche
+        
 
         # Encode the label as an integer
         encoded_label = self.label_encoder.transform([label])[0]
@@ -37,7 +41,7 @@ class SpectrogramDataset(Dataset):
 def load_file_path(data_dir):
     file_paths = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.pt')]
     return file_paths
-    
+
 def encode_lables(file_paths):
     all_labels = []
 

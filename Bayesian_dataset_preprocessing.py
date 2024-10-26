@@ -49,7 +49,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Setting the input and output folders
 # implementare funzione per prendere solo input e produrre cartella di output rinominandola come l'input ed eliminando la cartella in input
 input_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni/'
-output_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni/'
+output_dataset = './Chicks_Automatic_Detection_dataset/Registrazioni_prova/'
 
 
 # Change the file name and location
@@ -162,6 +162,7 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
             ytrim, _ = librosa.effects.trim(y, frame_length=256, hop_length=64, top_db=55)
 
             trimmed_duration = librosa.get_duration(y=ytrim, sr=sampling_rate)
+            # print(f"Trimmed duration for{audio_file}: {trimmed_duration}") 
 
             # Step n°2
             # Extract the base name of the audio file (without extension)
@@ -190,6 +191,7 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
                 # Skip chunks less than 20 seconds
                 if chunk_duration_sec < 20:
                     break  # Exit the loop if no more valid chunks
+                    # print(f"Chunk duration (segment {counter}) blocked for duration of {chunk_duration}") 
 
                 # Step n°3
                 segment_spectrogram = compute_spectrogram(segments, sampling_rate)
@@ -234,8 +236,8 @@ def audio_spectrograms(output_dataset, checkpoint_file = "preprocessed_audios.tx
 
 print ("Starting processing the dataset")
 
-file_name(input_dataset, output_dataset) # To reorder the dataset
+#file_name(input_dataset, output_dataset) # To reorder the dataset
 
-#audio_spectrograms(output_dataset)
+audio_spectrograms(output_dataset)
 
 print("Finish processing")

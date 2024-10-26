@@ -143,7 +143,7 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
         if sampling_rate != target_sr:  # Only resample if the original sampling rate is different
             y = librosa.resample(y, orig_sr=sampling_rate, target_sr=target_sr)
             sampling_rate = target_sr
-            print(f"Resampled {audio_file} to {target_sr} Hz")
+            # print(f"Resampled {audio_file} to {target_sr} Hz")
 
         # Step n°1
         # It's either I choose a dynamic trimming process...
@@ -159,6 +159,7 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
         ytrim, _ = librosa.effects.trim(y, frame_length=256, hop_length=64, top_db=55)
 
         trimmed_duration = librosa.get_duration(y=ytrim, sr=sampling_rate)
+        # print(f"Trimmed duration for {audio_file}: {trimmed_duration}") 
 
         # Step n°2
         # Extract the base name of the audio file (without extension)
@@ -182,10 +183,11 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
 
             # Check the duration of the current chunk
             chunk_duration_sec = librosa.get_duration(y=segments, sr=sampling_rate)
-            # print(f"Chunk duration (segment {counter}) for {audio_file}: {chunk_duration_sec:.2f} seconds")
+            # print(f"Chunk duration (segment {counter}) for {audio_file}: {chunk_duration_sec:.2f} seconds") 
             # Skip chunks less than 20 seconds
             if chunk_duration_sec < 20:
                 break  # Exit the loop if no more valid chunks
+                # print(f"Chunk duration (segment {counter}) blocked for duration of {chunk_duration}") 
 
             segments = ytrim[audio_done : (audio_done + buffer)]
 
@@ -250,7 +252,7 @@ def spectrograms_plotting(output_dataset, save_dir, spectrogram_dir, checkpoint_
 
             # Saving processed file to checkpoint
             with open(checkpoint_file, "a") as f:
-                f.write(file + "\n")
+                f.write(f"{file} with shape: {data['spectrogram'].shape}\n")
 
 # Function to assign and process a single audio file within a thread
 def thread_audio_file_form_queue(file_queue, output_dataset, save_dir, spectrogram_dir):

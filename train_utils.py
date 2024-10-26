@@ -2,6 +2,7 @@ import os
 import torch
 import pyro
 import csv
+from datetime import datetime
 
 # Function to save the model 
 def save_checkpoint(model, optimizer, epoch, loss, accuracy, filename='bnn_checkpoint.pth'):
@@ -54,7 +55,7 @@ def ensuring_log_directory(log_dir='logs', log_filename_prefix='training_logs'):
     # Create a new log file with the timestamp
     log_filename = f"{log_filename_prefix}_{timestamp}.csv"
     
-    return os.path.join(log_dir, log_file_name)
+    return os.path.join(log_dir, log_filename)
 
 # Function to add the values to a text file after each epoch
 def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy, model, filename='training_logs.csv'):

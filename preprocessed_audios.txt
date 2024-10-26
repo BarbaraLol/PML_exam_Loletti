@@ -1,5 +1,0 @@
-./Chicks_Automatic_Detection_dataset/Registrazioni_prova/Contact calls_High noise audio_P06_B04.wav
-./Chicks_Automatic_Detection_dataset/Registrazioni_prova/Contact calls_Low noise audio_P07_B06.wav
-./Chicks_Automatic_Detection_dataset/Registrazioni_prova/Contact calls_No playback_Giorno 01_P20_B03.wav
-./Chicks_Automatic_Detection_dataset/Registrazioni_prova/Pleasure calls_Giorno 04_P20_g4_food.wav
-./Chicks_Automatic_Detection_dataset/Registrazioni_prova/Brood calls_Giorno 01_P02_B02.wav
