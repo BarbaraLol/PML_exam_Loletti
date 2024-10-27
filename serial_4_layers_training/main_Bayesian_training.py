@@ -12,7 +12,7 @@ from train_utils import save_checkpoint, load_checkpoint, calculate_accuracy, lo
 
 # First step: dataset loading by defining a list of file paths
 # data_dir = './Chicks_Automatic_Detection_dataset/audio_segments/'
-data_dir = './Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
+data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
 num_epoch = 250 
 batch_size = 128
 
@@ -41,7 +41,7 @@ validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffl
 # Initializing the model
 input_size = torch.load(file_paths[0])['spectrogram'].numel() # It loads and flattens the spectrogram into a single vector (numel gives the total number of elements)
 print("This is the input_size: ", input_size)
-BNN_model = BNN(input_size=input_size, hidden_size=256, output_size=3)
+BNN_model = BNN(input_size=input_size, hidden_size=512, output_size=3)
 # Define the optimizer (before loading checkpoint)
 optimizer = torch.optim.Adam(BNN_model.parameters(), lr=0.0001)
 # SVI setup
