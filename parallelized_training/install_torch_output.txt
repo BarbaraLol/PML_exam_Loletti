@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/u/dssc/bloletti/my_env/bin/pip", line 5, in <module>
+    from pip._internal.cli.main import main
+ModuleNotFoundError: No module named 'pip'
