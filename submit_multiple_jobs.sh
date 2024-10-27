@@ -3,10 +3,11 @@
 ##########
 # Perform, in order:
 # chmod +x Bayesian.job submit_multiple_jobs.sh
-# nohup ./submit_sequential_jobs.sh > sequential_jobs.log 2>&1 &
+# ./submi_multiple_jobs
+# nohup ./submit_multiple_jobs.sh > sequential_jobs.log 2>&1 &
 #
 # To verfy that the script is running in the background
-# ps aux | grep submit_sequential_jobs.sh
+# ps aux | grep submit_multiple_jobs.sh
 ##########
 # Number of times to submit the job
 NUM_JOBS=5  # replace with your desired count, i.e., x
