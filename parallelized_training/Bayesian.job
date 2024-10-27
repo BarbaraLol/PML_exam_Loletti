@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH --job-name=python_job      # Job name
+#SBATCH --account=dssc             # Account name (dssc)
+#SBATCH --partition=GPU            # Partition to use (EPYC)
+#SBATCH --nodes=1                        # Number of nodes (use 1 unless explicitly needed)
+#SBATCH --ntasks=1                       # Number of tasks
+#SBATCH --gpus-per-node=3         # Number of GPUs per node (replace NUM_GPUS with an integer) 
+#SBATCH --mem=128G                 # Total memory (adapt to the node's capacity)
+#SBATCH --time=02:00:00            # Time limit (2 hours)
+#SBATCH --cpus-per-task=4                 # Number of CPUs per task (adjust as necessary)
+#SBATCH --output=./sbatches/job_output_%j.txt # Output file
+#SBATCH --error=./sbatches/job_error_%j.txt   # Error file
+
+
+# Load necessary modules if required
+module load python/3.x                    # Adjust version as needed
+module load cuda                          # Load CUDA module if required
+
+# Activate your Python environment
+source activate my_env                    # Replace with your environment name
+
+# Run the training script with torchrun
+torchrun --nproc_per_node=NUM_GPUS main_Bayesian_training.py

@@ -43,9 +43,9 @@ input_size = torch.load(file_paths[0])['spectrogram'].numel() # It loads and fla
 print("This is the input_size: ", input_size)
 BNN_model = BNN(input_size=input_size, hidden_size=256, output_size=3)
 # Define the optimizer (before loading checkpoint)
-optimizer = torch.optim.Adam(BNN_model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(BNN_model.parameters(), lr=0.0001)
 # SVI setup
-svi = SVI(BNN_model.model, BNN_model.guide, Adam({"lr": 0.001}), loss=Trace_ELBO())
+svi = SVI(BNN_model.model, BNN_model.guide, Adam({"lr": 0.0001}), loss=Trace_ELBO())
 
 ## Training and validation phase
 # Ensure the logs directory exists and get the log file path

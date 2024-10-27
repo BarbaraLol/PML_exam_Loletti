@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=bayesian_training      # Job name
+#SBATCH --account=dssc                    # Account name (replace as needed)
+#SBATCH --partition=GPU                   # Partition to use (GPU partition)
+#SBATCH --nodes=2                         # Number of nodes (1 node)
+#SBATCH --ntasks=2                        # Number of tasks (set to 1 as we control GPUs per node)
+#SBATCH --gpus-per-node=2          # Total number of GPUs per node (set NUM_GPUS accordingly)
+#SBATCH --mem=128G                        # Memory allocation (adjust as necessary)
+#SBATCH --time=02:00:00                   # Max runtime (2 hours)
+#SBATCH --cpus-per-task=4                 # CPUs per task
+#SBATCH --output=./sbatches/job_output_%j.txt # Output log file
+#SBATCH --error=./sbatches/job_error_%j.txt   # Error log file
+
+# Load required modules
+module load python/3.x                    # Load Python module (specify version)
+module load cuda                          # Load CUDA module
+
+# Activate your Python environment
+source activate my_env                    # Replace with your Conda environment
+
+# Define number of GPUs and other configurations
+NUM_GPUS=2                                # Set to 2 GPUs, as available per node
+
+# Run the script using torchrun for distributed multi-GPU training
+torchrun --nproc_per_node=$NUM_GPUS main_Bayesian_training.py
