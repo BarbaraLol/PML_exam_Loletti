@@ -70,3 +70,15 @@ def log_epoch_data(epoch, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_
 
         # Write the data for the current epoch
         writer.writerow([epoch + 1, avg_epoch_loss, avg_epoch_accuracy, avg_val_loss, avg_val_accuracy])
+
+    # f.write(f"Epoch {epoch+1}:\n")
+    # f.write(f"Train Loss: {avg_epoch_loss:.4f}, Train Accuracy: {avg_epoch_accuracy:.4f}\n")
+    # f.write(f"Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {avg_val_accuracy:.4f}\n")
+    # f.write("Weight and Bias Distributions:\n")
+        
+    # # Log weight and bias distributions from Pyro parameters
+    # pyro_param_store = pyro.get_param_store()
+    # for name in pyro_param_store.get_all_param_names():
+    #     param_value = pyro_param_store[name].detach().cpu().numpy()
+    #     f.write(f"{name}: {param_value}\n")
+    # f.write("\n")
