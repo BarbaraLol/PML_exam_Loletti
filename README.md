@@ -22,3 +22,30 @@ Possible features to implement/add to the code
 - Data augmentation 
 - Eaerly stopping and learning rate schedulers
 - Adding gradient clipping
+
+
+
+Errors enocuontered
+1. 
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (128x961450 and 512x512)
+           Trace Shapes:                   
+            Param Sites:                   
+     module$$$out.weight   3 512           
+       module$$$out.bias       3           
+           Sample Sites:                   
+module$$$fc1.weight dist       | 512 961450
+                   value       | 512 961450
+  module$$$fc1.bias dist       | 512       
+                   value       | 512       
+module$$$fc2.weight dist       | 512    512
+                   value       | 512    512
+  module$$$fc2.bias dist       | 512       
+                   value       | 512       
+module$$$fc3.weight dist       | 512    512
+                   value       | 512    512
+  module$$$fc3.bias dist       | 512       
+                   value       | 512       
+               data dist       |           
+                   value 128   | 
+
+2. 
