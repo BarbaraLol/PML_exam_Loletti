@@ -6,15 +6,8 @@ __pycache__/
 bnn_checkpoint.pth
 sbatches/
 parallelized_training/sbatches/
-serial_4_layers_training(DM)/
-serial_5_layers_training(DM)/
-serial_6_layers_training(DM)/
 serial_3_layers_training/sbatches/
 serial_3_layers_training/__pycache__/
-serial_4_layers_training/sbatches/
-serial_4_layers_training/__pycache__/
-serial_5_layers_training/sbatches/
-serial_5_layers_training/__pycache__/
 serial_6_layers_training/sbatches/
 serial_6_layers_training/__pycache__/
 
