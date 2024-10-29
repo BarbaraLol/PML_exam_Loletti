@@ -39,9 +39,11 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
 # Initializing the model
-input_size = torch.load(file_paths[0])['spectrogram'].numel() # It loads and flattens the spectrogram into a single vector (numel gives the total number of elements)
-print("This is the input_size: ", input_size)
-BNN_model = BNN(input_size=input_size, hidden_size=512, output_size=3)
+sample_spectrogram = torch.load(file_paths[0])['spectrogram']
+input_size = sample_spectrogram.shape[0] * sample_spectrogram.shape[1]  # 1025 * 938
+#print("This is the input_size: ", input_size)
+BNN_model = BNN(input_size=input_size, hidden_size=256, output_size=3)
+
 # Define the optimizer (before loading checkpoint)
 optimizer = torch.optim.Adam(BNN_model.parameters(), lr=0.0001)
 # SVI setup

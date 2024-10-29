@@ -39,7 +39,6 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
 # Initializing the model
-#input_size = torch.load(file_paths[0])['spectrogram'].numel() # It loads and flattens the spectrogram into a single vector (numel gives the total number of elements)
 sample_spectrogram = torch.load(file_paths[0])['spectrogram']
 input_size = sample_spectrogram.shape[0] * sample_spectrogram.shape[1]  # 1025 * 938
 #print("This is the input_size: ", input_size)
