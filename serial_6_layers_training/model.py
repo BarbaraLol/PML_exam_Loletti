@@ -14,6 +14,9 @@ class BNN(nn.Module):
     self.fc1 = nn.Linear(input_size, hidden_size)
     self.fc2 = nn.Linear(hidden_size, hidden_size)
     self.fc3 = nn.Linear(hidden_size, hidden_size)
+    self.fc4 = nn.Linear(hidden_size, hidden_size)
+    self.fc5 = nn.Linear(hidden_size, hidden_size)
+    self.fc6 = nn.Linear(hidden_size, hidden_size)
     self.out = nn.Linear(hidden_size, output_size)
 
   def forward(self, x):
