@@ -38,24 +38,24 @@ class BNN(nn.Module):
     fc1w_prior = Normal(loc=torch.zeros_like(self.fc1.weight), scale=torch.ones_like(self.fc1.weight)).to_event(2)
     fc1b_prior = Normal(loc=torch.zeros_like(self.fc1.bias), scale=torch.ones_like(self.fc1.bias)).to_event(1)
 
-    #fc2w_prior = Normal(loc=torch.zeros_like(self.fc2.weight), scale=torch.ones_like(self.fc2.weight)).to_event(2)
-    #fc2b_prior = Normal(loc=torch.zeros_like(self.fc2.bias), scale=torch.ones_like(self.fc2.bias)).to_event(1)
+    fc2w_prior = Normal(loc=torch.zeros_like(self.fc2.weight), scale=torch.ones_like(self.fc2.weight)).to_event(2)
+    fc2b_prior = Normal(loc=torch.zeros_like(self.fc2.bias), scale=torch.ones_like(self.fc2.bias)).to_event(1)
 
-    #fc3w_prior = Normal(loc=torch.zeros_like(self.fc3.weight), scale=torch.ones_like(self.fc3.weight)).to_event(2)
-    #fc3b_prior = Normal(loc=torch.zeros_like(self.fc3.bias), scale=torch.ones_like(self.fc3.bias)).to_event(1)
+    fc3w_prior = Normal(loc=torch.zeros_like(self.fc3.weight), scale=torch.ones_like(self.fc3.weight)).to_event(2)
+    fc3b_prior = Normal(loc=torch.zeros_like(self.fc3.bias), scale=torch.ones_like(self.fc3.bias)).to_event(1)
 
-    #outputw_prior = Normal(loc=torch.zeros_like(self.out.weight), scale=torch.ones_like(self.out.weight)).to_event(2)
-    #outputb_prior = Normal(loc=torch.zeros_like(self.out.bias), scale=torch.ones_like(self.out.bias)).to_event(1)
+    outputw_prior = Normal(loc=torch.zeros_like(self.out.weight), scale=torch.ones_like(self.out.weight)).to_event(2)
+    outputb_prior = Normal(loc=torch.zeros_like(self.out.bias), scale=torch.ones_like(self.out.bias)).to_event(1)
 
     priors = {
         'fc1.weight': fc1w_prior, 
         'fc1.bias': fc1b_prior, 
-        #'fc2.weight': fc2w_prior, 
-        #'fc2.bias': fc2b_prior,  
-        #'fc3.weight': fc3w_prior, 
-        #'fc3.bias': fc3b_prior,
-        #'out.weight': outputw_prior, 
-        #'out.bias': outputb_prior
+        'fc2.weight': fc2w_prior, 
+        'fc2.bias': fc2b_prior,  
+        'fc3.weight': fc3w_prior, 
+        'fc3.bias': fc3b_prior,
+        'out.weight': outputw_prior, 
+        'out.bias': outputb_prior
     }
     
     # Lift module parameters to random variables sampled from the priors
@@ -72,12 +72,12 @@ class BNN(nn.Module):
       #x = F.relu(lifted_reg_model.fc1(x))
       #x = F.relu(lifted_reg_model.fc2(x))
       #x = F.relu(lifted_reg_model.fc3(x)
-      #logits = lifted_reg_model(x_data)
-      output = F.relu(lifted_reg_model.fc1(x_data))  # Pass through fc1 only
-      print("Output shape after fc1 in model:", output.shape)  # Should print [128, 256]
-      obs = pyro.sample("obs", Categorical(logits=output), obs=y_data)
+         logits = lifted_reg_model(x_data)
+      #output = F.relu(lifted_reg_model.fc1(x_data))  # Pass through fc1 only
+      #print("Output shape after fc1 in model:", output.shape)  # Should print [128, 256]
+         obs = pyro.sample("obs", Categorical(logits=logits), obs=y_data)
 
-    return output
+    return logits
 
   def guide(self, x_data, y_data = None):
     # Variable for the softplus function
