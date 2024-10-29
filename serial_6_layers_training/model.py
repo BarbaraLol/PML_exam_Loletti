@@ -24,7 +24,11 @@ class BNN(nn.Module):
     output = F.relu(self.fc1(x))
     output = F.relu(self.fc2(output))
     output = F.relu(self.fc3(output))
+    output = F.relu(self.fc4(output))
+    output = F.relu(self.fc5(output))
+    output = F.relu(self.fc6(output))
     output = self.out(output)
+    print("After output layer: ", output.shape)
     return output
 
   def model(self, x_data, y_data = None):
@@ -38,6 +42,15 @@ class BNN(nn.Module):
     fc3w_prior = Normal(loc=torch.zeros_like(self.fc3.weight), scale=torch.ones_like(self.fc3.weight)).to_event(2)
     fc3b_prior = Normal(loc=torch.zeros_like(self.fc3.bias), scale=torch.ones_like(self.fc3.bias)).to_event(1)
 
+    fc4w_prior = Normal(loc=torch.zeros_like(self.fc4.weight), scale=torch.ones_like(self.fc4.weight)).to_event(2)
+    fc4b_prior = Normal(loc=torch.zeros_like(self.fc4.bias), scale=torch.ones_like(self.fc4.bias)).to_event(1)
+
+    fc5w_prior = Normal(loc=torch.zeros_like(self.fc5.weight), scale=torch.ones_like(self.fc5.weight)).to_event(2)
+    fc5b_prior = Normal(loc=torch.zeros_like(self.fc5.bias), scale=torch.ones_like(self.fc5.bias)).to_event(1)
+
+    fc6w_prior = Normal(loc=torch.zeros_like(self.fc6.weight), scale=torch.ones_like(self.fc6.weight)).to_event(2)
+    fc6b_prior = Normal(loc=torch.zeros_like(self.fc6.bias), scale=torch.ones_like(self.fc6.bias)).to_event(1)
+
     outputw_prior = Normal(loc=torch.zeros_like(self.out.weight), scale=torch.ones_like(self.out.weight)).to_event(2)
     outputb_prior = Normal(loc=torch.zeros_like(self.out.bias), scale=torch.ones_like(self.out.bias)).to_event(1)
 
@@ -48,6 +61,12 @@ class BNN(nn.Module):
         'fc2.bias': fc2b_prior,  
         'fc3.weight': fc3w_prior, 
         'fc3.bias': fc3b_prior,
+        'fc4.weight': fc4w_prior, 
+        'fc4.bias': fc4b_prior, 
+        'fc5.weight': fc5w_prior, 
+        'fc5.bias': fc5b_prior,  
+        'fc6.weight': fc6w_prior, 
+        'fc6.bias': fc6b_prior,
         'out.weight': outputw_prior, 
         'out.bias': outputb_prior
     }
@@ -112,6 +131,48 @@ class BNN(nn.Module):
     fc3b_sigma_param = softplus(pyro.param("fc3b_sigma", fc3b_sigma))
     fc3b_prior = Normal(loc=fc3b_mu_param, scale=fc3b_sigma_param).to_event(1)
 
+    # Fourth layer weight distribution priors
+    fc4w_mu = torch.randn_like(self.fc4.weight)
+    fc4w_sigma = torch.randn_like(self.fc4.weight)
+    fc4w_mu_param = pyro.param("fc4w_mu", fc4w_mu)
+    fc4w_sigma_param = softplus(pyro.param("fc4w_sigma", fc4w_sigma))
+    fc4w_prior = Normal(loc=fc4w_mu_param, scale=fc4w_sigma_param).to_event(2)
+
+    # Fourth layer bias distribution priors
+    fc4b_mu = torch.randn_like(self.fc4.bias)
+    fc4b_sigma = torch.randn_like(self.fc4.bias)
+    fc4b_mu_param = pyro.param("fc4b_mu", fc4b_mu)
+    fc4b_sigma_param = softplus(pyro.param("fc4b_sigma", fc4b_sigma))
+    fc4b_prior = Normal(loc=fc4b_mu_param, scale=fc4b_sigma_param).to_event(1)
+
+    # Fifth layer weight distribution priors
+    fc5w_mu = torch.randn_like(self.fc5.weight)
+    fc5w_sigma = torch.randn_like(self.fc5.weight)
+    fc5w_mu_param = pyro.param("fc5w_mu", fc5w_mu)
+    fc5w_sigma_param = softplus(pyro.param("fc5w_sigma", fc5w_sigma))
+    fc5w_prior = Normal(loc=fc5w_mu_param, scale=fc5w_sigma_param).to_event(2)
+
+    # Fifth layer bias distribution priors
+    fc5b_mu = torch.randn_like(self.fc5.bias)
+    fc5b_sigma = torch.randn_like(self.fc5.bias)
+    fc5b_mu_param = pyro.param("fc5b_mu", fc5b_mu)
+    fc5b_sigma_param = softplus(pyro.param("fc5b_sigma", fc5b_sigma))
+    fc5b_prior = Normal(loc=fc5b_mu_param, scale=fc5b_sigma_param).to_event(1)
+
+    # Sixth layer weight distribution priors
+    fc6w_mu = torch.randn_like(self.fc6.weight)
+    fc6w_sigma = torch.randn_like(self.fc6.weight)
+    fc6w_mu_param = pyro.param("fc6w_mu", fc6w_mu)
+    fc6w_sigma_param = softplus(pyro.param("fc6w_sigma", fc6w_sigma))
+    fc6w_prior = Normal(loc=fc6w_mu_param, scale=fc6w_sigma_param).to_event(2)
+
+    # Sixth layer bias distribution priors
+    fc6b_mu = torch.randn_like(self.fc6.bias)
+    fc6b_sigma = torch.randn_like(self.fc6.bias)
+    fc6b_mu_param = pyro.param("fc6b_mu", fc6b_mu)
+    fc6b_sigma_param = softplus(pyro.param("fc6b_sigma", fc6b_sigma))
+    fc6b_prior = Normal(loc=fc6b_mu_param, scale=fc6b_sigma_param).to_event(1)
+
     # Output layer weight distribution priors
     outputw_mu = torch.randn_like(self.out.weight)
     outputw_sigma = torch.randn_like(self.out.weight)
@@ -133,6 +194,12 @@ class BNN(nn.Module):
         'fc2.bias': fc2b_prior, 
         'fc3.weight': fc3w_prior, 
         'fc3.bias': fc3b_prior, 
+        'fc4.weight': fc4w_prior, 
+        'fc4.bias': fc4b_prior, 
+        'fc5.weight': fc5w_prior, 
+        'fc5.bias': fc5b_prior, 
+        'fc6.weight': fc6w_prior, 
+        'fc6.bias': fc6b_prior, 
         'out.weight': outputw_prior, 
         'out.bias': outputb_prior
     }
