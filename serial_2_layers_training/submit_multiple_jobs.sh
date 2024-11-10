@@ -3,7 +3,6 @@
 ##########
 # Perform, in order:
 # chmod +x Bayesian.job submit_multiple_jobs.sh
-# ./submi_multiple_jobs
 # nohup ./submit_multiple_jobs.sh > sequential_jobs.log 2>&1 &
 #
 # To verfy that the script is running in the background

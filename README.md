@@ -48,4 +48,5 @@ module$$$fc3.weight dist       | 512    512
                data dist       |           
                    value 128   | 
 
-2. 
+2. Stop loss implememtation in order to reduce the loss and increment the accuracy. Confusion matrix to see the accuracy (3x3 for the different possibilites)
+3. 
