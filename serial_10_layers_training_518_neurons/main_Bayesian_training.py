@@ -12,10 +12,9 @@ from train_utils import save_checkpoint, load_checkpoint, calculate_accuracy, lo
 import seaborn as sns 
 import matplotlib as plt
 
-
 # First step: dataset loading by defining a list of file paths
-# data_dir = './Chicks_Automatic_Detection_dataset/audio_segments/'
-data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
+data_dir = '../Chicks_Automatic_Detection_dataset/audio_segments/' # If the training is in local
+# data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/' # If the training is on Orfeo
 num_epoch = 250 
 batch_size = 64
 
@@ -76,7 +75,7 @@ for epoch in range(start_epoch, num_epoch):
     # Training loop
     for x_train, y_train in train_loader:
         epoch_loss += svi.step(x_train, y_train)
-        predictions = BNN_model(x_train)
+        predictions = BNN_model(x_trtrain_loaderain)
         epoch_accuracy += calculate_accuracy(predictions, y_train)
     
     # Averaging the loss for the epoch
@@ -125,15 +124,16 @@ save_checkpoint(BNN_model, optimizer, epoch, avg_epoch_loss, avg_epoch_accuracy)
 # Confusion Matrix and Classification Report after training
 print("\nConfusion Matrix:")
 cm = confusion_matrix(all_labels, all_preds)
-print(cm)
 
-# Plot Confusion Matrix
+# Save Confusion Matrix as an image
+cm_filename = 'confusion_matrix.png'
 plt.figure(figsize=(6, 6))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
 plt.xlabel('Predicted Labels')
 plt.ylabel('True Labels')
 plt.title('Confusion Matrix')
-plt.show()
+plt.savefig(cm_filename)  # Save the plot as a PNG file
+print(f"Confusion Matrix saved as {cm_filename}")
 
 # Classification report for precision, recall, f1-score
 print("\nClassification Report:")
