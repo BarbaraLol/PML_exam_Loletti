@@ -19,7 +19,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 # Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 data_dir = '../audio_segments'
-num_epochs = 250
+num_epochs = 1000
 batch_size = 16
 learning_rate = 0.0001
 
