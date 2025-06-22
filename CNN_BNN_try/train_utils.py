@@ -61,27 +61,23 @@ def ensuring_log_directory(log_dir='logs', log_filename_prefix='training_logs'):
     
     return os.path.join(log_dir, log_filename)
 
-def log_epoch_data(epoch, train_loss, train_accuracy, val_loss, val_accuracy, filename='training_logs.csv'):
-    """Log training metrics for each epoch."""
+def log_epoch_data(epoch, train_loss, train_acc, val_loss, val_acc, lr, filename):
     file_exists = os.path.isfile(filename)
-    
     with open(filename, mode='a', newline='') as f:
         writer = csv.writer(f)
         if not file_exists:
             writer.writerow([
                 'Epoch', 
                 'Train Loss', 
-                'Train Accuracy', 
+                'Train Accuracy',
                 'Validation Loss', 
-                'Validation Accuracy',
-                'Timestamp'
+                'Validation Accuracy', 
+                'Learning Rate'
             ])
-        
-        writer.writerow([
-            epoch + 1, 
-            train_loss, 
-            train_accuracy, 
-            val_loss, 
-            val_accuracy,
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        ])
+
+        writer.writerow([epoch+1, 
+                         train_loss, 
+                         train_acc, 
+                         val_loss, 
+                         val_acc, 
+                         lr])
