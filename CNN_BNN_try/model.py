@@ -80,10 +80,10 @@ class HybridCNN_BNN(nn.Module):
         # CNN part is deterministic
         with pyro.plate("data", x_data.size(0)):
             # CNN features (deterministic)
-            cnn_features = lifted_model._get_cnn_features(x_data)
+            cnn_features = lifted_reg_model._get_cnn_features(x_data)
             
             # BNN prediction
-            logits = lifted_model._bnn_forward(cnn_features)
+            logits = lifted_reg_model._bnn_forward(cnn_features)
             pyro.sample("obs", dist.Categorical(logits=logits), obs=y_data)
         
         return logits

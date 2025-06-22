@@ -4,7 +4,7 @@ from sklearn.preprocessing import LabelEncoder
 import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.cuda.amp import autocast, GradScaler
+# Remove deprecated autocast import since we'll handle CPU/GPU differently
 from torch.utils.data import random_split, DataLoader
 import pyro
 from pyro.optim import PyroOptim
@@ -19,6 +19,8 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 # Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 # data_dir = '../audio_segments'
 data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
 num_epochs = 1000
@@ -41,6 +43,10 @@ def main():
     sample_spectrogram = torch.load(file_paths[0])['spectrogram']
     input_shape = sample_spectrogram.shape
     num_classes = len(label_encoder.classes_)
+    
+    print(f"Input shape: {input_shape}")
+    print(f"Number of classes: {num_classes}")
+    print(f"Total samples: {len(dataset)}")
 
     # Split dataset
     train_size = int(0.7 * len(dataset))
@@ -56,19 +62,23 @@ def main():
     # Initialize model
     model = HybridCNN_BNN(input_shape, num_classes).to(device)
     
+    # Clear any existing Pyro parameters
+    pyro.clear_param_store()
+    
     # Optimizer and LR scheduler setup
     pyro_optimizer = PyroOptim(optim.Adam, {"lr": initial_lr})
     svi = SVI(model.model, model.guide, pyro_optimizer, loss=Trace_ELBO())
     
     # PyTorch optimizer for LR scheduling (wrapped around Pyro's optimizer)
     outer_optimizer = optim.Adam(model.parameters(), lr=initial_lr)
+    
+    # Fixed: Remove verbose parameter
     scheduler = ReduceLROnPlateau(
         outer_optimizer, 
         mode='min', 
         factor=0.5, 
         patience=5
     )
-    scaler = GradScaler()
 
     # Training setup
     log_file = ensuring_log_directory(log_dir='logs', log_filename_prefix='training_logs')
@@ -84,17 +94,11 @@ def main():
         train_loss, train_acc = 0.0, 0.0
         
         # Training phase
-        for x_train, y_train in train_loader:
+        for batch_idx, (x_train, y_train) in enumerate(train_loader):
             x_train, y_train = x_train.to(device), y_train.to(device)
             
-            outer_optimizer.zero_grad()
-            
-            with autocast():
-                loss = svi.step(x_train, y_train)
-            
-            scaler.scale(loss).backward()
-            scaler.step(outer_optimizer)
-            scaler.update()
+            # Use SVI step (which handles gradients internally)
+            loss = svi.step(x_train, y_train)
             
             with torch.no_grad():
                 preds = model(x_train)
@@ -112,12 +116,17 @@ def main():
                 
                 val_loss += svi.evaluate_loss(x_val, y_val)
                 
-                # KL divergence calculation
-                trace = poutine.trace(model.guide).get_trace(x_val)
-                kl = sum(node["fn"].log_prob(node["value"]).sum() 
-                       for name, node in trace.nodes.items() 
-                       if "fn" in node and "value" in node)
-                kl_divergence += kl.item()
+                # KL divergence calculation (fixed)
+                try:
+                    trace = poutine.trace(model.guide).get_trace(x_val, y_val)
+                    kl = 0.0
+                    for name, node in trace.nodes.items():
+                        if "fn" in node and "value" in node and hasattr(node["fn"], "log_prob"):
+                            kl += node["fn"].log_prob(node["value"]).sum().item()
+                    kl_divergence += kl
+                except Exception as e:
+                    print(f"Warning: Could not calculate KL divergence: {e}")
+                    kl_divergence += 0.0
                 
                 # Accuracy
                 preds = model(x_val)
@@ -125,8 +134,13 @@ def main():
 
         # Update learning rate
         avg_val_loss = val_loss / len(val_loader)
+        old_lr = outer_optimizer.param_groups[0]['lr']
         scheduler.step(avg_val_loss)
         current_lr = outer_optimizer.param_groups[0]['lr']
+        
+        # Print LR change if it occurred
+        if current_lr != old_lr:
+            print(f"Learning rate reduced from {old_lr:.2e} to {current_lr:.2e}")
         
         # Calculate metrics
         avg_train_loss = train_loss / len(train_loader)
@@ -152,6 +166,7 @@ def main():
                 avg_train_acc, 
                 filename='best_model.pth'
             )
+            print("New best model saved!")
         else:
             epochs_without_improvement += 1
             if epochs_without_improvement >= patience:
@@ -169,7 +184,8 @@ def main():
             filename=log_file
         )
 
-    # [Rest of your test evaluation code remains the same...]
+    print("Training completed!")
+    print(f"Best validation loss: {best_val_loss:.4f}")
 
 if __name__ == "__main__":
     main()
