@@ -1,9 +1,0 @@
-Node allocated gpu001
-Using 1 node(s)
-Using 1 task(s) in total
-Using 1 task(s) per node
-
-Using 2 GPU(s) per node
-Master node used 10.128.2.151
-srun: error: gpu001: task 0: Exited with exit code 2
-slurmstepd: error: execve(): torchrun: No such file or directory
