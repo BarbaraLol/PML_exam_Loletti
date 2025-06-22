@@ -66,8 +66,7 @@ def main():
         outer_optimizer, 
         mode='min', 
         factor=0.5, 
-        patience=5, 
-        verbose=True
+        patience=5
     )
     scaler = GradScaler()
 
