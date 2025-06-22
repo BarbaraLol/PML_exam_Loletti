@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pyro
+import pyro.distributions as dist
 from pyro.distributions import Normal, Categorical
 
 class HybridCNN_BNN(nn.Module):
