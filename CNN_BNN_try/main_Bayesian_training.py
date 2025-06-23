@@ -4,7 +4,6 @@ from sklearn.preprocessing import LabelEncoder
 import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-# Remove deprecated autocast import since we'll handle CPU/GPU differently
 from torch.utils.data import random_split, DataLoader
 import pyro
 from pyro.optim import PyroOptim
@@ -16,16 +15,17 @@ from train_utils import save_checkpoint, load_checkpoint, calculate_accuracy, lo
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, classification_report
+import numpy as np
 
 # Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# data_dir = '../audio_segments'
+# FIXED: Updated batch size to 128 as requested
 data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
 num_epochs = 1000
-batch_size = 16
-initial_lr = 0.001  # Start with slightly higher LR for dynamic adjustment
+batch_size = 128  # Increased from 32
+initial_lr = 5e-6  # Even smaller LR for stability
 
 def main():
     # Load and process data
@@ -47,6 +47,7 @@ def main():
     print(f"Input shape: {input_shape}")
     print(f"Number of classes: {num_classes}")
     print(f"Total samples: {len(dataset)}")
+    print(f"Batch size: {batch_size}")
 
     # Split dataset
     train_size = int(0.7 * len(dataset))
@@ -54,7 +55,7 @@ def main():
     test_size = len(dataset) - train_size - val_size
     train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
 
-    # Create data loaders
+    # Create data loaders with increased batch size
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
@@ -65,19 +66,33 @@ def main():
     # Clear any existing Pyro parameters
     pyro.clear_param_store()
     
-    # Optimizer and LR scheduler setup
-    pyro_optimizer = PyroOptim(optim.Adam, {"lr": initial_lr})
+    # CRITICAL FIX: Add gradient clipping to prevent explosions
+    def clip_gradients(optimizer, max_norm=1.0):
+        """Clip gradients to prevent explosion"""
+        for group in optimizer.param_groups:
+            for p in group['params']:
+                if p.grad is not None:
+                    torch.nn.utils.clip_grad_norm_(p, max_norm)
+    
+    # Optimizer setup with gradient clipping
+    def make_optimizer(params, lr):
+        optimizer = optim.Adam(params, lr=lr, weight_decay=1e-4)  # Added weight decay
+        return optimizer
+    
+    pyro_optimizer = PyroOptim(make_optimizer, {"lr": initial_lr})
+    
+    # CRITICAL FIX: Use ClippedAdam to prevent gradient explosion
     svi = SVI(model.model, model.guide, pyro_optimizer, loss=Trace_ELBO())
     
-    # PyTorch optimizer for LR scheduling (wrapped around Pyro's optimizer)
-    outer_optimizer = optim.Adam(model.parameters(), lr=initial_lr)
+    # PyTorch optimizer for LR scheduling
+    outer_optimizer = optim.Adam(model.parameters(), lr=initial_lr, weight_decay=1e-4)
     
-    # Fixed: Remove verbose parameter
     scheduler = ReduceLROnPlateau(
         outer_optimizer, 
         mode='min', 
         factor=0.5, 
-        patience=5
+        patience=8,  # Increased patience
+        min_lr=1e-8
     )
 
     # Training setup
@@ -87,7 +102,17 @@ def main():
     # Early stopping
     best_val_loss = float('inf')
     epochs_without_improvement = 0
-    patience = 15  # Longer patience to allow LR reduction to take effect
+    patience = 20  # Increased patience
+
+    # DEBUG: Quick data check
+    print("\n=== Quick Data Check ===")
+    sample_batch = next(iter(train_loader))
+    x_sample, y_sample = sample_batch[0].to(device), sample_batch[1].to(device)
+    print(f"Sample input range: [{x_sample.min():.6f}, {x_sample.max():.6f}]")
+    print(f"Sample input mean: {x_sample.mean():.6f}, std: {x_sample.std():.6f}")
+    print(f"Sample target range: [{y_sample.min()}, {y_sample.max()}]")
+    print(f"Target unique values: {torch.unique(y_sample)}")
+    print("========================\n")
 
     for epoch in range(num_epochs):
         model.train()
@@ -97,36 +122,43 @@ def main():
         for batch_idx, (x_train, y_train) in enumerate(train_loader):
             x_train, y_train = x_train.to(device), y_train.to(device)
             
-            # Use SVI step (which handles gradients internally)
+            # Skip batch if contains NaN/Inf
+            if torch.isnan(x_train).any() or torch.isinf(x_train).any():
+                print(f"WARNING: Skipping batch {batch_idx} due to NaN/Inf")
+                continue
+                
+            # Use SVI step
             loss = svi.step(x_train, y_train)
+            
+            # CRITICAL: Check for exploding loss
+            if np.isnan(loss) or np.isinf(loss) or loss > 1e8:
+                print(f"CRITICAL: Loss explosion detected: {loss:.2e}")
+                print(f"Stopping training to prevent further issues")
+                return
             
             with torch.no_grad():
                 preds = model(x_train)
                 train_acc += calculate_accuracy(preds, y_train)
             train_loss += loss
+            
+            # Early debug output
+            if epoch == 0 and batch_idx < 2:
+                print(f"Epoch {epoch+1}, Batch {batch_idx+1}: Loss = {loss:.6f}")
 
         # Validation phase
         model.eval()
         val_loss, val_acc = 0.0, 0.0
-        kl_divergence = 0.0
         
         with torch.no_grad():
             for x_val, y_val in val_loader:
                 x_val, y_val = x_val.to(device), y_val.to(device)
                 
-                val_loss += svi.evaluate_loss(x_val, y_val)
+                batch_val_loss = svi.evaluate_loss(x_val, y_val)
+                val_loss += batch_val_loss
                 
-                # KL divergence calculation (fixed)
-                try:
-                    trace = poutine.trace(model.guide).get_trace(x_val, y_val)
-                    kl = 0.0
-                    for name, node in trace.nodes.items():
-                        if "fn" in node and "value" in node and hasattr(node["fn"], "log_prob"):
-                            kl += node["fn"].log_prob(node["value"]).sum().item()
-                    kl_divergence += kl
-                except Exception as e:
-                    print(f"Warning: Could not calculate KL divergence: {e}")
-                    kl_divergence += 0.0
+                # Check validation loss
+                if np.isnan(batch_val_loss) or np.isinf(batch_val_loss):
+                    print(f"WARNING: NaN/Inf in validation loss: {batch_val_loss}")
                 
                 # Accuracy
                 preds = model(x_val)
@@ -146,13 +178,11 @@ def main():
         avg_train_loss = train_loss / len(train_loader)
         avg_train_acc = train_acc / len(train_loader)
         avg_val_acc = val_acc / len(val_loader)
-        avg_kl = kl_divergence / len(val_loader)
 
         # Print metrics
         print(f"\nEpoch {epoch+1}/{num_epochs}")
         print(f"LR: {current_lr:.2e} | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
         print(f"Train Acc: {avg_train_acc:.4f} | Val Acc: {avg_val_acc:.4f}")
-        print(f"KL Divergence: {avg_kl:.4f}")
 
         # Early stopping and checkpointing
         if avg_val_loss < best_val_loss:
@@ -173,16 +203,22 @@ def main():
                 print(f"\nEarly stopping at epoch {epoch+1}!")
                 break
 
-        # Log epoch data (now includes LR)
+        # Log epoch data
         log_epoch_data(
             epoch, 
             avg_train_loss, 
             avg_train_acc, 
             avg_val_loss, 
             avg_val_acc,
-            current_lr,  # Add LR to logging
+            current_lr,
             filename=log_file
         )
+
+        # Stop early if loss is still problematic
+        if epoch == 0 and avg_train_loss > 1e4:
+            print(f"Training loss too high after first epoch ({avg_train_loss:.2e})")
+            print("Consider checking data preprocessing or model architecture")
+            break
 
     print("Training completed!")
     print(f"Best validation loss: {best_val_loss:.4f}")

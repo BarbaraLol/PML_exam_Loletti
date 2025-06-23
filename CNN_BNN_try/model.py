@@ -20,10 +20,25 @@ class HybridCNN_BNN(nn.Module):
         self._to_linear = None
         self._get_conv_output_size(input_shape)
         
-        # BNN Classifier
+        # BNN Classifier with proper initialization
         self.bnn_fc1 = nn.Linear(self._to_linear, 256)
         self.bnn_fc2 = nn.Linear(256, 128)
         self.bnn_out = nn.Linear(128, num_classes)
+        
+        # CRITICAL FIX: Proper weight initialization
+        self._initialize_weights()
+        
+    def _initialize_weights(self):
+        """Proper weight initialization to prevent exploding gradients"""
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                # Small initialization for BNN layers
+                nn.init.normal_(m.weight, 0, 0.01)  # Very small std
+                nn.init.constant_(m.bias, 0)
         
     def _get_conv_output_size(self, shape):
         with torch.no_grad():
@@ -49,22 +64,24 @@ class HybridCNN_BNN(nn.Module):
         return x
     
     def model(self, x_data, y_data=None):
-        # Priors for CNN weights (optional - could keep these deterministic)
-        # Priors for BNN weights
+        # CRITICAL FIX: Much smaller prior scale to prevent exploding gradients
+        prior_scale = 0.1  # Reduced from 1.0
+        
+        # Priors for BNN weights with smaller scale
         bnn_fc1w_prior = Normal(loc=torch.zeros_like(self.bnn_fc1.weight), 
-                              scale=torch.ones_like(self.bnn_fc1.weight)).to_event(2)
+                              scale=prior_scale * torch.ones_like(self.bnn_fc1.weight)).to_event(2)
         bnn_fc1b_prior = Normal(loc=torch.zeros_like(self.bnn_fc1.bias), 
-                              scale=torch.ones_like(self.bnn_fc1.bias)).to_event(1)
+                              scale=prior_scale * torch.ones_like(self.bnn_fc1.bias)).to_event(1)
         
         bnn_fc2w_prior = Normal(loc=torch.zeros_like(self.bnn_fc2.weight), 
-                              scale=torch.ones_like(self.bnn_fc2.weight)).to_event(2)
+                              scale=prior_scale * torch.ones_like(self.bnn_fc2.weight)).to_event(2)
         bnn_fc2b_prior = Normal(loc=torch.zeros_like(self.bnn_fc2.bias), 
-                              scale=torch.ones_like(self.bnn_fc2.bias)).to_event(1)
+                              scale=prior_scale * torch.ones_like(self.bnn_fc2.bias)).to_event(1)
         
         outw_prior = Normal(loc=torch.zeros_like(self.bnn_out.weight), 
-                          scale=torch.ones_like(self.bnn_out.weight)).to_event(2)
+                          scale=prior_scale * torch.ones_like(self.bnn_out.weight)).to_event(2)
         outb_prior = Normal(loc=torch.zeros_like(self.bnn_out.bias), 
-                          scale=torch.ones_like(self.bnn_out.bias)).to_event(1)
+                          scale=prior_scale * torch.ones_like(self.bnn_out.bias)).to_event(1)
         
         priors = {
             'bnn_fc1.weight': bnn_fc1w_prior,
@@ -78,43 +95,58 @@ class HybridCNN_BNN(nn.Module):
         lifted_module = pyro.random_module("module", self, priors)
         lifted_reg_model = lifted_module()
         
-        # CNN part is deterministic
+        # CRITICAL FIX: Proper forward pass
         with pyro.plate("data", x_data.size(0)):
-            # CNN features (deterministic)
-            cnn_features = lifted_reg_model._get_cnn_features(x_data)
+            # Forward pass through the lifted model
+            logits = lifted_reg_model(x_data)
             
-            # BNN prediction
-            logits = lifted_reg_model._bnn_forward(cnn_features)
-            pyro.sample("obs", dist.Categorical(logits=logits), obs=y_data)
+            # CRITICAL FIX: Use proper observation model
+            if y_data is not None:
+                pyro.sample("obs", Categorical(logits=logits), obs=y_data)
         
         return logits
     
     def guide(self, x_data, y_data=None):
         softplus = torch.nn.Softplus()
         
+        # CRITICAL FIX: Better initialization for variational parameters
+        init_scale = 0.01  # Much smaller initial scale
+        
         # Variational parameters for BNN weights
-        bnn_fc1w_mu = pyro.param("bnn_fc1w_mu", torch.randn_like(self.bnn_fc1.weight))
-        bnn_fc1w_sigma = softplus(pyro.param("bnn_fc1w_sigma", torch.randn_like(self.bnn_fc1.weight)))
+        bnn_fc1w_mu = pyro.param("bnn_fc1w_mu", 
+                                 torch.randn_like(self.bnn_fc1.weight) * init_scale)
+        bnn_fc1w_sigma = softplus(pyro.param("bnn_fc1w_sigma", 
+                                           -3.0 + 0.1 * torch.randn_like(self.bnn_fc1.weight)))
         bnn_fc1w_prior = Normal(loc=bnn_fc1w_mu, scale=bnn_fc1w_sigma).to_event(2)
         
-        bnn_fc1b_mu = pyro.param("bnn_fc1b_mu", torch.randn_like(self.bnn_fc1.bias))
-        bnn_fc1b_sigma = softplus(pyro.param("bnn_fc1b_sigma", torch.randn_like(self.bnn_fc1.bias)))
+        bnn_fc1b_mu = pyro.param("bnn_fc1b_mu", 
+                                torch.randn_like(self.bnn_fc1.bias) * init_scale)
+        bnn_fc1b_sigma = softplus(pyro.param("bnn_fc1b_sigma", 
+                                           -3.0 + 0.1 * torch.randn_like(self.bnn_fc1.bias)))
         bnn_fc1b_prior = Normal(loc=bnn_fc1b_mu, scale=bnn_fc1b_sigma).to_event(1)
         
-        bnn_fc2w_mu = pyro.param("bnn_fc2w_mu", torch.randn_like(self.bnn_fc2.weight))
-        bnn_fc2w_sigma = softplus(pyro.param("bnn_fc2w_sigma", torch.randn_like(self.bnn_fc2.weight)))
+        bnn_fc2w_mu = pyro.param("bnn_fc2w_mu", 
+                                torch.randn_like(self.bnn_fc2.weight) * init_scale)
+        bnn_fc2w_sigma = softplus(pyro.param("bnn_fc2w_sigma", 
+                                           -3.0 + 0.1 * torch.randn_like(self.bnn_fc2.weight)))
         bnn_fc2w_prior = Normal(loc=bnn_fc2w_mu, scale=bnn_fc2w_sigma).to_event(2)
         
-        bnn_fc2b_mu = pyro.param("bnn_fc2b_mu", torch.randn_like(self.bnn_fc2.bias))
-        bnn_fc2b_sigma = softplus(pyro.param("bnn_fc2b_sigma", torch.randn_like(self.bnn_fc2.bias)))
+        bnn_fc2b_mu = pyro.param("bnn_fc2b_mu", 
+                                torch.randn_like(self.bnn_fc2.bias) * init_scale)
+        bnn_fc2b_sigma = softplus(pyro.param("bnn_fc2b_sigma", 
+                                           -3.0 + 0.1 * torch.randn_like(self.bnn_fc2.bias)))
         bnn_fc2b_prior = Normal(loc=bnn_fc2b_mu, scale=bnn_fc2b_sigma).to_event(1)
         
-        outw_mu = pyro.param("outw_mu", torch.randn_like(self.bnn_out.weight))
-        outw_sigma = softplus(pyro.param("outw_sigma", torch.randn_like(self.bnn_out.weight)))
+        outw_mu = pyro.param("outw_mu", 
+                            torch.randn_like(self.bnn_out.weight) * init_scale)
+        outw_sigma = softplus(pyro.param("outw_sigma", 
+                                       -3.0 + 0.1 * torch.randn_like(self.bnn_out.weight)))
         outw_prior = Normal(loc=outw_mu, scale=outw_sigma).to_event(2)
         
-        outb_mu = pyro.param("outb_mu", torch.randn_like(self.bnn_out.bias))
-        outb_sigma = softplus(pyro.param("outb_sigma", torch.randn_like(self.bnn_out.bias)))
+        outb_mu = pyro.param("outb_mu", 
+                            torch.randn_like(self.bnn_out.bias) * init_scale)
+        outb_sigma = softplus(pyro.param("outb_sigma", 
+                                       -3.0 + 0.1 * torch.randn_like(self.bnn_out.bias)))
         outb_prior = Normal(loc=outb_mu, scale=outb_sigma).to_event(1)
         
         priors = {
