@@ -19,8 +19,7 @@ import numpy as np
 
 # Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = HybridCNN_BNN(input_shape, num_classes).to(device)
-print(f"Model moved to: {next(model.parameters()).device}")  # Verify
+pyro.enable_validation(False)
 
 # FIXED: Updated batch size to 128 as requested
 data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
@@ -64,6 +63,7 @@ def main():
 
     # Initialize model
     model = HybridCNN_BNN(input_shape, num_classes).to(device)
+    print(f"Model moved to: {next(model.parameters()).device}")  # Verify
     
     # Clear any existing Pyro parameters
     pyro.clear_param_store()
