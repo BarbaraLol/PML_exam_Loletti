@@ -49,9 +49,13 @@ class SpectrogramDataset(Dataset):
         spectrogram = data['spectrogram'].float()  # Ensure float type
         
         # Normalize
-        original_shape = spectrogram.shape
-        spectrogram = self.scaler.transform(spectrogram.numpy().reshape(-1, 1))
-        spectrogram = torch.tensor(spectrogram, dtype=torch.float32).reshape(original_shape)
+        #original_shape = spectrogram.shape
+        #spectrogram = self.scaler.transform(spectrogram.numpy().reshape(-1, 1))
+        #spectrogram = torch.tensor(spectrogram, dtype=torch.float32).reshape(original_shape)
+        spectrogram = (spectrogram - spectrogram.mean()) / (spectrogram.std() + 1e-8)
+        
+        # Clamp extreme values
+        spectrogram = torch.clamp(spectrogram, min=-3, max=3) 
         
         # Encode label
         encoded_label = self.label_encoder.transform([data['label']])[0]

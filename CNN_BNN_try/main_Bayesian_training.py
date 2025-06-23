@@ -19,13 +19,15 @@ import numpy as np
 
 # Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
+model = HybridCNN_BNN(input_shape, num_classes).to(device)
+print(f"Model moved to: {next(model.parameters()).device}")  # Verify
 
 # FIXED: Updated batch size to 128 as requested
 data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
 num_epochs = 1000
-batch_size = 128  # Increased from 32
-initial_lr = 5e-6  # Even smaller LR for stability
+batch_size = 64  # Better balance for V100
+initial_lr = 1e-6  # Start extremely low
+grad_clip = 1.0  # Essential for Bayesian nets
 
 def main():
     # Load and process data
@@ -98,6 +100,7 @@ def main():
     # Training setup
     log_file = ensuring_log_directory(log_dir='logs', log_filename_prefix='training_logs')
     print(f"Starting training with initial LR: {initial_lr}")
+    torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
 
     # Early stopping
     best_val_loss = float('inf')
