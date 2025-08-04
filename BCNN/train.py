@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
-from model import ChickCallDetector
+from torchvision import transforms 
+from blitz.losses import kl_divergence_from_nn
+from model import BayesianChickCallDetector
 from data_loading import SpectrogramDataset, load_file_paths, encode_labels
 from sklearn.preprocessing import LabelEncoder
 import argparse
@@ -29,6 +30,7 @@ def main():
     args = parser.parse_args()
 
     # Create output directory with timestamp
+    output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}")
     
@@ -41,23 +43,8 @@ def main():
     label_encoder = LabelEncoder()
     label_encoder.fit(encode_labels(file_paths))
     
-    # # Data augmentation transforms
-    # train_transform = transforms.Compose([
-    #     transforms.Lambda(lambda x: x.unsqueeze(0)),  # Add channel dimension
-    #     transforms.RandomHorizontalFlip(p=0.5), # Time Flipping
-    #     transforms.RandomVerticalFlip(p=0.5), # Frequency Flipping
-    #     transforms.RandomApply([
-    #         transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05))
-    #     ], p=0.3), # Apply only 30% of the time
-    # ])
-    
-    # Validation transform (no augmentation)
-    val_transform = transforms.Compose([
-        transforms.Lambda(lambda x: x.unsqueeze(0)), # Just adding a channel dim
-    ])
-    
     # Create datasets
-    dataset = SpectrogramDataset(file_paths, label_encoder, transform=train_transform)
+    dataset = SpectrogramDataset(file_paths, label_encoder)
     sample_shape = torch.load(file_paths[0])['spectrogram'].shape
     num_classes = len(label_encoder.classes_)
     print(f"Found {len(dataset)} samples with shape {sample_shape} and {num_classes} classes")
@@ -69,9 +56,6 @@ def main():
     train_dataset, val_dataset, test_dataset = random_split(
         dataset, [train_size, val_size, test_size]
     )
-    
-    # Apply different transforms to validation set
-    val_dataset.dataset.transform = val_transform
     
     # Create data loaders
     train_loader = DataLoader(
@@ -97,18 +81,18 @@ def main():
         return data, target
 
     # Model
-    print("Initializing model...")
-    model = ChickCallDetector(sample_shape, num_classes).to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
+    print("Initializing Full Bayesian CNN model...")
+    model = BayesianChickCallDetector(sample_shape, num_classes).to(device)
+    optimizer = optim.AdamW(model.parameters(), lr=5e-5, weight_decay=1e-5) # Low LR for stability
     criterion = nn.CrossEntropyLoss()
     
     # Learning rate scheduler
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 
         mode='min', 
-        factor=0.5, 
-        patience=5, 
-        min_lr=1e-6
+        factor=0.7, 
+        patience=8, 
+        min_lr=1e-7
     )
     
     # Early stopping
@@ -125,12 +109,10 @@ def main():
         writer = csv.writer(f)
         writer.writerow([
             'epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 
-            'lr', 'kl_loss', 'time_elapsed'
+            'lr', 'kl_loss', 'time_elapsed', 'train_uncertainty', 'val_uncertainty'
         ])
     
     for epoch in range(args.epochs):
-        # KL annealing - gradually increase influence
-        kl_weight = min(1.0, (epoch + 1) / 10)  # Ramp up KL loss influence over 10 epochs (from 10% → 100%)
 
         epoch_start = time.time()
         model.train()
@@ -148,7 +130,7 @@ def main():
             
             # Calculate losses
             nll_loss = criterion(outputs, target)
-            kl_loss = model.kl_loss() / (len(train_loader.dataset) * kl_weight)  # Scaled KL
+            kl_loss = kl_divergence_from_nn(model) / (len(train_loader.dataset)) 
             loss = nll_loss + kl_loss
             
             loss.backward()
@@ -179,7 +161,7 @@ def main():
             for batch in val_loader:
                 data, target = fix_dims(batch)
                 data, target = data.to(device), target.to(device)
-                outputs = model(data)  # Use mean for validation
+                outputs = model(data, sample=False)  # Disabling sampling
                 loss = criterion(outputs, target)
                 
                 val_loss += loss.item() * data.size(0)
