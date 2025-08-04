@@ -1,0 +1,8 @@
+Chicks_Automatic_Detection_dataset/
+CNN_BNN_final/results/best_model.pth
+CNN_BNN_final/results/final_model.pth
+simple_approach_CNN/__pycache__/
+simple_approach_CNN/results/best_model.pth
+intermediate_approach/
+BCNN/results/best_model.pth
+BCNN/results/final_model.pth
