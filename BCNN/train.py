@@ -1,9 +1,12 @@
 import torch
+torch.backends.cudnn.benchmark = True
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms 
-from blitz.losses import kl_divergence_from_nn
+from blitz.losses import kl_divergence_from_nn  # Fixed import
 from model import BayesianChickCallDetector
 from data_loading import SpectrogramDataset, load_file_paths, encode_labels
 from sklearn.preprocessing import LabelEncoder
@@ -23,7 +26,7 @@ def main():
     # Arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")
+    parser.add_argument('--batch_size', type=int, default=8, help="Batch size for training")
     parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
     parser.add_argument('--output_dir', default='results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
@@ -109,7 +112,7 @@ def main():
         writer = csv.writer(f)
         writer.writerow([
             'epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 
-            'lr', 'kl_loss', 'time_elapsed', 'train_uncertainty', 'val_uncertainty'
+            'lr', 'kl_loss', 'time_elapsed'
         ])
     
     for epoch in range(args.epochs):
@@ -130,7 +133,7 @@ def main():
             
             # Calculate losses
             nll_loss = criterion(outputs, target)
-            kl_loss = kl_divergence_from_nn(model) / (len(train_loader.dataset)) 
+            kl_loss = kl_divergence_from_nn(model) / len(train_loader.dataset)
             loss = nll_loss + kl_loss
             
             loss.backward()
@@ -138,7 +141,7 @@ def main():
             
             # Track metrics
             train_loss += nll_loss.item() * data.size(0)
-            kl_loss_total += kl_loss.item() * len(train_loader.dataset)
+            kl_loss_total += kl_loss.item() * data.size(0)
             _, predicted = outputs.max(1)
             total += target.size(0)
             correct += predicted.eq(target).sum().item()

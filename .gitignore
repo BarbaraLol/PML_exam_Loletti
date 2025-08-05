@@ -6,3 +6,5 @@ simple_approach_CNN/results/best_model.pth
 intermediate_approach/
 BCNN/results/best_model.pth
 BCNN/results/final_model.pth
+BCNN/__pycache__/
+BCNN/cuda_12.8.0_570.86.10_linux.run
