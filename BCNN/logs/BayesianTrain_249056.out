@@ -1,0 +1,10 @@
+===== GPU INFORMATION =====
+No devices were found
+===== PYTHON GPU CHECK =====
+Using device: cpu
+Using device: cpu
+Output directory: results
+Loading data...
+Found 5094 samples with shape torch.Size([1025, 938]) and 3 classes
+Initializing Full Bayesian CNN model...
+Starting training...

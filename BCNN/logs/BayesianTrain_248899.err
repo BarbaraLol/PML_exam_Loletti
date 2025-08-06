@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/orfeo/cephfs/home/dssc/bloletti/Romina/PML_exam_Loletti/BCNN/train.py", line 8, in <module>
+    from torchvision import transforms 
+ModuleNotFoundError: No module named 'torchvision'
