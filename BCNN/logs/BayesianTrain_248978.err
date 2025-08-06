@@ -1,5 +1,0 @@
-/orfeo/cephfs/home/dssc/bloletti/myenv/lib64/python3.9/site-packages/networkx/utils/backends.py:135: RuntimeWarning: networkx backend defined more than once: nx-loopback
-  backends.update(_get_backends("networkx.backends"))
-/orfeo/cephfs/home/dssc/bloletti/myenv/lib64/python3.9/site-packages/torch/utils/data/dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
-  warnings.warn(warn_msg)
-slurmstepd: error: *** JOB 248978 ON gpu004 CANCELLED AT 2025-08-05T18:58:51 ***
