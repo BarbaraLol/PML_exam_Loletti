@@ -50,13 +50,13 @@ import gc
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Setting the input and output folders
-# implementare funzione per prendere solo input e produrre cartella di output rinominandola come l'input ed eliminando la cartella in input
 input_dataset = '../Chicks_Automatic_Detection_dataset/Registrazioni/'
-output_dataset = '../Chicks_Automatic_Detection_dataset/Registrazioni/'
+output_dataset = '../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/'  # New separate folder for processed data
 
 
-# Change the file name and location
+# Change the file name and location - MODIFIED to not move .wav files
 def file_name(input_dataset, output_dataset):
+    """This function is now optional since we're not moving .wav files"""
     for subdir, dirs, files in os.walk(input_dataset):
         for file in files:
             if file.endswith('.wav'):
@@ -87,10 +87,15 @@ def file_name(input_dataset, output_dataset):
             print(f"Deleted folder and its contents: {item_path}")
 
 
-# Checking and creating the directories to save the spectrograms
 def preparing_directories(output_dataset, subdirectory='audio_segments'):
+    # Create the main output directory if it doesn't exist
+    if not os.path.exists(output_dataset):
+        os.makedirs(output_dataset)
+        print(f"Created main output directory: {output_dataset}")
+    
     save_dir = os.path.join(output_dataset, subdirectory) # Where the audio segments spectrograms will be saved
     spectrogram_dir = os.path.join(save_dir, 'spectrograms') # Where the spectrograms images will be saved (inside the audio_segments folder)
+    
     # To make sure that both directories exist
     # Ensure the save_dir exists
     if not os.path.exists(save_dir):
@@ -116,16 +121,17 @@ def compute_spectrogram(y, sr):
     return torch.tensor(spectrogram, dtype=torch.float32).to(device)
 
 
-# Funtion to process a single audio file
+# MODIFIED: Function to process a single audio file with separate output directory
 def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, checkpoint_file = "preprocessed_audios.txt"):
-    # Setting the checkpoints' saving process
+    # Setting the checkpoints' saving process - save checkpoint in output directory
+    checkpoint_path = os.path.join(output_dataset, checkpoint_file)
     processed_files = set()
-    if os.path.exists(checkpoint_file):
-        with open(checkpoint_file, "r") as f:
+    if os.path.exists(checkpoint_path):
+        with open(checkpoint_path, "r") as f:
             processed_files = set(f.read().splitlines())
     else:
         # creation of the checkpoint file if it doesn't exist
-        with open(checkpoint_file, "w") as f:
+        with open(checkpoint_path, "w") as f:
             pass
     
     if audio_file not in processed_files:
@@ -165,7 +171,7 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
         # Extract the base name of the audio file (without extension)
         base_name = os.path.splitext(os.path.basename(audio_file))[0]
 
-        chunk_duration = 20 # Every chunck is 20sec long
+        chunk_duration = 10 # Every chunck is 20sec long
         # Get number of samples for 20 seconds
         buffer = int(chunk_duration * sampling_rate)
 
@@ -212,7 +218,7 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
             audio_done += buffer # Update the position in the audio
 
         # Saving processed file to checkpoint
-        with open(checkpoint_file, "a") as f:
+        with open(checkpoint_path, "a") as f:
             f.write(audio_file + "\n")
 
         # Explicitly delete variables to free memory
@@ -220,17 +226,19 @@ def audio_spectrograms(audio_file, output_dataset, save_dir, spectrogram_dir, ch
         torch.cuda.empty_cache()  # Clears GPU cache to free GPU memory
         gc.collect()  # Collects garbage to free CPU memory
 
-# Plotting the spectrograms
+# MODIFIED: Plotting spectrograms with checkpoint in output directory
 def spectrograms_plotting(output_dataset, save_dir, spectrogram_dir, checkpoint_file = "preprocessed_segments.txt"):
-    # Setting the checkpoints' saving process
+    # Setting the checkpoints' saving process - save checkpoint in output directory
+    checkpoint_path = os.path.join(output_dataset, checkpoint_file)
     processed_files = set()
-    if os.path.exists(checkpoint_file):
-        with open(checkpoint_file, "r") as f:
+    if os.path.exists(checkpoint_path):
+        with open(checkpoint_path, "r") as f:
             processed_files = set(f.read().splitlines())
     else:
         # creation of the checkpoint file if it doesn't exist
-        with open(checkpoint_file, "w") as f:
+        with open(checkpoint_path, "w") as f:
             pass
+    
     for file in os.listdir(save_dir):
         if file not in processed_files and file.endswith('.pt'):
             # Load the saved spectrogram data
@@ -251,8 +259,18 @@ def spectrograms_plotting(output_dataset, save_dir, spectrogram_dir, checkpoint_
             plt.close()
 
             # Saving processed file to checkpoint
-            with open(checkpoint_file, "a") as f:
+            with open(checkpoint_path, "a") as f:
                 f.write(f"{file} with shape: {data['spectrogram'].shape}\n")
+
+# Function to get all .wav files from input directory (including subdirectories)
+def get_audio_files_from_input(input_dataset):
+    """Recursively find all .wav files in the input directory"""
+    audio_files = []
+    for subdir, dirs, files in os.walk(input_dataset):
+        for file in files:
+            if file.endswith('.wav'):
+                audio_files.append(os.path.join(subdir, file))
+    return audio_files
 
 # Function to assign and process a single audio file within a thread
 def thread_audio_file_form_queue(file_queue, output_dataset, save_dir, spectrogram_dir):
@@ -268,12 +286,13 @@ def thread_audio_file_form_queue(file_queue, output_dataset, save_dir, spectrogr
         # Marking the task as done when compleated
         file_queue.task_done()
 
-# Parallel process function
-def parallel_audio_processing(output_dataset, workers):
-    # Get a list of all audio files in the directory
-    audio_files = [os.path.join(output_dataset, f) for f in os.listdir(output_dataset) if f.endswith('.wav')]
+# MODIFIED: Parallel process function to read from input and save to output
+def parallel_audio_processing(input_dataset, output_dataset, workers):
+    # Get a list of all audio files in the INPUT directory
+    audio_files = get_audio_files_from_input(input_dataset)
+    print(f"Found {len(audio_files)} audio files to process")
 
-    # Preparing the directories
+    # Preparing the directories in the OUTPUT directory
     save_dir, spectrogram_dir = preparing_directories(output_dataset)
 
     # Creating a queue to menage the audio files
@@ -288,10 +307,10 @@ def parallel_audio_processing(output_dataset, workers):
 
     # Create and menage threads
     threads = []
-    for _ in range (workers):
+    for _ in range(workers):
         thread = threading.Thread(target = thread_audio_file_form_queue, args = (file_queue, output_dataset, save_dir, spectrogram_dir))
         thread.start()
-        threads.append(thread)parallel_audio_processing
+        threads.append(thread)
 
     # Wait for all tasks to be processed
     file_queue.join() # This will block until all tasks are marked as done
@@ -308,13 +327,14 @@ def parallel_audio_processing(output_dataset, workers):
 
 # Main entry point to run the parallel processing
 if __name__ == "__main__":
-    print ("Starting parallel processing with GPU enhancement and intermidiate result savings")
+    print("Starting parallel processing with GPU enhancement and intermediate result savings")
 
-    #file_name(input_dataset, output_dataset) # To reorder the dataset
+    # Optional: uncomment if you want to reorganize .wav files first
+    # file_name(input_dataset, input_dataset)  # Keep .wav files in input directory
 
     # Run parallel audio processing with a specified number of workers
+    # The function now takes both input and output directories
     # Set the 'workers' variable according to how many processes you want to execute in parallel
-    parallel_audio_processing(output_dataset, workers = 128) # To change based on how many task you want to perform in parallel
+    parallel_audio_processing(input_dataset, output_dataset, workers=128) # To change based on how many task you want to perform in parallel
 
     print("Finish processing")
-
