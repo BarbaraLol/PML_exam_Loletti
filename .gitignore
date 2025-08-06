@@ -1,4 +1,5 @@
 Chicks_Automatic_Detection_dataset/
+Chicks_Automatic_Detection_dataset_orfeo/
 CNN_BNN_final/results/best_model.pth
 CNN_BNN_final/results/final_model.pth
 simple_approach_CNN/__pycache__/
@@ -8,3 +9,6 @@ BCNN/results/best_model.pth
 BCNN/results/final_model.pth
 BCNN/__pycache__/
 BCNN/cuda_12.8.0_570.86.10_linux.run
+CNN_BNN_final_no_augmentation/__pycache__/
+CNN_BNN_final_no_augmentation/results/best_model.pth
+CNN_BNN_final_no_augmentation/results/final_model.pth
