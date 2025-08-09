@@ -21,9 +21,9 @@ def main():
     # Arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=4, help="Batch size for training")
+    parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")
     parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
-    parser.add_argument('--output_dir', default='results', help="Directory to save outputs")
+    parser.add_argument('--output_dir', default='results/20sec_chunks', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
     args = parser.parse_args()
 
