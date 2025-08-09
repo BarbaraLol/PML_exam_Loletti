@@ -291,7 +291,7 @@ def parallel_audio_processing(output_dataset, workers):
     for _ in range (workers):
         thread = threading.Thread(target = thread_audio_file_form_queue, args = (file_queue, output_dataset, save_dir, spectrogram_dir))
         thread.start()
-        threads.append(thread)parallel_audio_processing
+        threads.append(thread)
 
     # Wait for all tasks to be processed
     file_queue.join() # This will block until all tasks are marked as done

@@ -12,3 +12,4 @@ BCNN/cuda_12.8.0_570.86.10_linux.run
 CNN_BNN_final_no_augmentation/__pycache__/
 CNN_BNN_final_no_augmentation/results/best_model.pth
 CNN_BNN_final_no_augmentation/results/final_model.pth
+VAE/__pycache__/
