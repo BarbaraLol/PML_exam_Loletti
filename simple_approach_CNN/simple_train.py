@@ -40,7 +40,7 @@ class EarlyStopping:
         
         return self.early_stop
 
-def setup_csv_logging(results_dir='results'):
+def setup_csv_logging(results_dir='results/20sec_chunks'):
     """Setup CSV file for logging training results."""
     os.makedirs(results_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
