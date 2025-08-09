@@ -325,7 +325,7 @@ def main():
     # Arguments
     parser = argparse.ArgumentParser(description='Train Spectrogram VAE for Chick Call Generation')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")
+    parser.add_argument('--batch_size', type=int, default=2, help="Batch size for training")
     parser.add_argument('--epochs', type=int, default=200, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
     parser.add_argument('--latent_dim', type=int, default=128, help="Latent dimension")

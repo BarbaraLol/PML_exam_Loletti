@@ -17,7 +17,7 @@ def load_training_data(csv_path):
         print(f"Error loading CSV: {e}")
         return None
 
-def plot_training_curves(df, save_dir='plots'):
+def plot_training_curves(df, save_dir='results/5sec_chunks'):
     """Plot training and validation curves."""
     
     # Create plots directory
@@ -105,7 +105,7 @@ def plot_training_curves(df, save_dir='plots'):
     
     return fig
 
-def plot_loss_vs_accuracy(df, save_dir='plots'):
+def plot_loss_vs_accuracy(df, save_dir='results/5sec_chunks'):
     """Plot loss vs accuracy correlation."""
     
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
@@ -204,7 +204,7 @@ def generate_training_summary(df):
 def main():
     parser = argparse.ArgumentParser(description='Plot CNN training results')
     parser.add_argument('csv_path', help='Path to the training results CSV file')
-    parser.add_argument('--save_dir', default='plots', help='Directory to save plots')
+    parser.add_argument('--save_dir', default='plresults/5sec_chunks', help='Directory to save plots')
     
     args = parser.parse_args()
     
@@ -228,7 +228,7 @@ def main():
     print(f"\nAll plots saved to: {args.save_dir}/")
     print("Done!")
 
-def plot_csv_file(csv_path, save_dir='plots'):
+def plot_csv_file(csv_path, save_dir='results/5sec_chunks'):
     """Convenience function to plot results from a CSV file."""
     df = load_training_data(csv_path)
     if df is None:
