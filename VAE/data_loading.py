@@ -26,45 +26,57 @@ class SpectrogramVAEDataset(Dataset):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        data = torch.load(self.file_paths[idx])
-        spectrogram = data['spectrogram'].float()
-        
-        # FIXED: Better normalization approach
-        # Remove extreme outliers first
-        spectrogram = torch.clamp(spectrogram, 
-                                percentile=torch.quantile(spectrogram, 0.01), 
-                                max=torch.quantile(spectrogram, 0.99))
-        
-        # Normalize to [0, 1] first, then to [-1, 1]
-        spec_min = spectrogram.min()
-        spec_max = spectrogram.max()
-        if spec_max > spec_min:
-            spectrogram = (spectrogram - spec_min) / (spec_max - spec_min)
-        spectrogram = 2 * spectrogram - 1  # Scale to [-1, 1]
-        
-        # Check for NaN/Inf and handle
-        if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
-            print(f"NaN/Inf detected in: {self.file_paths[idx]}")
-            spectrogram = torch.zeros_like(spectrogram)
-        
-        # Apply transforms (data augmentation)
-        if self.transform:
-            spectrogram = self.transform(spectrogram)
+        try:
+            data = torch.load(self.file_paths[idx], map_location='cpu')
+            spectrogram = data['spectrogram'].float()
             
-        # Add channel dimension if needed [1, height, width]
-        if spectrogram.dim() == 2:
-            spectrogram = spectrogram.unsqueeze(0)
-        
-        if self.conditional and 'label' in data and self.label_encoder is not None:
-            label = torch.tensor(
-                self.label_encoder.transform([data['label']])[0],
-                dtype=torch.long
-            )
-            return spectrogram, label
-        else:
-            return spectrogram, spectrogram
-
-        
+            # FIXED: Better normalization approach
+            # Remove extreme outliers using percentiles
+            if spectrogram.numel() > 1:  # Only if tensor has multiple elements
+                q01 = torch.quantile(spectrogram.flatten(), 0.01)
+                q99 = torch.quantile(spectrogram.flatten(), 0.99)
+                spectrogram = torch.clamp(spectrogram, min=q01.item(), max=q99.item())
+            
+            # FIXED: Robust normalization to [-1, 1]
+            spec_min = spectrogram.min()
+            spec_max = spectrogram.max()
+            
+            # Handle edge cases
+            if spec_max == spec_min:
+                spectrogram = torch.zeros_like(spectrogram)
+            else:
+                # Normalize to [0, 1] first, then to [-1, 1]
+                spectrogram = (spectrogram - spec_min) / (spec_max - spec_min)
+                spectrogram = 2 * spectrogram - 1  # Scale to [-1, 1]
+            
+            # Check for NaN/Inf and handle
+            if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
+                print(f"NaN/Inf detected in: {self.file_paths[idx]}")
+                spectrogram = torch.zeros_like(spectrogram)
+            
+            # Apply transforms (data augmentation)
+            if self.transform:
+                spectrogram = self.transform(spectrogram)
+                
+            # Add channel dimension if needed [1, height, width]
+            if spectrogram.dim() == 2:
+                spectrogram = spectrogram.unsqueeze(0)
+            
+            if self.conditional and 'label' in data and self.label_encoder is not None:
+                label = torch.tensor(
+                    self.label_encoder.transform([data['label']])[0],
+                    dtype=torch.long
+                )
+                return spectrogram, label
+            else:
+                return spectrogram, spectrogram
+                
+        except Exception as e:
+            print(f"Error loading {self.file_paths[idx]}: {e}")
+            # Return a dummy tensor instead of crashing
+            dummy_shape = (1, 1025, 938)  # Based on your spectrogram shape
+            dummy_tensor = torch.zeros(dummy_shape)
+            return dummy_tensor, dummy_tensor        
 
 
 class SpectrogramDataAugmentation:

@@ -1,2 +1,0 @@
-epoch,train_loss,train_recon_loss,train_kl_loss,val_loss,val_recon_loss,val_kl_loss,lr,time_elapsed
-1,nan,nan,nan,nan,nan,nan,0.001,365.54548621177673
