@@ -136,7 +136,7 @@ def main():
     )
     
     # Setup model checkpoints directory
-    checkpoint_dir = 'checkpoints'
+    checkpoint_dir = 'results/20sec_chunks/checkpoints'
     os.makedirs(checkpoint_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
