@@ -40,7 +40,7 @@ class EarlyStopping:
         
         return self.early_stop
 
-def setup_csv_logging(results_dir='results/5sec_chunks'):
+def setup_csv_logging(results_dir='results'):
     """Setup CSV file for logging training results."""
     os.makedirs(results_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -81,7 +81,7 @@ def check_cuda_compatibility():
 
 def main():
     # Configuration
-    data_dir = '../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments/'
+    data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
     num_epochs = 100
     batch_size = 32
     initial_lr = 1e-3
@@ -135,8 +135,14 @@ def main():
         restore_best_weights=True
     )
     
+    # Setup model checkpoints directory
+    checkpoint_dir = 'checkpoints'
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
     # Training loop
     best_val_loss = float('inf')
+    best_epoch = 0
     print(f"\nStarting training for up to {num_epochs} epochs...")
     print("=" * 70)
     
@@ -189,21 +195,46 @@ def main():
         # Save best model
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            save_checkpoint(model, optimizer, epoch, avg_train_loss, avg_train_acc, 'best_model.pth')
-            print(f"    → New best model saved! (Val Loss: {avg_val_loss:.4f})")
+            best_epoch = epoch
+            best_model_path = os.path.join(checkpoint_dir, f'best_model_{timestamp}.pth')
+            save_checkpoint(model, optimizer, epoch, avg_train_loss, avg_train_acc, best_model_path)
+            print(f"    → New best model saved! (Val Loss: {avg_val_loss:.4f}) -> {best_model_path}")
         
         # Check early stopping
         if early_stopping(avg_val_loss, model):
             print(f"\nEarly stopping triggered after {epoch + 1} epochs!")
             print(f"Best validation loss: {early_stopping.best_loss:.4f}")
+            # Save early stopped model (with best weights restored by early stopping)
+            early_stop_path = os.path.join(checkpoint_dir, f'early_stopped_model_{timestamp}.pth')
+            save_checkpoint(model, optimizer, best_epoch, best_val_loss, 0, early_stop_path)
+            print(f"Early stopped model saved: {early_stop_path}")
             break
         elif early_stopping.counter > 0:
             print(f"    Early stopping counter: {early_stopping.counter}/{early_stopping_patience}")
+    else:
+        # Training completed without early stopping - save final model
+        final_model_path = os.path.join(checkpoint_dir, f'final_model_{timestamp}.pth')
+        save_checkpoint(model, optimizer, epoch, avg_train_loss, avg_train_acc, final_model_path)
+        print(f"\nTraining completed! Final model saved: {final_model_path}")
     
-    print("\nTraining completed!")
-    print(f"Results saved to: {csv_path}")
+    print("\n" + "="*70)
+    print("MODEL CHECKPOINTS SUMMARY:")
+    print("="*70)
     
-    return csv_path
+    # List all saved models
+    saved_models = []
+    for filename in os.listdir(checkpoint_dir):
+        if filename.endswith(f'{timestamp}.pth'):
+            saved_models.append(os.path.join(checkpoint_dir, filename))
+    
+    for model_path in sorted(saved_models):
+        model_name = os.path.basename(model_path)
+        print(f"✓ {model_name}")
+    
+    print(f"\nResults logged to: {csv_path}")
+    print(f"Models saved to: {checkpoint_dir}/")
+    
+    return csv_path, checkpoint_dir
 
 if __name__ == "__main__":
-    csv_path = main()
+    csv_path, checkpoint_dir = main()
