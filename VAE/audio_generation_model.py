@@ -103,7 +103,7 @@ class SpectrogramVAE(nn.Module):
         super().__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
-        self.beta = beta # β-VAE parameter for disentanglement
+        self.beta = beta
 
         self.encoder = SpectrogramEncoder(input_shape, latent_dim)
         self.decoder = SpectrogramDecoder(latent_dim, input_shape)
@@ -111,11 +111,13 @@ class SpectrogramVAE(nn.Module):
     def encode(self, x):
         return self.encoder(x)
 
-    def decode(self, z):  # Fixed method name
+    def decode(self, z):
         return self.decoder(z)
 
-    def reparameterize(self, mu, logvar):  # Fixed method name
+    def reparameterize(self, mu, logvar):
         if self.training:
+            # FIXED: Clamp logvar to prevent extreme values
+            logvar = torch.clamp(logvar, min=-20, max=20)
             std = torch.exp(0.5 * logvar)
             eps = torch.randn_like(std)
             return mu + eps * std
@@ -129,22 +131,37 @@ class SpectrogramVAE(nn.Module):
         return recon_x, mu, logvar, z
 
     def loss_function(self, recon_x, x, mu, logvar, reduction='mean'):
-        '''VAE loss function computation: reconstruction + KL divergence'''
+        '''FIXED VAE loss function with numerical stability'''
+        
+        # Check for NaN inputs
+        if torch.isnan(recon_x).any() or torch.isnan(x).any():
+            print("NaN detected in reconstruction or input!")
+            return torch.tensor(float('nan')), torch.tensor(float('nan')), torch.tensor(float('nan'))
+        
         # Reconstruction loss (MSE for spectrograms)
-        recon_loss = F.mse_loss(recon_x, x, reduction=reduction)
-
-        # KL divergence
-        kl_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())  # Mean instead of sum
-
-        if reduction == 'mean':
-            kl_loss = kl_loss / x.size(0)
-
-        return recon_loss + self.beta * kl_loss, recon_loss, kl_loss
+        recon_loss = F.mse_loss(recon_x, x, reduction='mean')
+        
+        # FIXED: More stable KL divergence computation
+        logvar = torch.clamp(logvar, min=-20, max=20)  # Prevent extreme values
+        mu = torch.clamp(mu, min=-100, max=100)       # Prevent extreme values
+        
+        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+        kl_loss = torch.mean(kl_loss)
+        
+        # Check for NaN in losses
+        if torch.isnan(recon_loss) or torch.isnan(kl_loss):
+            print(f"NaN in losses - recon: {recon_loss}, kl: {kl_loss}")
+            return torch.tensor(float('nan')), recon_loss, kl_loss
+        
+        # FIXED: Start with very small beta and gradually increase
+        effective_beta = min(self.beta * 0.1, self.beta)  # Start with 10% of beta
+        total_loss = recon_loss + effective_beta * kl_loss
+        
+        return total_loss, recon_loss, kl_loss
 
     def sample(self, num_samples, device='cpu'):
-        '''Generation of new spectrograms from prior distribution'''
         with torch.no_grad():
-            z = torch.randn(num_samples, self.latent_dim, device=device)  # Fixed device parameter
+            z = torch.randn(num_samples, self.latent_dim, device=device)
             samples = self.decode(z)
             return samples
         

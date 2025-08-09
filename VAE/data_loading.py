@@ -11,9 +11,8 @@ class SpectrogramVAEDataset(Dataset):
     def __init__(self, file_paths, label_encoder=None, transform=None, conditional=False):
         self.label_encoder = label_encoder
         self.transform = transform
-        self.conditional = conditional  # Whether to use conditional VAE
+        self.conditional = conditional
         self.file_paths = [fp for fp in file_paths if self._is_valid_file(fp)]
-        self.scaler = self._fit_scaler()
 
     def _is_valid_file(self, filepath):
         try:
@@ -23,23 +22,6 @@ class SpectrogramVAEDataset(Dataset):
             print(f"Skipping corrupted file: {filepath}")
             return False
 
-    def _fit_scaler(self, sample_size=100):
-        sample_files = self.file_paths[:min(sample_size, len(self.file_paths))]
-        sample_data = []
-        
-        for fp in sample_files:
-            try:
-                data = torch.load(fp)
-                spectrogram = data['spectrogram'].float().numpy()
-                sample_data.append(spectrogram.reshape(-1, 1))
-            except:
-                continue
-        
-        scaler = StandardScaler()
-        if sample_data:
-            scaler.fit(np.concatenate(sample_data))
-        return scaler
-
     def __len__(self):
         return len(self.file_paths)
 
@@ -47,15 +29,23 @@ class SpectrogramVAEDataset(Dataset):
         data = torch.load(self.file_paths[idx])
         spectrogram = data['spectrogram'].float()
         
-        # Normalization
-        if self.scaler is not None:
-            original_shape = spectrogram.shape
-            spectrogram = self.scaler.transform(spectrogram.numpy().reshape(-1, 1))
-            spectrogram = torch.tensor(spectrogram, dtype=torch.float32).reshape(original_shape)
+        # FIXED: Better normalization approach
+        # Remove extreme outliers first
+        spectrogram = torch.clamp(spectrogram, 
+                                percentile=torch.quantile(spectrogram, 0.01), 
+                                max=torch.quantile(spectrogram, 0.99))
         
-        # Normalize to [-1, 1] range for Tanh output and ensure proper scaling
-        spectrogram = (spectrogram - spectrogram.mean()) / (spectrogram.std() + 1e-8)
-        spectrogram = torch.tanh(spectrogram)
+        # Normalize to [0, 1] first, then to [-1, 1]
+        spec_min = spectrogram.min()
+        spec_max = spectrogram.max()
+        if spec_max > spec_min:
+            spectrogram = (spectrogram - spec_min) / (spec_max - spec_min)
+        spectrogram = 2 * spectrogram - 1  # Scale to [-1, 1]
+        
+        # Check for NaN/Inf and handle
+        if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
+            print(f"NaN/Inf detected in: {self.file_paths[idx]}")
+            spectrogram = torch.zeros_like(spectrogram)
         
         # Apply transforms (data augmentation)
         if self.transform:
@@ -66,19 +56,13 @@ class SpectrogramVAEDataset(Dataset):
             spectrogram = spectrogram.unsqueeze(0)
         
         if self.conditional and 'label' in data and self.label_encoder is not None:
-            # Return spectrogram and encoded label for conditional VAE
             label = torch.tensor(
                 self.label_encoder.transform([data['label']])[0],
                 dtype=torch.long
             )
             return spectrogram, label
         else:
-            # For standard VAE, return spectrogram twice (input and target for reconstruction)
             return spectrogram, spectrogram
-        
-        if torch.isnan(spectrogram).any():
-            print(f"NaN detected in: {self.file_paths[idx]}")
-            spectrogram = torch.nan_to_num(spectrogram)
 
         
 

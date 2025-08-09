@@ -100,34 +100,24 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
 
 
 def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-    """Main training loop for VAE"""
+    """FIXED Main training loop for VAE with better stability"""
     
-    # Setup optimizer and scheduler
-    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    # FIXED: More conservative optimizer settings
+    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-5, eps=1e-8)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.8, patience=10, min_lr=1e-6
+        optimizer, mode='min', factor=0.5, patience=15, min_lr=1e-7
     )
     
-    # Training log
-    log_file = os.path.join(output_dir, "vae_training_log.csv")
-    with open(log_file, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['epoch', 'train_loss', 'train_recon_loss', 'train_kl_loss', 
-                        'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'time_elapsed'])
+    # FIXED: Gradient scaling for mixed precision (optional)
+    scaler = torch.cuda.amp.GradScaler() if device.type == 'cuda' else None
     
-    # Training state
     best_val_loss = float('inf')
     patience_counter = 0
     start_time = time.time()
     
-    print("Starting VAE training...")
-    print(f"Model: {'Conditional' if conditional else 'Standard'} VAE")
-    print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
+    print("Starting VAE training with stability fixes...")
     
     for epoch in range(args.epochs):
-        epoch_start = time.time()
-        
-        # Training phase
         model.train()
         train_total_loss = 0
         train_recon_loss = 0  
@@ -136,32 +126,61 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         
         for batch_idx, batch in enumerate(train_loader):
             if conditional:
-                # Conditional VAE: (spectrogram, label)
                 data, labels = batch
                 data, labels = data.to(device), labels.to(device)
             else:
-                # Standard VAE: (input, target) where target == input
                 data, _ = batch
                 data = data.to(device)
             
+            # FIXED: Check for NaN in input data
+            if torch.isnan(data).any():
+                print(f"NaN detected in input batch {batch_idx}, skipping...")
+                continue
+            
             optimizer.zero_grad()
             
-            # Forward pass
-            if conditional:
-                recon_x, mu, logvar, z = model(data, labels)
+            # FIXED: Use automatic mixed precision if available
+            if scaler is not None:
+                with torch.cuda.amp.autocast():
+                    if conditional:
+                        recon_x, mu, logvar, z = model(data, labels)
+                    else:
+                        recon_x, mu, logvar, z = model(data)
+                    total_loss, recon_loss, kl_loss = model.loss_function(recon_x, data, mu, logvar)
+                
+                # FIXED: Check for NaN before backward pass
+                if torch.isnan(total_loss):
+                    print(f"NaN loss at batch {batch_idx}, skipping...")
+                    continue
+                
+                scaler.scale(total_loss).backward()
+                
+                # FIXED: More aggressive gradient clipping
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
+                
+                scaler.step(optimizer)
+                scaler.update()
             else:
-                recon_x, mu, logvar, z = model(data)
-            
-            # Compute loss
-            total_loss, recon_loss, kl_loss = model.loss_function(recon_x, data, mu, logvar)
-            
-            # Backward pass
-            total_loss.backward()
-            
-            # Gradient clipping
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)  # Reduce from 1.0 to 0.5
-            
-            optimizer.step()
+                # Regular training without mixed precision
+                if conditional:
+                    recon_x, mu, logvar, z = model(data, labels)
+                else:
+                    recon_x, mu, logvar, z = model(data)
+                
+                total_loss, recon_loss, kl_loss = model.loss_function(recon_x, data, mu, logvar)
+                
+                # FIXED: Check for NaN before backward pass
+                if torch.isnan(total_loss):
+                    print(f"NaN loss at batch {batch_idx}, skipping...")
+                    continue
+                
+                total_loss.backward()
+                
+                # FIXED: Aggressive gradient clipping
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
+                
+                optimizer.step()
             
             # Track losses
             train_total_loss += total_loss.item()
@@ -169,12 +188,17 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             train_kl_loss += kl_loss.item()
             num_batches += 1
             
-            # Print progress
-            if batch_idx % 20 == 0:
+            # FIXED: More frequent progress updates and NaN checks
+            if batch_idx % 10 == 0:
                 print(f"Epoch {epoch+1}/{args.epochs} [{batch_idx}/{len(train_loader)}] "
-                      f"Loss: {total_loss.item():.4f} | "
-                      f"Recon: {recon_loss.item():.4f} | "
-                      f"KL: {kl_loss.item():.4f}")
+                      f"Loss: {total_loss.item():.6f} | "
+                      f"Recon: {recon_loss.item():.6f} | "
+                      f"KL: {kl_loss.item():.6f}")
+                
+                # Early stopping if NaN persists
+                if torch.isnan(total_loss):
+                    print("Persistent NaN detected, stopping training...")
+                    return
         
         # Average training losses
         train_total_loss /= num_batches
@@ -303,9 +327,9 @@ def main():
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
     parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")
     parser.add_argument('--epochs', type=int, default=200, help="Number of training epochs")
-    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
+    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
     parser.add_argument('--latent_dim', type=int, default=128, help="Latent dimension")
-    parser.add_argument('--beta', type=float, default=1.0, help="Beta parameter for β-VAE")
+    parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE")
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
     parser.add_argument('--output_dir', default='vae_results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=20, help="Patience for early stopping")
