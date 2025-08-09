@@ -1,0 +1,56 @@
+Using device: Tesla V100-PCIE-32GB
+CUDA capability: sm_70
+PyTorch CUDA version: 12.1
+Training results will be logged to: results/5sec_chunks/training_log_20250809_173533.csv
+Dataset sizes - Train: 10817, Val: 2317, Test: 2319
+
+Starting training for up to 100 epochs...
+======================================================================
+Epoch   1/100 | Train Loss: 0.4250 | Train Acc: 0.8660 | Val Loss: 0.3686 | Val Acc: 0.8660 | LR: 0.001000
+    → New best model saved! (Val Loss: 0.3686) -> results/5sec_chunks/checkpoints/best_model_20250809_173708.pth
+Epoch   2/100 | Train Loss: 0.2626 | Train Acc: 0.9083 | Val Loss: 0.2368 | Val Acc: 0.9048 | LR: 0.001000
+    → New best model saved! (Val Loss: 0.2368) -> results/5sec_chunks/checkpoints/best_model_20250809_173708.pth
+Epoch   3/100 | Train Loss: 0.1757 | Train Acc: 0.9353 | Val Loss: 0.2248 | Val Acc: 0.9211 | LR: 0.001000
+    → New best model saved! (Val Loss: 0.2248) -> results/5sec_chunks/checkpoints/best_model_20250809_173708.pth
+Epoch   4/100 | Train Loss: 0.1092 | Train Acc: 0.9592 | Val Loss: 0.2607 | Val Acc: 0.9166 | LR: 0.001000
+    Early stopping counter: 1/15
+Epoch   5/100 | Train Loss: 0.0638 | Train Acc: 0.9780 | Val Loss: 0.3419 | Val Acc: 0.9166 | LR: 0.001000
+    Early stopping counter: 2/15
+Epoch   6/100 | Train Loss: 0.0369 | Train Acc: 0.9872 | Val Loss: 0.4846 | Val Acc: 0.9155 | LR: 0.001000
+    Early stopping counter: 3/15
+Epoch   7/100 | Train Loss: 0.0350 | Train Acc: 0.9886 | Val Loss: 0.5232 | Val Acc: 0.9161 | LR: 0.001000
+    Early stopping counter: 4/15
+Epoch   8/100 | Train Loss: 0.0218 | Train Acc: 0.9927 | Val Loss: 0.5008 | Val Acc: 0.9144 | LR: 0.001000
+    Early stopping counter: 5/15
+Epoch   9/100 | Train Loss: 0.0214 | Train Acc: 0.9937 | Val Loss: 0.6483 | Val Acc: 0.9202 | LR: 0.000500
+    Early stopping counter: 6/15
+Epoch  10/100 | Train Loss: 0.0102 | Train Acc: 0.9982 | Val Loss: 0.5949 | Val Acc: 0.9247 | LR: 0.000500
+    Early stopping counter: 7/15
+Epoch  11/100 | Train Loss: 0.0054 | Train Acc: 0.9991 | Val Loss: 0.5703 | Val Acc: 0.9285 | LR: 0.000500
+    Early stopping counter: 8/15
+Epoch  12/100 | Train Loss: 0.0018 | Train Acc: 0.9995 | Val Loss: 0.7343 | Val Acc: 0.9255 | LR: 0.000500
+    Early stopping counter: 9/15
+Epoch  13/100 | Train Loss: 0.0049 | Train Acc: 0.9989 | Val Loss: 0.7658 | Val Acc: 0.9249 | LR: 0.000500
+    Early stopping counter: 10/15
+Epoch  14/100 | Train Loss: 0.0022 | Train Acc: 0.9995 | Val Loss: 0.7269 | Val Acc: 0.9275 | LR: 0.000500
+    Early stopping counter: 11/15
+Epoch  15/100 | Train Loss: 0.0034 | Train Acc: 0.9995 | Val Loss: 0.6853 | Val Acc: 0.9277 | LR: 0.000250
+    Early stopping counter: 12/15
+Epoch  16/100 | Train Loss: 0.0004 | Train Acc: 0.9998 | Val Loss: 0.7039 | Val Acc: 0.9294 | LR: 0.000250
+    Early stopping counter: 13/15
+Epoch  17/100 | Train Loss: 0.0002 | Train Acc: 1.0000 | Val Loss: 0.7165 | Val Acc: 0.9238 | LR: 0.000250
+    Early stopping counter: 14/15
+Epoch  18/100 | Train Loss: 0.0001 | Train Acc: 1.0000 | Val Loss: 0.7346 | Val Acc: 0.9285 | LR: 0.000250
+
+Early stopping triggered after 18 epochs!
+Best validation loss: 0.2248
+Early stopped model saved: results/5sec_chunks/checkpoints/early_stopped_model_20250809_173708.pth
+
+======================================================================
+MODEL CHECKPOINTS SUMMARY:
+======================================================================
+✓ best_model_20250809_173708.pth
+✓ early_stopped_model_20250809_173708.pth
+
+Results logged to: results/5sec_chunks/training_log_20250809_173533.csv
+Models saved to: results/5sec_chunks/checkpoints/
