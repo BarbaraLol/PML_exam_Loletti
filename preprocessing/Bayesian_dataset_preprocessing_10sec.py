@@ -33,8 +33,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #
 print(f"Using device: {device}")
 
 # Setting the input and output folders
-input_dataset = '../Chicks_Automatic_Detection_dataset_orfeo/Registrazioni/'
-output_dataset = '../Chicks_Automatic_Detection_dataset_orfeo/Processed_Data_5sec/'
+input_dataset = '../Chicks_Automatic_Detection_dataset/Registrazioni/'
+output_dataset = '../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/'
 
 # Create output directory if it doesn't exist
 os.makedirs(output_dataset, exist_ok=True)
