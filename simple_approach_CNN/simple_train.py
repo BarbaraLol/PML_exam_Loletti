@@ -40,7 +40,7 @@ class EarlyStopping:
         
         return self.early_stop
 
-def setup_csv_logging(results_dir='results/5sec_chunks'):
+def setup_csv_logging(results_dir='results/10sec_chunks'):
     """Setup CSV file for logging training results."""
     os.makedirs(results_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -81,7 +81,7 @@ def check_cuda_compatibility():
 
 def main():
     # Configuration
-    data_dir = '../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments/'
+    data_dir = '../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments/'
     num_epochs = 100
     batch_size = 32
     initial_lr = 1e-3
@@ -136,7 +136,7 @@ def main():
     )
     
     # Setup model checkpoints directory
-    checkpoint_dir = 'results/5sec_chunks/checkpoints'
+    checkpoint_dir = 'results/10sec_chunks/checkpoints'
     os.makedirs(checkpoint_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
