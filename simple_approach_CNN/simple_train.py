@@ -1,5 +1,7 @@
 # 299792458?
 import os
+import csv
+from datetime import datetime
 from simple_cnn import SimpleCNN
 from data_loading import SpectrogramDataset, load_file_paths, encode_labels
 from sklearn.preprocessing import LabelEncoder
@@ -9,6 +11,61 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import random_split, DataLoader
 from train_utils import save_checkpoint, calculate_accuracy, log_epoch_data
 import torch.nn as nn
+
+class EarlyStopping:
+    """Early stopping utility to prevent overfitting."""
+    
+    def __init__(self, patience=10, min_delta=1e-4, restore_best_weights=True):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.restore_best_weights = restore_best_weights
+        self.best_loss = float('inf')
+        self.counter = 0
+        self.best_weights = None
+        self.early_stop = False
+    
+    def __call__(self, val_loss, model):
+        if val_loss < self.best_loss - self.min_delta:
+            self.best_loss = val_loss
+            self.counter = 0
+            if self.restore_best_weights:
+                self.best_weights = model.state_dict().copy()
+        else:
+            self.counter += 1
+            
+        if self.counter >= self.patience:
+            self.early_stop = True
+            if self.restore_best_weights and self.best_weights is not None:
+                model.load_state_dict(self.best_weights)
+        
+        return self.early_stop
+
+def setup_csv_logging(results_dir='results/20sec_chunks'):
+    """Setup CSV file for logging training results."""
+    os.makedirs(results_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = os.path.join(results_dir, f'training_log_{timestamp}.csv')
+    
+    # Create CSV with headers
+    with open(csv_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([
+            'epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 
+            'learning_rate', 'early_stop_counter', 'timestamp'
+        ])
+    
+    return csv_path
+
+def log_to_csv(csv_path, epoch, train_loss, train_acc, val_loss, val_acc, 
+               learning_rate, early_stop_counter):
+    """Log epoch results to CSV file."""
+    with open(csv_path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([
+            epoch + 1, f"{train_loss:.6f}", f"{train_acc:.6f}", 
+            f"{val_loss:.6f}", f"{val_acc:.6f}", f"{learning_rate:.8f}",
+            early_stop_counter, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ])
 
 def check_cuda_compatibility():
     if not torch.cuda.is_available():
@@ -29,10 +86,16 @@ def main():
     batch_size = 32
     initial_lr = 1e-3
     grad_clip = 1.0
+    early_stopping_patience = 15  # Stop if no improvement for 15 epochs
+    min_delta = 1e-4  # Minimum change to qualify as improvement
 
     # Verify CUDA compatibility
     check_cuda_compatibility()
     device = torch.device("cuda")
+    
+    # Setup CSV logging
+    csv_path = setup_csv_logging()
+    print(f"Training results will be logged to: {csv_path}")
     
     # Load and process data
     file_paths = load_file_paths(data_dir)
@@ -51,6 +114,8 @@ def main():
     test_size = len(dataset) - train_size - val_size
     train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
     
+    print(f"Dataset sizes - Train: {train_size}, Val: {val_size}, Test: {test_size}")
+    
     # Data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
                             num_workers=4, pin_memory=True)
@@ -63,8 +128,18 @@ def main():
     criterion = nn.CrossEntropyLoss()
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
     
+    # Initialize early stopping
+    early_stopping = EarlyStopping(
+        patience=early_stopping_patience, 
+        min_delta=min_delta, 
+        restore_best_weights=True
+    )
+    
     # Training loop
     best_val_loss = float('inf')
+    print(f"\nStarting training for up to {num_epochs} epochs...")
+    print("=" * 70)
+    
     for epoch in range(num_epochs):
         model.train()
         train_loss, train_acc = 0.0, 0.0
@@ -91,19 +166,44 @@ def main():
                 val_loss += criterion(outputs, y_val.to(device)).item()
                 val_acc += calculate_accuracy(outputs, y_val.to(device))
         
+        # Calculate averages
+        avg_train_loss = train_loss / len(train_loader)
+        avg_train_acc = train_acc / len(train_loader)
         avg_val_loss = val_loss / len(val_loader)
+        avg_val_acc = val_acc / len(val_loader)
+        
+        # Update learning rate scheduler
         scheduler.step(avg_val_loss)
+        current_lr = optimizer.param_groups[0]['lr']
         
-        print(f"Epoch {epoch+1}/{num_epochs}")
-        print(f"Train Loss: {train_loss/len(train_loader):.4f} | Val Loss: {avg_val_loss:.4f}")
-        print(f"Train Acc: {train_acc/len(train_loader):.4f} | Val Acc: {val_acc/len(val_loader):.4f}")
+        # Log to CSV
+        log_to_csv(csv_path, epoch, avg_train_loss, avg_train_acc, 
+                   avg_val_loss, avg_val_acc, current_lr, early_stopping.counter)
         
+        # Print progress
+        print(f"Epoch {epoch+1:3d}/{num_epochs} | "
+              f"Train Loss: {avg_train_loss:.4f} | Train Acc: {avg_train_acc:.4f} | "
+              f"Val Loss: {avg_val_loss:.4f} | Val Acc: {avg_val_acc:.4f} | "
+              f"LR: {current_lr:.6f}")
+        
+        # Save best model
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            save_checkpoint(model, optimizer, epoch, 
-                          train_loss/len(train_loader), 
-                          train_acc/len(train_loader),
-                          'best_model.pth')
+            save_checkpoint(model, optimizer, epoch, avg_train_loss, avg_train_acc, 'best_model.pth')
+            print(f"    → New best model saved! (Val Loss: {avg_val_loss:.4f})")
+        
+        # Check early stopping
+        if early_stopping(avg_val_loss, model):
+            print(f"\nEarly stopping triggered after {epoch + 1} epochs!")
+            print(f"Best validation loss: {early_stopping.best_loss:.4f}")
+            break
+        elif early_stopping.counter > 0:
+            print(f"    Early stopping counter: {early_stopping.counter}/{early_stopping_patience}")
+    
+    print("\nTraining completed!")
+    print(f"Results saved to: {csv_path}")
+    
+    return csv_path
 
 if __name__ == "__main__":
-    main()
+    csv_path = main()
