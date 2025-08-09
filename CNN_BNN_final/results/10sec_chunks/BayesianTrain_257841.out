@@ -1,0 +1,183 @@
+Using device: cuda
+Output directory: results/10sec_chunks
+Loading data...
+Found 8328 samples with shape torch.Size([1025, 469]) and 3 classes
+Initializing model...
+Starting training...
+
+Epoch 1 Summary:
+Time: 34.88s | Total: 0m 35s
+LR: 1.00e-04 | Train Loss: 1.2140 | Val Loss: 0.3883
+KL Loss: 222898.4527 | Train Acc: 78.11% | Val Acc: 86.95%
+Saved best model at epoch 1 with val loss: 0.3883
+
+Epoch 2 Summary:
+Time: 32.51s | Total: 1m 9s
+LR: 1.00e-04 | Train Loss: 0.4295 | Val Loss: 0.3527
+KL Loss: 45657.7304 | Train Acc: 85.50% | Val Acc: 87.67%
+Saved best model at epoch 2 with val loss: 0.3527
+
+Epoch 3 Summary:
+Time: 32.56s | Total: 1m 43s
+LR: 1.00e-04 | Train Loss: 0.3802 | Val Loss: 0.3425
+KL Loss: 16866.0140 | Train Acc: 86.72% | Val Acc: 88.39%
+Saved best model at epoch 3 with val loss: 0.3425
+
+Epoch 4 Summary:
+Time: 32.51s | Total: 2m 17s
+LR: 1.00e-04 | Train Loss: 0.3488 | Val Loss: 0.3788
+KL Loss: 7888.1588 | Train Acc: 87.87% | Val Acc: 86.79%
+
+Epoch 5 Summary:
+Time: 32.63s | Total: 2m 50s
+LR: 1.00e-04 | Train Loss: 0.3302 | Val Loss: 0.3105
+KL Loss: 4291.4141 | Train Acc: 88.57% | Val Acc: 87.91%
+Saved best model at epoch 5 with val loss: 0.3105
+
+Epoch 6 Summary:
+Time: 32.64s | Total: 3m 24s
+LR: 1.00e-04 | Train Loss: 0.3019 | Val Loss: 0.3046
+KL Loss: 2626.2314 | Train Acc: 88.93% | Val Acc: 88.79%
+Saved best model at epoch 6 with val loss: 0.3046
+
+Epoch 7 Summary:
+Time: 32.52s | Total: 3m 58s
+LR: 1.00e-04 | Train Loss: 0.2779 | Val Loss: 0.3113
+KL Loss: 1774.6086 | Train Acc: 89.60% | Val Acc: 88.31%
+
+Epoch 8 Summary:
+Time: 32.64s | Total: 4m 30s
+LR: 1.00e-04 | Train Loss: 0.2649 | Val Loss: 0.2840
+KL Loss: 1302.9450 | Train Acc: 90.27% | Val Acc: 89.19%
+Saved best model at epoch 8 with val loss: 0.2840
+
+Epoch 9 Summary:
+Time: 32.53s | Total: 5m 4s
+LR: 1.00e-04 | Train Loss: 0.2408 | Val Loss: 0.2703
+KL Loss: 1021.2456 | Train Acc: 90.87% | Val Acc: 90.23%
+Saved best model at epoch 9 with val loss: 0.2703
+
+Epoch 10 Summary:
+Time: 32.63s | Total: 5m 39s
+LR: 1.00e-04 | Train Loss: 0.2214 | Val Loss: 0.2898
+KL Loss: 840.3153 | Train Acc: 91.80% | Val Acc: 89.51%
+
+Epoch 11 Summary:
+Time: 32.56s | Total: 6m 11s
+LR: 1.00e-04 | Train Loss: 0.1980 | Val Loss: 0.2684
+KL Loss: 784.8078 | Train Acc: 92.83% | Val Acc: 90.23%
+Saved best model at epoch 11 with val loss: 0.2684
+
+Epoch 12 Summary:
+Time: 32.47s | Total: 6m 45s
+LR: 1.00e-04 | Train Loss: 0.1734 | Val Loss: 0.2593
+KL Loss: 740.3833 | Train Acc: 93.89% | Val Acc: 89.83%
+Saved best model at epoch 12 with val loss: 0.2593
+
+Epoch 13 Summary:
+Time: 32.60s | Total: 7m 19s
+LR: 1.00e-04 | Train Loss: 0.1538 | Val Loss: 0.2532
+KL Loss: 702.0866 | Train Acc: 94.70% | Val Acc: 90.31%
+Saved best model at epoch 13 with val loss: 0.2532
+
+Epoch 14 Summary:
+Time: 32.57s | Total: 7m 53s
+LR: 1.00e-04 | Train Loss: 0.1337 | Val Loss: 0.2759
+KL Loss: 665.7334 | Train Acc: 95.32% | Val Acc: 90.23%
+
+Epoch 15 Summary:
+Time: 32.60s | Total: 8m 26s
+LR: 1.00e-04 | Train Loss: 0.1136 | Val Loss: 0.2687
+KL Loss: 628.8480 | Train Acc: 96.28% | Val Acc: 91.67%
+
+Epoch 16 Summary:
+Time: 32.64s | Total: 8m 59s
+LR: 1.00e-04 | Train Loss: 0.0955 | Val Loss: 0.2554
+KL Loss: 591.5626 | Train Acc: 96.84% | Val Acc: 90.39%
+
+Epoch 17 Summary:
+Time: 32.65s | Total: 9m 31s
+LR: 1.00e-04 | Train Loss: 0.0834 | Val Loss: 0.2499
+KL Loss: 554.0764 | Train Acc: 97.41% | Val Acc: 91.67%
+Saved best model at epoch 17 with val loss: 0.2499
+
+Epoch 18 Summary:
+Time: 32.58s | Total: 10m 5s
+LR: 1.00e-04 | Train Loss: 0.0878 | Val Loss: 0.2594
+KL Loss: 516.5629 | Train Acc: 97.07% | Val Acc: 91.35%
+
+Epoch 19 Summary:
+Time: 32.61s | Total: 10m 38s
+LR: 1.00e-04 | Train Loss: 0.0798 | Val Loss: 0.2753
+KL Loss: 478.8891 | Train Acc: 97.29% | Val Acc: 90.63%
+
+Epoch 20 Summary:
+Time: 32.66s | Total: 11m 11s
+LR: 1.00e-04 | Train Loss: 0.0652 | Val Loss: 0.2926
+KL Loss: 442.8416 | Train Acc: 98.40% | Val Acc: 91.27%
+
+Epoch 21 Summary:
+Time: 32.64s | Total: 11m 43s
+LR: 1.00e-04 | Train Loss: 0.0578 | Val Loss: 0.3168
+KL Loss: 407.4195 | Train Acc: 98.40% | Val Acc: 91.35%
+
+Epoch 22 Summary:
+Time: 32.65s | Total: 12m 16s
+LR: 1.00e-04 | Train Loss: 0.0505 | Val Loss: 0.3023
+KL Loss: 373.9451 | Train Acc: 98.61% | Val Acc: 91.11%
+
+Epoch 23 Summary:
+Time: 32.48s | Total: 12m 48s
+LR: 1.00e-04 | Train Loss: 0.0446 | Val Loss: 0.3252
+KL Loss: 341.7845 | Train Acc: 98.76% | Val Acc: 90.79%
+
+Epoch 24 Summary:
+Time: 32.65s | Total: 13m 21s
+LR: 5.00e-05 | Train Loss: 0.0349 | Val Loss: 0.3195
+KL Loss: 318.0693 | Train Acc: 99.23% | Val Acc: 90.39%
+
+Epoch 25 Summary:
+Time: 32.61s | Total: 13m 54s
+LR: 5.00e-05 | Train Loss: 0.0312 | Val Loss: 0.2962
+KL Loss: 302.6300 | Train Acc: 99.43% | Val Acc: 91.03%
+
+Epoch 26 Summary:
+Time: 32.57s | Total: 14m 26s
+LR: 5.00e-05 | Train Loss: 0.0304 | Val Loss: 0.3020
+KL Loss: 287.4416 | Train Acc: 99.37% | Val Acc: 91.75%
+
+Epoch 27 Summary:
+Time: 32.46s | Total: 14m 59s
+LR: 5.00e-05 | Train Loss: 0.0310 | Val Loss: 0.3334
+KL Loss: 272.8272 | Train Acc: 99.25% | Val Acc: 91.11%
+
+Epoch 28 Summary:
+Time: 32.63s | Total: 15m 31s
+LR: 5.00e-05 | Train Loss: 0.0303 | Val Loss: 0.3267
+KL Loss: 258.7329 | Train Acc: 99.40% | Val Acc: 90.95%
+
+Epoch 29 Summary:
+Time: 32.58s | Total: 16m 4s
+LR: 5.00e-05 | Train Loss: 0.0309 | Val Loss: 0.3438
+KL Loss: 245.0604 | Train Acc: 99.35% | Val Acc: 91.19%
+
+Epoch 30 Summary:
+Time: 32.57s | Total: 16m 37s
+LR: 2.50e-05 | Train Loss: 0.0225 | Val Loss: 0.2957
+KL Loss: 234.7707 | Train Acc: 99.66% | Val Acc: 91.83%
+
+Epoch 31 Summary:
+Time: 32.67s | Total: 17m 9s
+LR: 2.50e-05 | Train Loss: 0.0229 | Val Loss: 0.3101
+KL Loss: 227.8708 | Train Acc: 99.73% | Val Acc: 91.35%
+
+Epoch 32 Summary:
+Time: 32.60s | Total: 17m 42s
+LR: 2.50e-05 | Train Loss: 0.0213 | Val Loss: 0.3223
+KL Loss: 221.2114 | Train Acc: 99.69% | Val Acc: 91.03%
+
+Early stopping at epoch 32 after 15 epochs without improvement
+Best validation loss: 0.2499 | Best accuracy: 91.67%
+
+Training completed in 17m 42s
+Best validation loss: 0.2499 | Best accuracy: 91.67%

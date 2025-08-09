@@ -19,6 +19,6 @@ module load cuda/12.1
 #python -m venv ../../venv
 source ~/myenv/bin/activate
 # --- Run your training script ---
-python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --output_dir results/20sec_chunks
+python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --output_dir results/10sec_chunks
 
 deactivate

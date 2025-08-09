@@ -18,4 +18,5 @@ VAE/__pycache__/
 **/logs/
 **/best_model.pth
 **/last_model.pth
-
+**/final_model.pth
+**/checkpoints/

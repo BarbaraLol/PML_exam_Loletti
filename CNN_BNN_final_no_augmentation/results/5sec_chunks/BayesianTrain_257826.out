@@ -1,0 +1,162 @@
+Using device: cuda
+Output directory: results/5sec_chunks
+Loading data...
+Found 15453 samples with shape torch.Size([1025, 235]) and 3 classes
+Initializing model...
+Starting training...
+
+Epoch 1 Summary:
+Time: 29.86s | Total: 0m 30s
+LR: 1.00e-04 | Train Loss: 0.6282 | Val Loss: 0.3380
+KL Loss: 112479.1477 | Train Acc: 83.05% | Val Acc: 88.74%
+Saved best model at epoch 1 with val loss: 0.3380
+
+Epoch 2 Summary:
+Time: 27.87s | Total: 0m 58s
+LR: 1.00e-04 | Train Loss: 0.3525 | Val Loss: 0.3084
+KL Loss: 24276.7908 | Train Acc: 88.07% | Val Acc: 89.51%
+Saved best model at epoch 2 with val loss: 0.3084
+
+Epoch 3 Summary:
+Time: 27.94s | Total: 1m 27s
+LR: 1.00e-04 | Train Loss: 0.3268 | Val Loss: 0.2958
+KL Loss: 9289.2388 | Train Acc: 88.80% | Val Acc: 89.94%
+Saved best model at epoch 3 with val loss: 0.2958
+
+Epoch 4 Summary:
+Time: 27.88s | Total: 1m 56s
+LR: 1.00e-04 | Train Loss: 0.2985 | Val Loss: 0.2736
+KL Loss: 4451.8852 | Train Acc: 89.79% | Val Acc: 90.63%
+Saved best model at epoch 4 with val loss: 0.2736
+
+Epoch 5 Summary:
+Time: 27.93s | Total: 2m 25s
+LR: 1.00e-04 | Train Loss: 0.2809 | Val Loss: 0.2569
+KL Loss: 2453.0586 | Train Acc: 90.23% | Val Acc: 91.24%
+Saved best model at epoch 5 with val loss: 0.2569
+
+Epoch 6 Summary:
+Time: 27.87s | Total: 2m 53s
+LR: 1.00e-04 | Train Loss: 0.2642 | Val Loss: 0.2676
+KL Loss: 1502.2139 | Train Acc: 90.68% | Val Acc: 90.72%
+
+Epoch 7 Summary:
+Time: 27.87s | Total: 3m 21s
+LR: 1.00e-04 | Train Loss: 0.2458 | Val Loss: 0.2483
+KL Loss: 1005.5964 | Train Acc: 91.21% | Val Acc: 90.76%
+Saved best model at epoch 7 with val loss: 0.2483
+
+Epoch 8 Summary:
+Time: 27.98s | Total: 3m 50s
+LR: 1.00e-04 | Train Loss: 0.2288 | Val Loss: 0.3480
+KL Loss: 726.5419 | Train Acc: 91.86% | Val Acc: 86.71%
+
+Epoch 9 Summary:
+Time: 27.95s | Total: 4m 18s
+LR: 1.00e-04 | Train Loss: 0.2203 | Val Loss: 0.2362
+KL Loss: 559.9426 | Train Acc: 91.88% | Val Acc: 91.67%
+Saved best model at epoch 9 with val loss: 0.2362
+
+Epoch 10 Summary:
+Time: 27.87s | Total: 4m 47s
+LR: 1.00e-04 | Train Loss: 0.1969 | Val Loss: 0.2250
+KL Loss: 454.1273 | Train Acc: 92.94% | Val Acc: 91.63%
+Saved best model at epoch 10 with val loss: 0.2250
+
+Epoch 11 Summary:
+Time: 27.96s | Total: 5m 15s
+LR: 1.00e-04 | Train Loss: 0.1810 | Val Loss: 0.2583
+KL Loss: 419.5594 | Train Acc: 93.52% | Val Acc: 91.11%
+
+Epoch 12 Summary:
+Time: 27.96s | Total: 5m 43s
+LR: 1.00e-04 | Train Loss: 0.1639 | Val Loss: 0.2208
+KL Loss: 393.8515 | Train Acc: 94.19% | Val Acc: 91.89%
+Saved best model at epoch 12 with val loss: 0.2208
+
+Epoch 13 Summary:
+Time: 27.91s | Total: 6m 12s
+LR: 1.00e-04 | Train Loss: 0.1443 | Val Loss: 0.2174
+KL Loss: 373.3165 | Train Acc: 94.74% | Val Acc: 91.89%
+Saved best model at epoch 13 with val loss: 0.2174
+
+Epoch 14 Summary:
+Time: 27.90s | Total: 6m 41s
+LR: 1.00e-04 | Train Loss: 0.1311 | Val Loss: 0.2596
+KL Loss: 355.5485 | Train Acc: 95.43% | Val Acc: 91.32%
+
+Epoch 15 Summary:
+Time: 27.98s | Total: 7m 9s
+LR: 1.00e-04 | Train Loss: 0.1040 | Val Loss: 0.2675
+KL Loss: 338.7343 | Train Acc: 96.18% | Val Acc: 90.81%
+
+Epoch 16 Summary:
+Time: 27.85s | Total: 7m 37s
+LR: 1.00e-04 | Train Loss: 0.0891 | Val Loss: 0.2620
+KL Loss: 322.0253 | Train Acc: 97.11% | Val Acc: 90.46%
+
+Epoch 17 Summary:
+Time: 27.88s | Total: 8m 4s
+LR: 1.00e-04 | Train Loss: 0.1076 | Val Loss: 0.2654
+KL Loss: 305.1735 | Train Acc: 96.34% | Val Acc: 91.58%
+
+Epoch 18 Summary:
+Time: 27.92s | Total: 8m 32s
+LR: 1.00e-04 | Train Loss: 0.0716 | Val Loss: 0.2346
+KL Loss: 287.7646 | Train Acc: 97.72% | Val Acc: 92.06%
+
+Epoch 19 Summary:
+Time: 27.98s | Total: 9m 0s
+LR: 1.00e-04 | Train Loss: 0.0619 | Val Loss: 0.2268
+KL Loss: 270.6219 | Train Acc: 98.10% | Val Acc: 92.58%
+
+Epoch 20 Summary:
+Time: 27.97s | Total: 9m 28s
+LR: 5.00e-05 | Train Loss: 0.0430 | Val Loss: 0.2360
+KL Loss: 257.5720 | Train Acc: 99.03% | Val Acc: 92.32%
+
+Epoch 21 Summary:
+Time: 27.91s | Total: 9m 56s
+LR: 5.00e-05 | Train Loss: 0.0398 | Val Loss: 0.2457
+KL Loss: 248.7290 | Train Acc: 99.26% | Val Acc: 92.23%
+
+Epoch 22 Summary:
+Time: 27.96s | Total: 10m 24s
+LR: 5.00e-05 | Train Loss: 0.0394 | Val Loss: 0.2595
+KL Loss: 239.7997 | Train Acc: 99.21% | Val Acc: 92.40%
+
+Epoch 23 Summary:
+Time: 27.95s | Total: 10m 52s
+LR: 5.00e-05 | Train Loss: 0.0368 | Val Loss: 0.2322
+KL Loss: 230.9443 | Train Acc: 99.18% | Val Acc: 92.49%
+
+Epoch 24 Summary:
+Time: 27.90s | Total: 11m 20s
+LR: 5.00e-05 | Train Loss: 0.0327 | Val Loss: 0.2305
+KL Loss: 222.1509 | Train Acc: 99.34% | Val Acc: 92.45%
+
+Epoch 25 Summary:
+Time: 27.91s | Total: 11m 48s
+LR: 5.00e-05 | Train Loss: 0.0585 | Val Loss: 0.2502
+KL Loss: 214.0799 | Train Acc: 98.35% | Val Acc: 92.27%
+
+Epoch 26 Summary:
+Time: 27.90s | Total: 12m 16s
+LR: 2.50e-05 | Train Loss: 0.0307 | Val Loss: 0.2477
+KL Loss: 207.7320 | Train Acc: 99.52% | Val Acc: 92.40%
+
+Epoch 27 Summary:
+Time: 28.06s | Total: 12m 44s
+LR: 2.50e-05 | Train Loss: 0.0279 | Val Loss: 0.2450
+KL Loss: 203.2539 | Train Acc: 99.57% | Val Acc: 91.93%
+
+Epoch 28 Summary:
+Time: 27.92s | Total: 13m 12s
+LR: 2.50e-05 | Train Loss: 0.0279 | Val Loss: 0.2380
+KL Loss: 198.8520 | Train Acc: 99.52% | Val Acc: 92.66%
+
+Early stopping at epoch 28 after 15 epochs without improvement
+Best validation loss: 0.2174 | Best accuracy: 91.89%
+
+Training completed in 13m 12s
+Best validation loss: 0.2174 | Best accuracy: 91.89%

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Read the CSV file
-df = pd.read_csv('results/training_log.csv')
+df = pd.read_csv('results/5sec_chunks/training_log.csv')
 
 # Create a figure with multiple subplots
 fig, axes = plt.subplots(2, 3, figsize=(18, 12))
@@ -61,8 +61,8 @@ axes[1, 2].grid(True, alpha=0.3)
 plt.tight_layout()
 
 # Save the plot
-plt.savefig('results/training_results.png', dpi=300, bbox_inches='tight', facecolor='white')
-plt.savefig('results/training_results.pdf', bbox_inches='tight', facecolor='white')
+plt.savefig('results/5sec_chunks/training_results.png', dpi=300, bbox_inches='tight', facecolor='white')
+plt.savefig('results/5sec_chunks/training_results.pdf', bbox_inches='tight', facecolor='white')
 print("Plots saved as 'training_results.png' and 'training_results.pdf'")
 
 plt.show()
