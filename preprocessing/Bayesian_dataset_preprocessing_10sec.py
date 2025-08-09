@@ -34,7 +34,7 @@ print(f"Using device: {device}")
 
 # Setting the input and output folders
 input_dataset = '../Chicks_Automatic_Detection_dataset/Registrazioni/'
-output_dataset = '../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/'
+output_dataset = '../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/'
 
 # Create output directory if it doesn't exist
 os.makedirs(output_dataset, exist_ok=True)
@@ -65,7 +65,7 @@ def compute_spectrogram(y, sr):
     return torch.tensor(spectrogram, dtype=torch.float32).to(device)
 
 
-def audio_spectrograms(input_dir, output_dir, chunk_duration=5):
+def audio_spectrograms(input_dir, output_dir, chunk_duration=10):
     checkpoint_file = os.path.join(output_dir, "preprocessed_audios.txt")
     
     # Create checkpoint file if missing
@@ -178,5 +178,5 @@ def audio_spectrograms(input_dir, output_dir, chunk_duration=5):
 
 # Main processing
 print("Starting audio processing")
-audio_spectrograms(input_dataset, output_dataset, chunk_duration=5)
+audio_spectrograms(input_dataset, output_dataset, chunk_duration=10)
 print("Processing completed successfully")

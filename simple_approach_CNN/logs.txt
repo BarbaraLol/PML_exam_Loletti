@@ -1,0 +1,47 @@
+Using device: Tesla V100-PCIE-32GB
+CUDA capability: sm_70
+PyTorch CUDA version: 12.1
+Training results will be logged to: results/5sec_chunks/training_log_20250809_111625.csv
+Dataset sizes - Train: 8430, Val: 1806, Test: 1808
+
+Starting training for up to 100 epochs...
+======================================================================
+Epoch   1/100 | Train Loss: 0.4434 | Train Acc: 0.8560 | Val Loss: 0.3062 | Val Acc: 0.8832 | LR: 0.001000
+    → New best model saved! (Val Loss: 0.3062)
+Epoch   2/100 | Train Loss: 0.2772 | Train Acc: 0.9061 | Val Loss: 0.2900 | Val Acc: 0.9030 | LR: 0.001000
+    → New best model saved! (Val Loss: 0.2900)
+Epoch   3/100 | Train Loss: 0.1971 | Train Acc: 0.9297 | Val Loss: 0.3029 | Val Acc: 0.8909 | LR: 0.001000
+    Early stopping counter: 1/15
+Epoch   4/100 | Train Loss: 0.1408 | Train Acc: 0.9493 | Val Loss: 0.3347 | Val Acc: 0.9139 | LR: 0.001000
+    Early stopping counter: 2/15
+Epoch   5/100 | Train Loss: 0.0899 | Train Acc: 0.9698 | Val Loss: 0.4095 | Val Acc: 0.9095 | LR: 0.001000
+    Early stopping counter: 3/15
+Epoch   6/100 | Train Loss: 0.0514 | Train Acc: 0.9843 | Val Loss: 0.5303 | Val Acc: 0.8986 | LR: 0.001000
+    Early stopping counter: 4/15
+Epoch   7/100 | Train Loss: 0.0361 | Train Acc: 0.9889 | Val Loss: 0.5353 | Val Acc: 0.9178 | LR: 0.001000
+    Early stopping counter: 5/15
+Epoch   8/100 | Train Loss: 0.0239 | Train Acc: 0.9924 | Val Loss: 0.6524 | Val Acc: 0.9189 | LR: 0.000500
+    Early stopping counter: 6/15
+Epoch   9/100 | Train Loss: 0.0172 | Train Acc: 0.9956 | Val Loss: 0.6987 | Val Acc: 0.9221 | LR: 0.000500
+    Early stopping counter: 7/15
+Epoch  10/100 | Train Loss: 0.0117 | Train Acc: 0.9970 | Val Loss: 0.6754 | Val Acc: 0.9156 | LR: 0.000500
+    Early stopping counter: 8/15
+Epoch  11/100 | Train Loss: 0.0058 | Train Acc: 0.9988 | Val Loss: 0.7460 | Val Acc: 0.9172 | LR: 0.000500
+    Early stopping counter: 9/15
+Epoch  12/100 | Train Loss: 0.0044 | Train Acc: 0.9995 | Val Loss: 0.8383 | Val Acc: 0.9254 | LR: 0.000500
+    Early stopping counter: 10/15
+Epoch  13/100 | Train Loss: 0.0041 | Train Acc: 0.9993 | Val Loss: 0.7875 | Val Acc: 0.9249 | LR: 0.000500
+    Early stopping counter: 11/15
+Epoch  14/100 | Train Loss: 0.0061 | Train Acc: 0.9989 | Val Loss: 0.8524 | Val Acc: 0.9249 | LR: 0.000250
+    Early stopping counter: 12/15
+Epoch  15/100 | Train Loss: 0.0014 | Train Acc: 0.9998 | Val Loss: 0.7294 | Val Acc: 0.9243 | LR: 0.000250
+    Early stopping counter: 13/15
+Epoch  16/100 | Train Loss: 0.0024 | Train Acc: 0.9998 | Val Loss: 0.7648 | Val Acc: 0.9243 | LR: 0.000250
+    Early stopping counter: 14/15
+Epoch  17/100 | Train Loss: 0.0016 | Train Acc: 0.9998 | Val Loss: 0.7533 | Val Acc: 0.9265 | LR: 0.000250
+
+Early stopping triggered after 17 epochs!
+Best validation loss: 0.2900
+
+Training completed!
+Results saved to: results/5sec_chunks/training_log_20250809_111625.csv

@@ -29,6 +29,7 @@ def main():
     args = parser.parse_args()
 
     # Create output directory with timestamp
+    output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}")
     
@@ -42,19 +43,19 @@ def main():
     label_encoder.fit(encode_labels(file_paths))
     
     # # Data augmentation transforms
-    # train_transform = transforms.Compose([
-    #     transforms.Lambda(lambda x: x.unsqueeze(0)),  # Add channel dimension
-    #     transforms.RandomHorizontalFlip(p=0.5), # Time Flipping
-    #     transforms.RandomVerticalFlip(p=0.5), # Frequency Flipping
-    #     transforms.RandomApply([
-    #         transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05))
-    #     ], p=0.3), # Apply only 30% of the time
-    # ])
+    train_transform = transforms.Compose([
+        transforms.Lambda(lambda x: x.unsqueeze(0)),  # Add channel dimension
+        transforms.RandomHorizontalFlip(p=0.5), # Time Flipping
+        transforms.RandomVerticalFlip(p=0.5), # Frequency Flipping
+        transforms.RandomApply([
+            transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05))
+        ], p=0.3), # Apply only 30% of the time
+    ])
     
     # Validation transform (no augmentation)
     val_transform = transforms.Compose([
         transforms.Lambda(lambda x: x.unsqueeze(0)), # Just adding a channel dim
-    ])
+     ])
     
     # Create datasets
     dataset = SpectrogramDataset(file_paths, label_encoder, transform=train_transform)

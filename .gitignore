@@ -1,5 +1,6 @@
 Chicks_Automatic_Detection_dataset/
 Chicks_Automatic_Detection_dataset_orfeo/
+CNN_BNN_final/__pycache__/
 CNN_BNN_final/results/best_model.pth
 CNN_BNN_final/results/final_model.pth
 simple_approach_CNN/__pycache__/
@@ -13,3 +14,8 @@ CNN_BNN_final_no_augmentation/__pycache__/
 CNN_BNN_final_no_augmentation/results/best_model.pth
 CNN_BNN_final_no_augmentation/results/final_model.pth
 VAE/__pycache__/
+
+**/logs/
+**/best_model.pth
+**/last_model.pth
+
