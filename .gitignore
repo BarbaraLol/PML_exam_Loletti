@@ -20,3 +20,5 @@ VAE/__pycache__/
 **/last_model.pth
 **/final_model.pth
 **/checkpoints/
+
+cuda.md
