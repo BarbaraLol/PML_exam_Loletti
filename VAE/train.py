@@ -12,7 +12,7 @@ from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
 
 # Import your modules
-from variational_autoencoder_model import SpectrogramVAE, ConditionalSpectrogramVAE
+from audio_generation_model import SpectrogramVAE, ConditionalSpectrogramVAE
 from data_loading import create_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint
 
