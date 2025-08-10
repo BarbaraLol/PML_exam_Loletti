@@ -75,60 +75,54 @@ class SpectrogramVAEDataset(Dataset):
             return False
     
     def _compute_dataset_stats(self):
-        """Compute dataset statistics using incremental calculation"""
+        """Compute dataset statistics without concatenating all values"""
         print("Computing dataset statistics for normalization...")
         
-        # Initialize statistics
+        # Initialize accumulators
         min_val = float('inf')
         max_val = float('-inf')
         sum_val = 0.0
         sum_sq_val = 0.0
         count = 0
         
-        # Process files in chunks
-        chunk_size = 100  # Files per chunk
-        num_chunks = len(self.file_paths) // chunk_size + 1
-        
-        print(f"Processing {len(self.file_paths)} files in {num_chunks} chunks...")
-        
-        for chunk_idx in range(num_chunks):
-            start_idx = chunk_idx * chunk_size
-            end_idx = min((chunk_idx + 1) * chunk_size, len(self.file_paths))
-            chunk_files = self.file_paths[start_idx:end_idx]
-            
-            print(f"Processing chunk {chunk_idx+1}/{num_chunks} ({len(chunk_files)} files)")
-            
-            for file_path in chunk_files:
-                try:
-                    data = torch.load(file_path, map_location='cpu')
-                    spec = data['spectrogram'].float()
+        # Process each file individually
+        for i, file_path in enumerate(self.file_paths):
+            if i % 100 == 0:
+                print(f"Processing file {i+1}/{len(self.file_paths)}...")
+                
+            try:
+                data = torch.load(file_path, map_location='cpu')
+                spec = data['spectrogram'].float()
+                
+                # Handle complex spectrograms
+                if torch.is_complex(spec):
+                    spec = torch.abs(spec)
                     
-                    if torch.is_complex(spec):
-                        spec = torch.abs(spec)
+                # Skip invalid spectrograms
+                if torch.isnan(spec).any() or torch.isinf(spec).any():
+                    continue
                     
-                    # Handle negative values for log transform
-                    spec_min = spec.min().item()
-                    if spec_min <= 0:
-                        spec = spec - spec_min + 1e-8
-                    
-                    # Apply log transform
-                    spec_log = torch.log(spec + 1e-8)
-                    
-                    # Update statistics
-                    chunk_min = spec_log.min().item()
-                    chunk_max = spec_log.max().item()
-                    chunk_sum = spec_log.sum().item()
-                    chunk_sq_sum = (spec_log ** 2).sum().item()
-                    chunk_count = spec_log.numel()
-                    
-                    min_val = min(min_val, chunk_min)
-                    max_val = max(max_val, chunk_max)
-                    sum_val += chunk_sum
-                    sum_sq_val += chunk_sq_sum
-                    count += chunk_count
-                    
-                except Exception as e:
-                    print(f"Error processing {file_path}: {e}")
+                # Apply log transform
+                spec_min = spec.min().item()
+                if spec_min <= 0:
+                    spec = spec - spec_min + 1e-8
+                spec_log = torch.log(spec + 1e-8)
+                
+                # Update statistics
+                file_min = spec_log.min().item()
+                file_max = spec_log.max().item()
+                file_sum = spec_log.sum().item()
+                file_sq_sum = (spec_log ** 2).sum().item()
+                file_count = spec_log.numel()
+                
+                min_val = min(min_val, file_min)
+                max_val = max(max_val, file_max)
+                sum_val += file_sum
+                sum_sq_val += file_sq_sum
+                count += file_count
+                
+            except Exception as e:
+                print(f"Error processing {file_path}: {e}")
         
         # Calculate final statistics
         self.dataset_min = min_val
