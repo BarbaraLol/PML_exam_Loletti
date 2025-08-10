@@ -75,95 +75,73 @@ class SpectrogramVAEDataset(Dataset):
             return False
     
     def _compute_dataset_stats(self):
-        """Robust statistics computation with better error handling"""
+        """Compute dataset statistics using incremental calculation"""
         print("Computing dataset statistics for normalization...")
         
-        # Sample more files but process them more carefully
-        sample_size = min(100, len(self.file_paths))
-        step = max(1, len(self.file_paths) // sample_size)
-        sampled_files = self.file_paths[::step][:sample_size]
+        # Initialize statistics
+        min_val = float('inf')
+        max_val = float('-inf')
+        sum_val = 0.0
+        sum_sq_val = 0.0
+        count = 0
         
-        print(f"Computing stats from {len(sampled_files)} sampled files...")
+        # Process files in chunks
+        chunk_size = 100  # Files per chunk
+        num_chunks = len(self.file_paths) // chunk_size + 1
         
-        all_values = []
-        processed_files = 0
+        print(f"Processing {len(self.file_paths)} files in {num_chunks} chunks...")
         
-        for i, fp in enumerate(sampled_files):
-            if i % 20 == 0:
-                print(f"Processing {i}/{len(sampled_files)} files for stats...")
-                
-            try:
-                data = torch.load(fp, map_location='cpu')
-                spec = data['spectrogram'].float()
-                
-                # Handle complex spectrograms properly
-                if torch.is_complex(spec):
-                    spec = torch.abs(spec)
-                
-                # Check for problematic values
-                if torch.isnan(spec).any() or torch.isinf(spec).any():
-                    print(f"Skipping {fp}: contains NaN/Inf values")
-                    continue
-                
-                # Apply log transform more carefully
-                # First, ensure we have positive values
-                spec_min = spec.min().item()
-                if spec_min <= 0:
-                    # Shift to make all values positive
-                    spec = spec - spec_min + 1e-8
-                
-                # Apply log transform
-                spec_log = torch.log(spec + 1e-8)  # Add small epsilon for stability
-                
-                # Check the result
-                if torch.isnan(spec_log).any() or torch.isinf(spec_log).any():
-                    print(f"Skipping {fp}: log transform produced NaN/Inf")
-                    continue
-                
-                # Check for variance
-                if spec_log.numel() > 1:
-                    variance = torch.var(spec_log)
-                    if variance.item() < 1e-10:
-                        print(f"Skipping {fp}: zero variance after log transform")
-                        continue
-                
-                # Collect values for statistics
-                all_values.append(spec_log.flatten())
-                processed_files += 1
-                
-                # Limit memory usage
-                if processed_files >= 50:
-                    break
+        for chunk_idx in range(num_chunks):
+            start_idx = chunk_idx * chunk_size
+            end_idx = min((chunk_idx + 1) * chunk_size, len(self.file_paths))
+            chunk_files = self.file_paths[start_idx:end_idx]
+            
+            print(f"Processing chunk {chunk_idx+1}/{num_chunks} ({len(chunk_files)} files)")
+            
+            for file_path in chunk_files:
+                try:
+                    data = torch.load(file_path, map_location='cpu')
+                    spec = data['spectrogram'].float()
                     
-            except Exception as e:
-                print(f"Error processing {fp} for stats: {e}")
-                continue
+                    if torch.is_complex(spec):
+                        spec = torch.abs(spec)
+                    
+                    # Handle negative values for log transform
+                    spec_min = spec.min().item()
+                    if spec_min <= 0:
+                        spec = spec - spec_min + 1e-8
+                    
+                    # Apply log transform
+                    spec_log = torch.log(spec + 1e-8)
+                    
+                    # Update statistics
+                    chunk_min = spec_log.min().item()
+                    chunk_max = spec_log.max().item()
+                    chunk_sum = spec_log.sum().item()
+                    chunk_sq_sum = (spec_log ** 2).sum().item()
+                    chunk_count = spec_log.numel()
+                    
+                    min_val = min(min_val, chunk_min)
+                    max_val = max(max_val, chunk_max)
+                    sum_val += chunk_sum
+                    sum_sq_val += chunk_sq_sum
+                    count += chunk_count
+                    
+                except Exception as e:
+                    print(f"Error processing {file_path}: {e}")
         
-        if len(all_values) == 0:
-            raise ValueError("Could not process any files for statistics computation!")
+        # Calculate final statistics
+        self.dataset_min = min_val
+        self.dataset_max = max_val
+        self.dataset_mean = sum_val / count
+        self.dataset_std = (sum_sq_val / count - self.dataset_mean ** 2) ** 0.5
         
-        # Concatenate all values
-        all_values = torch.cat(all_values)
-        
-        print(f"Computed stats from {processed_files} files ({len(all_values):,} values)")
-        
-        # Compute robust statistics
-        self.dataset_min = torch.quantile(all_values, 0.01).item()  # 1st percentile
-        self.dataset_max = torch.quantile(all_values, 0.99).item()  # 99th percentile
-        self.dataset_mean = torch.mean(all_values).item()
-        self.dataset_std = torch.std(all_values).item()
-        
-        # Ensure reasonable values
-        if self.dataset_std < 1e-6:
-            print("Warning: Very low std, using fallback normalization")
-            self.dataset_std = 1.0
-        
-        print(f"Robust dataset statistics:")
-        print(f"  Min (1%): {self.dataset_min:.3f}")
-        print(f"  Max (99%): {self.dataset_max:.3f}")
-        print(f"  Mean: {self.dataset_mean:.3f}")
-        print(f"  Std: {self.dataset_std:.3f}")
-        print(f"  Range: {self.dataset_max - self.dataset_min:.3f}")
+        print(f"\nFinal dataset statistics:")
+        print(f"  Min: {self.dataset_min:.6f}")
+        print(f"  Max: {self.dataset_max:.6f}")
+        print(f"  Mean: {self.dataset_mean:.6f}")
+        print(f"  Std: {self.dataset_std:.6f}")
+        print(f"  Total values processed: {count:,}")
     
     def __len__(self):
         return len(self.file_paths)
