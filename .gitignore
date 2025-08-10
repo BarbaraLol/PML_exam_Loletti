@@ -19,6 +19,7 @@ VAE/__pycache__/
 **/best_model.pth
 **/last_model.pth
 **/final_model.pth
+**/best_vae_model.pth
 **/checkpoints/
 
 cuda.md
