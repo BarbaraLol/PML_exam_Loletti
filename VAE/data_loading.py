@@ -221,8 +221,9 @@ class SpectrogramVAEDataset(Dataset):
         
         # Final safety check
         if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
-            print("Warning: Final preprocessing check failed, using random data")
-            spectrogram = torch.rand_like(spectrogram) * 0.5 + 0.25  # Random in [0.25, 0.75]
+            print("WARNING: NaN/Inf in preprocessed spectrogram")
+            # Fallback to random values
+            spectrogram = torch.rand_like(spectrogram) * 0.5 + 0.25
         
         return spectrogram
 

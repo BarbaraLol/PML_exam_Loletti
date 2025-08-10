@@ -103,6 +103,9 @@ class SpectrogramVAE(nn.Module):
             std = torch.exp(0.5 * logvar)
             eps = torch.randn_like(std)
             return mu + eps * std
+        else:
+            # Return mean during evaluation
+            return mu
 
     def forward(self, x):
         mu, logvar = self.encode(x)
@@ -225,7 +228,7 @@ class ConditionalSpectrogramVAE(SpectrogramVAE):
         self.eval()
         with torch.no_grad():
             z = torch.randn(num_samples, self.latent_dim, device = device)
-            class_lables = torch.full((num_samples,), class_lables, device = device, dtype = torch.long)
+            class_lables = torch.full((num_samples,), class_label, device = device, dtype = torch.long)
             samples = self.decode(z, class_labels)
             return samples
     
