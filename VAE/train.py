@@ -285,22 +285,22 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             patience_counter = 0
             
             # Save best model
-            torch.save({
-                'epoch': epoch+1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'val_loss': val_total_loss,
-                'best_val_loss': best_val_loss,
-                'model_config': {
-                    'input_shape': model.input_shape,
-                    'latent_dim': model.latent_dim,
-                    'beta': args.beta,
-                    'conditional': conditional,
-                    'num_classes': getattr(model, 'num_classes', None)
-                }
-            }, os.path.join(output_dir, 'best_vae_model.pth'))
+            # torch.save({
+            #     'epoch': epoch+1,
+            #     'model_state_dict': model.state_dict(),
+            #     'optimizer_state_dict': optimizer.state_dict(),
+            #     'val_loss': val_total_loss,
+            #     'best_val_loss': best_val_loss,
+            #     'model_config': {
+            #         'input_shape': model.input_shape,
+            #         'latent_dim': model.latent_dim,
+            #         'beta': args.beta,
+            #         'conditional': conditional,
+            #         'num_classes': getattr(model, 'num_classes', None)
+            #     }
+            # }, os.path.join(output_dir, 'best_vae_model.pth'))
             
-            print(f"✓ Saved best model at epoch {epoch+1} with val loss: {val_total_loss:.4f}")
+            # print(f"✓ Saved best model at epoch {epoch+1} with val loss: {val_total_loss:.4f}")
         else:
             patience_counter += 1
             if patience_counter >= args.patience:
@@ -314,22 +314,22 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             break
     
     # Save final model
-    torch.save({
-        'epoch': epoch+1,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'val_loss': val_total_loss if not np.isnan(val_total_loss) else float('inf'),
-        'model_config': {
-            'input_shape': model.input_shape,
-            'latent_dim': model.latent_dim,
-            'beta': args.beta,
-            'conditional': conditional,
-            'num_classes': getattr(model, 'num_classes', None)
-        }
-    }, os.path.join(output_dir, 'final_vae_model.pth'))
+    # torch.save({
+    #     'epoch': epoch+1,
+    #     'model_state_dict': model.state_dict(),
+    #     'optimizer_state_dict': optimizer.state_dict(),
+    #     'val_loss': val_total_loss if not np.isnan(val_total_loss) else float('inf'),
+    #     'model_config': {
+    #         'input_shape': model.input_shape,
+    #         'latent_dim': model.latent_dim,
+    #         'beta': args.beta,
+    #         'conditional': conditional,
+    #         'num_classes': getattr(model, 'num_classes', None)
+    #     }
+    # }, os.path.join(output_dir, 'final_vae_model.pth'))
     
-    print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
-    print(f"Best validation loss: {best_val_loss:.4f}")
+    # print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
+    # print(f"Best validation loss: {best_val_loss:.4f}")
 
 
 def main():

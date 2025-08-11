@@ -202,18 +202,18 @@ def main():
             best_val_acc = val_acc
             patience_counter = 0
             
-            # Save best model checkpoint
-            torch.save({
-                'epoch': epoch+1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'val_loss': val_loss,
-                'val_acc': val_acc,
-                'best_val_loss': best_val_loss,
-                'label_encoder': label_encoder
-            }, os.path.join(output_dir, 'best_model.pth'))
+            # # Save best model checkpoint
+            # torch.save({
+            #     'epoch': epoch+1,
+            #     'model_state_dict': model.state_dict(),
+            #     'optimizer_state_dict': optimizer.state_dict(),
+            #     'val_loss': val_loss,
+            #     'val_acc': val_acc,
+            #     'best_val_loss': best_val_loss,
+            #     'label_encoder': label_encoder
+            # }, os.path.join(output_dir, 'best_model.pth'))
             
-            print(f"Saved best model at epoch {epoch+1} with val loss: {val_loss:.4f}")
+            # print(f"Saved best model at epoch {epoch+1} with val loss: {val_loss:.4f}")
         else:
             patience_counter += 1
             if patience_counter >= args.patience:
@@ -221,15 +221,15 @@ def main():
                 print(f"Best validation loss: {best_val_loss:.4f} | Best accuracy: {best_val_acc:.2f}%")
                 break
     
-    # Save final model
-    torch.save({
-        'epoch': epoch+1,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'val_loss': val_loss,
-        'val_acc': val_acc,
-        'label_encoder': label_encoder
-    }, os.path.join(output_dir, 'final_model.pth'))
+    # # Save final model
+    # torch.save({
+    #     'epoch': epoch+1,
+    #     'model_state_dict': model.state_dict(),
+    #     'optimizer_state_dict': optimizer.state_dict(),
+    #     'val_loss': val_loss,
+    #     'val_acc': val_acc,
+    #     'label_encoder': label_encoder
+    # }, os.path.join(output_dir, 'final_model.pth'))
     
     print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
     print(f"Best validation loss: {best_val_loss:.4f} | Best accuracy: {best_val_acc:.2f}%")
