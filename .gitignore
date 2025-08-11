@@ -24,3 +24,6 @@ VAE/__pycache__/
 **/checkpoints/
 
 cuda.md
+after.sh
+bash.sh
+to_do.md
