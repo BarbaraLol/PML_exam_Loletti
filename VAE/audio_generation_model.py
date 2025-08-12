@@ -116,7 +116,6 @@ class SpectrogramVAE(nn.Module):
 
     def reparameterize(self, mu, logvar):
         if self.training:
-            # FIXED: Clamp logvar to prevent extreme values
             logvar = torch.clamp(logvar, min=-20, max=20)
             std = torch.exp(0.5 * logvar)
             eps = torch.randn_like(std)
@@ -141,7 +140,6 @@ class SpectrogramVAE(nn.Module):
         # Reconstruction loss (MSE for spectrograms)
         recon_loss = F.mse_loss(recon_x, x, reduction='mean')
         
-        # FIXED: More stable KL divergence computation
         logvar = torch.clamp(logvar, min=-20, max=20)  # Prevent extreme values
         mu = torch.clamp(mu, min=-100, max=100)       # Prevent extreme values
         
@@ -169,7 +167,7 @@ class SpectrogramVAE(nn.Module):
         '''Interpolation between two spectrograms in the latent space'''
         with torch.no_grad():
             mu1, _ = self.encode(x1)
-            mu2, _ = self.encode(x2)  # Fixed method name
+            mu2, _ = self.encode(x2)  
 
             interpolations = []
 
@@ -177,7 +175,7 @@ class SpectrogramVAE(nn.Module):
                 alpha = i / (num_steps - 1)
                 z_interp = (1 - alpha) * mu1 + alpha * mu2
                 x_interp = self.decode(z_interp)
-                interpolations.append(x_interp)  # Fixed method name
+                interpolations.append(x_interp)  
 
             return torch.cat(interpolations, dim=0)
 
@@ -197,9 +195,9 @@ class ConditionalSpectrogramVAE(SpectrogramVAE):
         self.encoder.fc_logvar = nn.Linear(original_flatten_size + 64, latent_dim)
 
         # Modify decoder to include class conditioning
-        self.decoder.fc = nn.Linear(latent_dim + 64, 256 * self.decoder.h_enc * self.decoder.w_enc)  # Fixed calculation
+        self.decoder.fc = nn.Linear(latent_dim + 64, 256 * self.decoder.h_enc * self.decoder.w_enc)  
 
-    def encode(self, x, class_labels):  # Fixed method name and parameter
+    def encode(self, x, class_labels):  
         # Getting features from the encoder
         features = self.encoder.encoder(x)
         features = features.view(features.size(0), -1)
@@ -213,9 +211,9 @@ class ConditionalSpectrogramVAE(SpectrogramVAE):
 
         return mu, logvar
 
-    def decode(self, z, class_labels):  # Fixed parameter name
+    def decode(self, z, class_labels): 
         class_emb = self.class_embedding(class_labels)
-        combined = torch.cat([z, class_emb], dim=1)  # Fixed variable name
+        combined = torch.cat([z, class_emb], dim=1)  
 
         x = self.decoder.fc(combined)
         x = x.view(x.size(0), 256, self.decoder.h_enc, self.decoder.w_enc)
@@ -226,17 +224,17 @@ class ConditionalSpectrogramVAE(SpectrogramVAE):
         
         return x
 
-    def forward(self, x, class_labels):  # Fixed parameter name
+    def forward(self, x, class_labels): 
         mu, logvar = self.encode(x, class_labels)
         z = self.reparameterize(mu, logvar)
         recon_x = self.decode(z, class_labels)
 
         return recon_x, mu, logvar, z
 
-    def sample_class(self, class_label, num_samples, device='cpu'):  # Fixed method name
+    def sample_class(self, class_label, num_samples, device='cpu'):  
         """Generate spectrograms for a specific class"""
         with torch.no_grad():
-            z = torch.randn(num_samples, self.latent_dim, device=device)  # Fixed torch.randn
-            class_labels = torch.full((num_samples,), class_label, device=device, dtype=torch.long)  # Fixed parameter name
+            z = torch.randn(num_samples, self.latent_dim, device=device)  
+            class_labels = torch.full((num_samples,), class_label, device=device, dtype=torch.long) 
             samples = self.decode(z, class_labels)
             return samples
