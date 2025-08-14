@@ -101,7 +101,7 @@ class SpectrogramDecoder(nn.Module):
     def forward(self, z):
         x = self.fc(z)
         # x = x.view(x.size(0), 256, self.h_enc, self.w_enc)
-        x = x.view(x.size(0), 256, self.encoded_dims[0], slef.encoded_dims[1])
+        x = x.view(x.size(0), 256, self.encoded_dims[0], self.encoded_dims[1])
         x = self.decoder(x)  # Fixed duplicate line
 
         # Ensuring the correct shape
