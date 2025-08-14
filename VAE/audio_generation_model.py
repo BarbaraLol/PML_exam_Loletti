@@ -120,7 +120,7 @@ class SpectrogramVAE(nn.Module):
         self.beta = beta
 
         self.encoder = SpectrogramEncoder(input_shape, latent_dim)
-        self.decoder = SpectrogramDecoder(latent_dim, input_shape)
+        self.decoder = SpectrogramDecoder(latent_dim, input_shape, self.encoder.encoded_dims)
 
     def encode(self, x):
         return self.encoder(x)
