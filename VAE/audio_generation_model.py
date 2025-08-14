@@ -13,11 +13,7 @@ class SpectrogramEncoder(nn.Module):
         # Convolutional encoder
         # 4 2d convolutional layers with batch normalization and LeakyReLU activation function
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 32, 4, stride=2, padding=1),
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(0.2),
-
-            nn.Conv2d(32, 64, 4, stride=2, padding=1),
+            nn.Conv2d(1, 64, 4, stride=2, padding=1),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2),
 
@@ -27,6 +23,10 @@ class SpectrogramEncoder(nn.Module):
 
             nn.Conv2d(128, 256, 4, stride=2, padding=1),
             nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(256, 512, 4, stride=2, padding=1),
+            nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2)
         )
 
@@ -69,20 +69,20 @@ class SpectrogramDecoder(nn.Module):
 
         # Transposed convolution (deconvoluting)
         self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1),  # Fixed ConvTranspose2d
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1),  # Fixed ConvTranspose2d
             nn.BatchNorm2d(128),
             nn.ReLU(),
 
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),  # Fixed ConvTranspose2d
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),   # Fixed ConvTranspose2d
             nn.BatchNorm2d(64),
             nn.ReLU(),
 
-            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1),   # Fixed ConvTranspose2d
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-
-            nn.ConvTranspose2d(32, 1, 4, stride=2, padding=1),    # Fixed ConvTranspose2d
-            nn.Tanh() # Output in [-1, 1] range
+            nn.ConvTranspose2d(64, 1, 4, stride=2, padding=1),    # Fixed ConvTranspose2d
+            nn.Sigmoid() # Output in [-1, 1] range
         )
 
     def forward(self, z):
