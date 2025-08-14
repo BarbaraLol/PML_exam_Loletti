@@ -31,17 +31,27 @@ class SpectrogramEncoder(nn.Module):
         )
 
         # Computing the flattened size
-        self.flatten_size = self._get_flatten_size()
+        # self.flatten_size = self._get_flatten_size()
+        # Computing the flattened size and encoded dimensions
+        self.encoded_dims = self._get_encoded_dims()
+        self.flatten_size = self.encoded_dims[0] * self.encoded_dims[1] * 512
 
         # Mean and Log variance 
         self.fc_mu = nn.Linear(self.flatten_size, latent_dim)
         self.fc_logvar = nn.Linear(self.flatten_size, latent_dim)
 
-    def _get_flatten_size(self):  # Fixed method definition
+    # def _get_flatten_size(self):
+    #     with torch.no_grad():
+    #         dummy = torch.zeros(1, 1, *self.input_shape)  
+    #         dummy = self.encoder(dummy)
+    #         return dummy.view(-1).shape[0]
+    def _get_encoded_dims(self):
+        """Calculate the exact dimensions after encoding"""
         with torch.no_grad():
-            dummy = torch.zeros(1, 1, *self.input_shape)  # Fixed torch.zeros
+            dummy = torch.zeros(1, 1, *self.input_shape)
             dummy = self.encoder(dummy)
-            return dummy.view(-1).shape[0]  # Fixed indexing
+            # Return (height, width) after encoding
+            return (dummy.shape[2], dummy.shape[3])
 
     def forward(self, x):
         x = self.encoder(x)
@@ -53,19 +63,22 @@ class SpectrogramEncoder(nn.Module):
 
 class SpectrogramDecoder(nn.Module):
     '''Decoder for spectrogram VAE'''
-    def __init__(self, latent_dim, output_shape):
+    def __init__(self, latent_dim, output_shape, encoded_dims):
         super().__init__()
         self.latent_dim = latent_dim
         self.output_shape = output_shape
+        self.encoded_dims = encoded_dims
 
         # Calculate the size after encoder
         h_enc = output_shape[0] // 16
         w_enc = output_shape[1] // 16
 
-        self.h_enc, self.w_enc = h_enc, w_enc
+        # self.h_enc, self.w_enc = h_enc, w_enc
 
         # Dense layer to reshape
-        self.fc = nn.Linear(latent_dim, 512 * h_enc * w_enc)
+        # self.fc = nn.Linear(latent_dim, 512 * h_enc * w_enc)
+        # Dense layer to reshape - use actual encoded dimensions
+        self.fc = nn.Linear(latent_dim, 512 * encoded_dims[0] * encoded_dims[1])
 
         # Transposed convolution (deconvoluting)
         self.decoder = nn.Sequential(
@@ -87,7 +100,8 @@ class SpectrogramDecoder(nn.Module):
 
     def forward(self, z):
         x = self.fc(z)
-        x = x.view(x.size(0), 256, self.h_enc, self.w_enc)
+        # x = x.view(x.size(0), 256, self.h_enc, self.w_enc)
+        x = x.view(x.size(0), 256, self.encoded_dims[0], slef.encoded_dims[1])
         x = self.decoder(x)  # Fixed duplicate line
 
         # Ensuring the correct shape
@@ -195,7 +209,9 @@ class ConditionalSpectrogramVAE(SpectrogramVAE):
         self.encoder.fc_logvar = nn.Linear(original_flatten_size + 64, latent_dim)
 
         # Modify decoder to include class conditioning
-        self.decoder.fc = nn.Linear(latent_dim + 64, 256 * self.decoder.h_enc * self.decoder.w_enc)  
+        # self.decoder.fc = nn.Linear(latent_dim + 64, 256 * self.decoder.h_enc * self.decoder.w_enc)  
+        encoded_size = self.encoder.encoded_dims[0] * self.encoder.encoded_dims[1]
+        self.decoder.fc = nn.Linear(latent_dim + 64, 512 * encoded_size)
 
     def encode(self, x, class_labels):  
         # Getting features from the encoder
@@ -216,7 +232,8 @@ class ConditionalSpectrogramVAE(SpectrogramVAE):
         combined = torch.cat([z, class_emb], dim=1)  
 
         x = self.decoder.fc(combined)
-        x = x.view(x.size(0), 256, self.decoder.h_enc, self.decoder.w_enc)
+        # x = x.view(x.size(0), 512, self.decoder.h_enc, self.decoder.w_enc)
+        x = x.view(x.size(0), 512, self.encoder.encoded_dims[0], self.encoder.encoded_dims[1])
         x = self.decoder.decoder(x)
 
         if x.shape[2:] != self.decoder.output_shape:
