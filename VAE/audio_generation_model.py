@@ -65,7 +65,7 @@ class SpectrogramDecoder(nn.Module):
         self.h_enc, self.w_enc = h_enc, w_enc
 
         # Dense layer to reshape
-        self.fc = nn.Linear(latent_dim, 256 * h_enc * w_enc)
+        self.fc = nn.Linear(latent_dim, 512 * h_enc * w_enc)
 
         # Transposed convolution (deconvoluting)
         self.decoder = nn.Sequential(
