@@ -139,6 +139,42 @@ class SpectrogramVAE(nn.Module):
         # Pass encoded shape to decoder
         self.decoder = SpectrogramDecoder(latent_dim, input_shape, self.encoder.encoded_shape)
 
+         # Define encoder blocks for skip connections
+        self.enc_block1 = nn.Sequential(
+            nn.Conv2d(1, 64, 4, stride=2, padding=1),
+            nn.LeakyReLU(0.2)
+        )
+        self.enc_block2 = nn.Sequential(
+            nn.Conv2d(64, 128, 4, stride=2, padding=1),
+            nn.LeakyReLU(0.2)
+        )
+        self.enc_block3 = nn.Sequential(
+            nn.Conv2d(128, 256, 4, stride=2, padding=1),
+            nn.LeakyReLU(0.2)
+        )
+        self.enc_block4 = nn.Sequential(
+            nn.Conv2d(256, 512, 4, stride=2, padding=1),
+            nn.LeakyReLU(0.2),
+            nn.Conv2d(512, 512, 3, 1, 1),
+            nn.LeakyReLU(0.2)
+        )
+        
+        # Define decoder blocks with skip connections
+        self.dec_block1 = self._make_dec_block(512, 512)
+        self.dec_block2 = self._make_dec_block(512, 256)
+        self.dec_block3 = self._make_dec_block(256, 128)
+        self.dec_block4 = self._make_dec_block(128, 64)
+        
+        self.final_conv = nn.Conv2d(64, 1, 3, padding=1)
+        self.sigmoid = nn.Sigmoid()
+    
+    def _make_dec_block(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.ConvTranspose2d(in_channels, out_channels, 4, stride=2, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU()
+        )
+
     def encode(self, x):
         return self.encoder(x)
 
@@ -171,36 +207,44 @@ class SpectrogramVAE(nn.Module):
         recon_x = self.decode(z)
         return recon_x, mu, logvar, z
 
-    def loss_function(self, recon_x, x, mu, logvar, reduction='mean'):
-        '''VAE loss function with numerical stability'''
+    # def loss_function(self, recon_x, x, mu, logvar, reduction='mean'):
+    #     '''VAE loss function with numerical stability'''
         
-        # Check for NaN inputs
-        if torch.isnan(recon_x).any() or torch.isnan(x).any():
-            print("NaN detected in reconstruction or input!")
-            return torch.tensor(float('nan')), torch.tensor(float('nan')), torch.tensor(float('nan'))
+    #     # Check for NaN inputs
+    #     if torch.isnan(recon_x).any() or torch.isnan(x).any():
+    #         print("NaN detected in reconstruction or input!")
+    #         return torch.tensor(float('nan')), torch.tensor(float('nan')), torch.tensor(float('nan'))
         
-        # Reconstruction loss (MSE for spectrograms)
-        mse_loss = F.mse_loss(recon_x, x, reduction='mean')
-        l1_loss = F.l1_loss(recon_x, x, reduction='mean')
-        recon_loss = 0.8 * mse_loss + 0.2 * l1_loss
+    #     # Reconstruction loss (MSE for spectrograms)
+    #     mse_loss = F.mse_loss(recon_x, x, reduction='mean')
+    #     l1_loss = F.l1_loss(recon_x, x, reduction='mean')
+    #     recon_loss = 0.8 * mse_loss + 0.2 * l1_loss
         
-        # Clamp to prevent extreme values
-        logvar = torch.clamp(logvar, min=-20, max=20)
-        mu = torch.clamp(mu, min=-100, max=100)
+    #     # Clamp to prevent extreme values
+    #     logvar = torch.clamp(logvar, min=-20, max=20)
+    #     mu = torch.clamp(mu, min=-100, max=100)
         
-        # KL divergence loss
-        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
-        kl_loss = torch.mean(kl_loss)
+    #     # KL divergence loss
+    #     kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+    #     kl_loss = torch.mean(kl_loss)
         
-        # Check for NaN in losses
-        if torch.isnan(recon_loss) or torch.isnan(kl_loss):
-            print(f"NaN in losses - recon: {recon_loss}, kl: {kl_loss}")
-            return torch.tensor(float('nan')), recon_loss, kl_loss
+    #     # Check for NaN in losses
+    #     if torch.isnan(recon_loss) or torch.isnan(kl_loss):
+    #         print(f"NaN in losses - recon: {recon_loss}, kl: {kl_loss}")
+    #         return torch.tensor(float('nan')), recon_loss, kl_loss
         
-        # Use beta as provided
-        total_loss = recon_loss + self.beta * kl_loss
+    #     # Use beta as provided
+    #     total_loss = recon_loss + self.beta * kl_loss
         
-        return total_loss, recon_loss, kl_loss
+    #     return total_loss, recon_loss, kl_loss
+    def loss_function(self, recon_x, x, mu, logvar):
+        # Reconstruction loss (binary cross entropy)
+        BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
+        
+        # KL divergence
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        
+        return BCE + self.beta * KLD
 
     def sample(self, num_samples, device='cpu'):
         with torch.no_grad():
