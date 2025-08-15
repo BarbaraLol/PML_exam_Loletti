@@ -5,7 +5,7 @@ import numpy as np
 
 class SpectrogramEncoder(nn.Module):
     '''Encoder for spectrogram VAE'''
-    def __init__(self, input_shape, latent_dim=128):
+    def __init__(self, input_shape, latent_dim=1024):
         super().__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
@@ -123,7 +123,7 @@ class SpectrogramDecoder(nn.Module):
 
 class SpectrogramVAE(nn.Module):
     '''Variational Autoencoder for spectrograms - CORRECTED VERSION'''
-    def __init__(self, input_shape, latent_dim=128, beta=1.0):
+    def __init__(self, input_shape, latent_dim=1024, beta=1.0):
         super().__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
@@ -165,7 +165,9 @@ class SpectrogramVAE(nn.Module):
             return torch.tensor(float('nan')), torch.tensor(float('nan')), torch.tensor(float('nan'))
         
         # Reconstruction loss (MSE for spectrograms)
-        recon_loss = F.mse_loss(recon_x, x, reduction='mean')
+        mse_loss = F.mse_loss(recon_x, x, reduction='mean')
+        l1_loss = F.l1_loss(recon_x, x, reduction='mean')
+        recon_loss = 0.8 * mse_loss + 0.2 * l1_loss
         
         # Clamp to prevent extreme values
         logvar = torch.clamp(logvar, min=-20, max=20)
@@ -209,7 +211,7 @@ class SpectrogramVAE(nn.Module):
 
 class ConditionalSpectrogramVAE(SpectrogramVAE):
     '''Conditional VAE that can generate spectrograms for specific classes - CORRECTED VERSION'''
-    def __init__(self, input_shape, num_classes, latent_dim=128, beta=1.0):
+    def __init__(self, input_shape, num_classes, latent_dim=1024, beta=1.0):
         # Initialize the parent class first
         super().__init__(input_shape, latent_dim, beta)
         self.num_classes = num_classes
