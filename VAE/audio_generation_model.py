@@ -5,7 +5,7 @@ import numpy as np
 
 class SpectrogramEncoder(nn.Module):
     '''Encoder for spectrogram VAE'''
-    def __init__(self, input_shape, latent_dim=1024):
+    def __init__(self, input_shape, latent_dim=2048):
         super().__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
@@ -26,6 +26,10 @@ class SpectrogramEncoder(nn.Module):
 
             nn.Conv2d(256, 512, 4, stride=2, padding=1),
             nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2),
+            
+            # Extra layer
+            nn.Conv2d(512, 512, 3, 1, 1), 
             nn.LeakyReLU(0.2)
         )
 
@@ -123,7 +127,7 @@ class SpectrogramDecoder(nn.Module):
 
 class SpectrogramVAE(nn.Module):
     '''Variational Autoencoder for spectrograms - CORRECTED VERSION'''
-    def __init__(self, input_shape, latent_dim=1024, beta=1.0):
+    def __init__(self, input_shape, latent_dim=2048, beta=1.0):
         super().__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
@@ -151,8 +155,19 @@ class SpectrogramVAE(nn.Module):
             return mu
 
     def forward(self, x):
+        # Encoder with skip connections
+        enc1 = self.enc_block1(x)
+        enc2 = self.enc_block2(enc1)
+        enc3 = self.enc_block3(enc2)
+        enc4 = self.enc_block4(enc3)
+
         mu, logvar = self.encoder(x)
         z = self.reparameterize(mu, logvar)
+
+        # Decoder with skips
+        dec = self.dec_block1(z, enc4)
+        dec = self.dec_block2(dec, enc3)
+        dec = self.dec_block3(dec, enc2)
         recon_x = self.decode(z)
         return recon_x, mu, logvar, z
 
@@ -211,7 +226,7 @@ class SpectrogramVAE(nn.Module):
 
 class ConditionalSpectrogramVAE(SpectrogramVAE):
     '''Conditional VAE that can generate spectrograms for specific classes - CORRECTED VERSION'''
-    def __init__(self, input_shape, num_classes, latent_dim=1024, beta=1.0):
+    def __init__(self, input_shape, num_classes, latent_dim=2048, beta=1.0):
         # Initialize the parent class first
         super().__init__(input_shape, latent_dim, beta)
         self.num_classes = num_classes
