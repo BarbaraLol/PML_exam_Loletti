@@ -158,7 +158,7 @@ class SpectrogramVAEDataset(Dataset):
                 if self.conditional and 'label' in data and self.label_encoder:
                     return spectrogram, label
                 else:
-                    return spectrogram
+                    return spectrogram 
                     
             except Exception as e:
                 print(f"Error loading {self.file_paths[file_idx]} (attempt {attempt+1}): {e}")
@@ -390,14 +390,12 @@ def create_vae_datasets(data_dir, label_encoder=None, conditional=False,
         for i in range(min(3, len(base_dataset))):
             try:
                 sample = base_dataset[i]
-                spec, target = sample
-                print(f"  Sample {i}: spec shape {spec.shape}, target type {type(target)}")
-                
-                # Check for data quality
-                if torch.isnan(spec).any():
-                    print(f"    ⚠️  Sample {i} contains NaN!")
-                if torch.unique(spec).numel() < 10:
-                    print(f"    ⚠️  Sample {i} has very low diversity!")
+                if conditional:  # Handle conditional/non-conditional
+                    spec, target = sample
+                    print(f"  Sample {i}: spec shape {spec.shape}, target = {target}")
+                else:
+                    spec = sample
+                    print(f"  Sample {i}: spec shape {spec.shape}")
                     
             except Exception as e:
                 print(f"    ❌ Error loading sample {i}: {e}")

@@ -57,23 +57,17 @@ def save_sample_outputs(model, device, output_dir, epoch, num_samples=8,
         plt.close()
 
 
-def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_samples=4):
+def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_samples=4, conditional=False):
     """Plot original vs reconstructed spectrograms"""
     model.eval()
     with torch.no_grad():
         # Get a batch from dataloader
         for batch in dataloader:
-            if len(batch) == 2 and isinstance(batch[1], torch.Tensor):
-                if batch[1].shape == batch[0].shape:
-                    # Standard VAE case
-                    originals = batch[0].to(device)
-                    reconstructed, _, _, _ = model(originals)
-                else:
-                    # Conditional VAE case
-                    originals = batch[0].to(device)
-                    labels = batch[1].to(device)
-                    reconstructed, _, _, _ = model(originals, labels)
-                break
+            if conditional:
+                originals = batch[0].to(device)
+                labels = batch[1].to(device)
+            else:  # Non-conditional
+                originals = batch.to(device)
     
     # Adjust number of samples to actual batch size
     num_samples = min(num_samples, originals.size(0))
@@ -154,9 +148,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 data, labels = data.to(device), labels.to(device)
                 recon_x, mu, logvar, z = model(data, labels)
             else:
-                # For non-conditional, batch is already just the data tensor
                 data = batch.to(device)
-                recon_x, mu, logvar, z = model(data)  # Now correct
             
             optimizer.zero_grad()
             
@@ -217,24 +209,8 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                     if conditional:
                         data, labels = batch
                         data, labels = data.to(device), labels.to(device)
-                    else:
-                        data, _ = batch
-                        data = data.to(device)
-                    
-                    # Forward pass
-                    if conditional:
-                        recon_x, mu, logvar, z = model(data, labels)
-                    else:
-                        recon_x, mu, logvar, z = model(data)
-                    
-                    # Compute loss
-                    total_loss, recon_loss, kl_loss = model.loss_function(recon_x, data, mu, logvar)
-                    
-                    if not torch.isnan(total_loss):
-                        val_total_loss += total_loss.item()
-                        val_recon_loss += recon_loss.item()
-                        val_kl_loss += kl_loss.item()
-                        val_batches += 1
+                    else:  # Non-conditional: batch is single tensor
+                        data = batch.to(device)
                         
                 except Exception as e:
                     print(f"Validation error: {e}")
