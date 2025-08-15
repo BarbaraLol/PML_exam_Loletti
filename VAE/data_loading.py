@@ -156,17 +156,9 @@ class SpectrogramVAEDataset(Dataset):
                 
                 # Handle conditional case
                 if self.conditional and 'label' in data and self.label_encoder:
-                    try:
-                        label = torch.tensor(
-                            self.label_encoder.transform([data['label']])[0],
-                            dtype=torch.long
-                        )
-                        return spectrogram, label
-                    except:
-                        # Fallback to dummy label if label encoding fails
-                        return spectrogram, torch.tensor(0, dtype=torch.long)
+                    return spectrogram, label
                 else:
-                    return spectrogram, spectrogram
+                    return spectrogram
                     
             except Exception as e:
                 print(f"Error loading {self.file_paths[file_idx]} (attempt {attempt+1}): {e}")
@@ -183,49 +175,40 @@ class SpectrogramVAEDataset(Dataset):
                 continue
     
     def _preprocess_spectrogram(self, spectrogram):
-        """Enhanced preprocessing with better error handling"""
-        
-        # Handle complex spectrograms
+        """Enhanced preprocessing for dB-scaled spectrograms"""
+        # Handle complex spectrograms (if any)
         if torch.is_complex(spectrogram):
             spectrogram = torch.abs(spectrogram)
         
-        # Check for problematic values before log transform
+        # Check for problematic values
         if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
             print("Warning: NaN/Inf detected before preprocessing")
             spectrogram = torch.nan_to_num(spectrogram, nan=1e-8, posinf=1e-8, neginf=1e-8)
         
-        # Ensure positive values for log transform
-        spec_min = spectrogram.min().item()
-        if spec_min <= 0:
-            spectrogram = spectrogram - spec_min + 1e-8
+        # Convert dB to power scale: 10^(dB/20)
+        spectrogram = torch.pow(10.0, spectrogram / 20.0)
         
-        # Apply log transform with safety check
-        spectrogram = torch.log(spectrogram + 1e-8)
+        # Add epsilon to avoid log(0)
+        spectrogram = torch.clamp(spectrogram, min=1e-7)
         
-        # Check for NaN after log
-        if torch.isnan(spectrogram).any():
-            print("Warning: NaN after log transform, using fallback")
-            spectrogram = torch.full_like(spectrogram, self.dataset_mean)
+        # Apply log compression (natural log)
+        spectrogram = torch.log(spectrogram)
         
-        # Robust normalization to [0, 1]
+        # Normalize to [0, 1] using dataset statistics
         range_val = self.dataset_max - self.dataset_min
-        
         if range_val > 1e-6:
             spectrogram = (spectrogram - self.dataset_min) / range_val
         else:
-            # Fallback: standardize and then sigmoid
+            # Fallback: standardize and use sigmoid
             spectrogram = (spectrogram - self.dataset_mean) / max(self.dataset_std, 1e-6)
-            spectrogram = torch.sigmoid(spectrogram)  # Maps to [0, 1]
+            spectrogram = torch.sigmoid(spectrogram)
         
-        spectrogram = torch.clamp(spectrogram, 0, 1)
-        
-        # Final safety check
+        # Final safety check and clamp
         if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
             print("WARNING: NaN/Inf in preprocessed spectrogram")
-            # Fallback to random values
-            spectrogram = torch.rand_like(spectrogram) * 0.5 + 0.25
+            spectrogram = torch.zeros_like(spectrogram) + 0.5  # Midpoint value
         
-        return spectrogram
+        return torch.clamp(spectrogram, 0, 1)
 
 
 class SpectrogramDataAugmentation:

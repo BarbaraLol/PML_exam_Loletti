@@ -152,9 +152,11 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             if conditional:
                 data, labels = batch
                 data, labels = data.to(device), labels.to(device)
+                recon_x, mu, logvar, z = model(data, labels)
             else:
-                data, _ = batch
-                data = data.to(device)
+                # For non-conditional, batch is already just the data tensor
+                data = batch.to(device)
+                recon_x, mu, logvar, z = model(data)  # Now correct
             
             optimizer.zero_grad()
             
@@ -331,6 +333,9 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     # print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
     # print(f"Best validation loss: {best_val_loss:.4f}")
 
+def single_item_collate(batch):
+    return torch.stack(batch)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Train Corrected Spectrogram VAE')
@@ -339,7 +344,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--latent_dim', type=int, default=128, help="Latent dimension")
-    parser.add_argument('--beta', type=float, default=0.0.001, help="Beta parameter for β-VAE")
+    parser.add_argument('--beta', type=float, default=0.001, help="Beta parameter for β-VAE")
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
     parser.add_argument('--output_dir', default='vae_results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=20, help="Patience for early stopping")
@@ -397,6 +402,17 @@ def main():
         raise ValueError("Training dataset is empty")
     
     # Create data loaders
+    if not args.conditional:
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            collate_fn=single_item_collate,  # Add this
+            shuffle=True,
+            num_workers=4,
+            pin_memory=True if device.type == 'cuda' else False,
+            drop_last=True
+        )
+
     train_loader = DataLoader(
         train_dataset, 
         batch_size=args.batch_size, 
