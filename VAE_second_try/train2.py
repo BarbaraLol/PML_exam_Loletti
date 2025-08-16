@@ -13,7 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 
 # Import your modules - UPDATED IMPORTS
 from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
-from data_loading import create_vae_datasets, encode_labels, load_file_paths
+from data_loading2 import create_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint
 
 
@@ -343,7 +343,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         weight_decay=1e-5,
         betas=(0.9, 0.999)
     ) 
-    
+
     # Learning rate scheduling with warmup
     total_steps = args.epochs * len(train_loader)
     warmup_steps = int(0.1 * total_steps)  # 10% warmup
