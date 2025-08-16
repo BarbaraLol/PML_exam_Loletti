@@ -42,14 +42,14 @@ class Encoder(nn.Module):
 
             # Residual blocks
             ResidualBlock(32),
-            nn.Conv2d(32, 64, kernel_size = 2, stride=2, padding = 1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2),
+            # nn.Conv2d(32, 64, kernel_size = 2, stride=2, padding = 1),
+            # nn.BatchNorm2d(64),
+            # nn.LeakyReLU(0.2),
             
             ResidualBlock(64),
-            nn.Conv2d(64, 128, kernel_size = 2, stride=2, padding = 1),
-            nn.BatchNorm2d(128), 
-            nn.LeakyReLU(0.2),
+            # nn.Conv2d(64, 128, kernel_size = 2, stride=2, padding = 1),
+            # nn.BatchNorm2d(128), 
+            # nn.LeakyReLU(0.2),
 
             nn.Conv2d(32, 64, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(64),
