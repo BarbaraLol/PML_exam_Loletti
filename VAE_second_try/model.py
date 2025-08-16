@@ -41,12 +41,12 @@ class Encoder(nn.Module):
             nn.LeakyReLU(0.2), 
 
             # Residual blocks
-            ResidualBlock(32),
+            # ResidualBlock(32),
             # nn.Conv2d(32, 64, kernel_size = 2, stride=2, padding = 1),
             # nn.BatchNorm2d(64),
             # nn.LeakyReLU(0.2),
             
-            ResidualBlock(64),
+            # ResidualBlock(64),
             # nn.Conv2d(64, 128, kernel_size = 2, stride=2, padding = 1),
             # nn.BatchNorm2d(128), 
             # nn.LeakyReLU(0.2),
@@ -175,12 +175,12 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(512, 512, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2),
-            ResidualBlock(512),
+            # ResidualBlock(512),
 
             nn.ConvTranspose2d(512, 256, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2),
-            ResidualBlock(256),
+            # ResidualBlock(256),
 
             nn.ConvTranspose2d(256, 128, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(128),
