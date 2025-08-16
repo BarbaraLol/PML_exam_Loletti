@@ -171,7 +171,7 @@ class SpectrogramVAEDataset(Dataset):
                     if self.conditional:
                         return dummy_tensor, torch.tensor(0, dtype=torch.long)
                     else:
-                        return dummy_tensor, dummy_tensor
+                        return dummy_tensor
                 continue
     
     def _preprocess_spectrogram(self, spectrogram):

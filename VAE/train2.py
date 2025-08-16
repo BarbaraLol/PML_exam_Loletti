@@ -11,8 +11,8 @@ import csv
 from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
 
-# Import your modules
-from audio_generation_model import SpectrogramVAE, ConditionalSpectrogramVAE
+# Import your modules - UPDATED IMPORTS
+from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
 from data_loading import create_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint
 
@@ -66,8 +66,13 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
             if conditional:
                 originals = batch[0].to(device)
                 labels = batch[1].to(device)
+                # Get reconstruction - UPDATED CALL
+                reconstructed, _, _ = model(originals, labels)
             else:  # Non-conditional
                 originals = batch.to(device)
+                # Get reconstruction - UPDATED CALL
+                reconstructed, _, _ = model(originals)
+            break
     
     # Adjust number of samples to actual batch size
     num_samples = min(num_samples, originals.size(0))
@@ -100,9 +105,9 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
 
 
 def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-    """Main training loop for VAE"""
+    """Main training loop for VAE - SIMPLIFIED"""
     
-    # Setup optimizer with reasonable parameters
+    # Setup optimizer
     optimizer = optim.Adam(
         model.parameters(), 
         lr=args.lr, 
@@ -143,49 +148,55 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         train_batches = 0
         
         for batch_idx, batch in enumerate(train_loader):
-            if conditional:
-                data, labels = batch
-                data, labels = data.to(device), labels.to(device)
-                recon_x, mu, logvar, z = model(data, labels)
-            else:
-                data = batch.to(device)
-            
-            optimizer.zero_grad()
-            
-            # Forward pass
-            if conditional:
-                recon_x, mu, logvar, z = model(data, labels)
-            else:
-                recon_x, mu, logvar, z = model(data)
-            
-            # Compute loss
-            total_loss, recon_loss, kl_loss = model.loss_function(recon_x, data, mu, logvar)
-            
-            # Check for NaN losses
-            if torch.isnan(total_loss):
-                print(f"NaN loss detected at epoch {epoch}, batch {batch_idx}")
+            try:
+                if conditional:
+                    data, labels = batch
+                    data, labels = data.to(device), labels.to(device)
+                else:
+                    data = batch.to(device)
+                
+                optimizer.zero_grad()
+                
+                # Forward pass - UPDATED CALLS
+                if conditional:
+                    recon_x, mu, logvar = model(data, labels)
+                else:
+                    recon_x, mu, logvar = model(data)
+                
+                # Compute loss - USING MODEL'S BUILT-IN LOSS FUNCTION
+                total_loss, recon_loss, kl_loss = model.loss_function(
+                    recon_x, data, mu, logvar, args.beta
+                )
+                
+                # Check for NaN losses
+                if torch.isnan(total_loss):
+                    print(f"NaN loss detected at epoch {epoch}, batch {batch_idx}")
+                    continue
+                
+                # Backward pass
+                total_loss.backward()
+                
+                # Gradient clipping
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip)
+                
+                optimizer.step()
+                
+                # Accumulate losses
+                train_total_loss += total_loss.item()
+                train_recon_loss += recon_loss.item()
+                train_kl_loss += kl_loss.item()
+                train_batches += 1
+                
+                # Progress updates
+                if batch_idx % 20 == 0:
+                    print(f"Epoch {epoch+1}/{args.epochs} [{batch_idx}/{len(train_loader)}] "
+                          f"Loss: {total_loss.item():.4f} | "
+                          f"Recon: {recon_loss.item():.4f} | "
+                          f"KL: {kl_loss.item():.4f}")
+                          
+            except Exception as e:
+                print(f"Training batch error: {e}")
                 continue
-            
-            # Backward pass
-            total_loss.backward()
-            
-            # Gradient clipping (less aggressive than original)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip)
-            
-            optimizer.step()
-            
-            # Accumulate losses
-            train_total_loss += total_loss.item()
-            train_recon_loss += recon_loss.item()
-            train_kl_loss += kl_loss.item()
-            train_batches += 1
-            
-            # Progress updates
-            if batch_idx % 20 == 0:
-                print(f"Epoch {epoch+1}/{args.epochs} [{batch_idx}/{len(train_loader)}] "
-                      f"Loss: {total_loss.item():.4f} | "
-                      f"Recon: {recon_loss.item():.4f} | "
-                      f"KL: {kl_loss.item():.4f}")
         
         # Average training losses
         if train_batches > 0:
@@ -209,11 +220,24 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                     if conditional:
                         data, labels = batch
                         data, labels = data.to(device), labels.to(device)
-                    else:  # Non-conditional: batch is single tensor
+                        recon_x, mu, logvar = model(data, labels)
+                    else:
                         data = batch.to(device)
+                        recon_x, mu, logvar = model(data)
+                    
+                    # Compute validation loss
+                    total_loss, recon_loss, kl_loss = model.loss_function(
+                        recon_x, data, mu, logvar, beta=args.beta
+                    )
+                    
+                    if not torch.isnan(total_loss):
+                        val_total_loss += total_loss.item()
+                        val_recon_loss += recon_loss.item()
+                        val_kl_loss += kl_loss.item()
+                        val_batches += 1
                         
                 except Exception as e:
-                    print(f"Validation error: {e}")
+                    print(f"Validation batch error: {e}")
                     continue
         
         # Average validation losses
@@ -237,7 +261,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         # Print epoch summary
         print(f"\nEpoch {epoch+1} Summary:")
         print(f"Time: {epoch_time:.2f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
-        print(f"LR: {current_lr:.2e} | Beta: {model.beta:.4f}")
+        print(f"LR: {current_lr:.2e} | Beta: {args.beta:.4f}")
         print(f"Train - Total: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
         print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
         
@@ -252,8 +276,8 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         # Save visualizations periodically
         if (epoch + 1) % 10 == 0 or epoch == 0:
             try:
-                save_sample_outputs(model, device, output_dir, epoch+1, conditional=conditional)
-                plot_reconstruction(model, val_loader, device, output_dir, epoch+1)
+                save_sample_outputs(model, device, output_dir, epoch+1, conditional=conditional, num_classes=getattr(model, 'num_classes', None))
+                plot_reconstruction(model, val_loader, device, output_dir, epoch+1, conditional=conditional)
             except Exception as e:
                 print(f"Error saving visualizations: {e}")
         
@@ -262,7 +286,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             best_val_loss = val_total_loss
             patience_counter = 0
             
-            # Save best model
+            # # Save best model
             # torch.save({
             #     'epoch': epoch+1,
             #     'model_state_dict': model.state_dict(),
@@ -306,24 +330,22 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     #     }
     # }, os.path.join(output_dir, 'final_vae_model.pth'))
     
-    # print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
-    # print(f"Best validation loss: {best_val_loss:.4f}")
-
-def single_item_collate(batch):
-    return torch.stack(batch)
+    print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
+    print(f"Best validation loss: {best_val_loss:.4f}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train Corrected Spectrogram VAE')
+    parser = argparse.ArgumentParser(description='Train Simple Spectrogram VAE')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")
+    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  # Reduced default
     parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
-    parser.add_argument('--latent_dim', type=int, default=128, help="Latent dimension")
+    parser.add_argument('--latent_dim', type=int, default=256, help="Latent dimension")  # Reduced default
     parser.add_argument('--beta', type=float, default=0.001, help="Beta parameter for β-VAE")
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
-    parser.add_argument('--output_dir', default='vae_results', help="Directory to save outputs")
-    parser.add_argument('--patience', type=int, default=20, help="Patience for early stopping")
+    parser.add_argument('--embed_dim', type=int, default=50, help="Label embedding dimension")
+    parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
+    parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")
     parser.add_argument('--weight_decay', type=float, default=1e-4, help="Weight decay for optimizer")
     parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")
@@ -335,7 +357,7 @@ def main():
     
     # Create output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = os.path.join(args.output_dir, f"vae_experiment_{timestamp}")
+    output_dir = os.path.join(args.output_dir, f"simple_vae_experiment_{timestamp}")
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}")
     
@@ -382,7 +404,7 @@ def main():
         train_dataset, 
         batch_size=args.batch_size, 
         shuffle=True, 
-        num_workers=4,
+        num_workers=2,  # Reduced for stability
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=True
     )
@@ -391,52 +413,49 @@ def main():
         val_dataset, 
         batch_size=args.batch_size, 
         shuffle=False,
-        num_workers=4,
+        num_workers=2,  # Reduced for stability
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=False
     )
     
-    # Initialize model
+    # Initialize model - UPDATED MODEL INITIALIZATION
     print(f"Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
+    print(f"Input shape for model: {spectrogram_shape} (type: {type(spectrogram_shape)})")
     
     try:
         if args.conditional and num_classes > 0:
-            model = ConditionalSpectrogramVAE(
+            model = ConditionalVariationalAutoEncoder(
                 input_shape=spectrogram_shape,
-                num_classes=num_classes,
                 latent_dim=args.latent_dim,
-                beta=args.beta
+                num_classes=num_classes,
+                embed_dim=args.embed_dim
             ).to(device)
         else:
-            model = SpectrogramVAE(
+            spectrogram_shape = (1, 1025, 469)
+            model = VariationalAutoEncoder(
                 input_shape=spectrogram_shape,
-                latent_dim=args.latent_dim,
-                beta=args.beta
+                latent_dim=args.latent_dim
             ).to(device)
     except Exception as e:
         print(f"Error initializing model: {e}")
+        import traceback
+        traceback.print_exc()
         return
     
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     
     # Save model configuration
     with open(os.path.join(output_dir, 'model_config.txt'), 'w') as f:
-        f.write(f"Corrected VAE Configuration\n")
-        f.write(f"============================\n")
+        f.write(f"Simple VAE Configuration\n")
+        f.write(f"========================\n")
         f.write(f"Model Type: {'Conditional' if args.conditional else 'Standard'} VAE\n")
         f.write(f"Input Shape: {spectrogram_shape}\n")
         f.write(f"Latent Dimension: {args.latent_dim}\n")
         f.write(f"Beta: {args.beta}\n")
         f.write(f"Number of Classes: {num_classes}\n")
+        if args.conditional:
+            f.write(f"Embedding Dimension: {args.embed_dim}\n")
         f.write(f"Total Parameters: {sum(p.numel() for p in model.parameters()):,}\n")
-        f.write(f"\nTraining Arguments:\n")
-        f.write(f"Batch Size: {args.batch_size}\n")
-        f.write(f"Learning Rate: {args.lr}\n")
-        f.write(f"Weight Decay: {args.weight_decay}\n")
-        f.write(f"Gradient Clipping: {args.grad_clip}\n")
-        f.write(f"Epochs: {args.epochs}\n")
-        f.write(f"Data Augmentation: {args.augment}\n")
-        f.write(f"Early Stopping Patience: {args.patience}\n")
         
         if label_encoder:
             f.write(f"\nClass Labels: {list(label_encoder.classes_)}\n")
@@ -455,7 +474,7 @@ def main():
     try:
         save_sample_outputs(model, device, output_dir, "final", num_samples=16, 
                            conditional=args.conditional, num_classes=num_classes)
-        plot_reconstruction(model, val_loader, device, output_dir, "final")
+        plot_reconstruction(model, val_loader, device, output_dir, "final", conditional=args.conditional)
     except Exception as e:
         print(f"Error generating final samples: {e}")
     

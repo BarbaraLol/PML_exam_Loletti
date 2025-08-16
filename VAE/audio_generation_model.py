@@ -12,7 +12,11 @@ class SpectrogramEncoder(nn.Module):
 
         # Convolutional encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 64, 4, stride=2, padding=1),
+            nn.Conv2d(1, 32, 4, stride=2, padding=1),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.2),
+            
+            nn.Conv2d(32, 64, 4, stride=2, padding=1),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2),
 
@@ -238,13 +242,16 @@ class SpectrogramVAE(nn.Module):
         
     #     return total_loss, recon_loss, kl_loss
     def loss_function(self, recon_x, x, mu, logvar):
-        # Reconstruction loss (binary cross entropy)
-        BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
+        mse_loss = F.mse_loss(recon_x, x, reduction='mean')
+        l1_loss = F.l1_loss(recon_x, x, reduction='mean')
+        recon_loss = 0.8 * mse_loss + 0.2 * l1_loss
         
-        # KL divergence
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        
-        return BCE + self.beta * KLD
+        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+        kl_loss = torch.mean(kl_loss)
+
+        total_loss = recon_loss + self.beta * kl_loss
+        return total_loss, recon_loss, kl_loss
+
 
     def sample(self, num_samples, device='cpu'):
         with torch.no_grad():
