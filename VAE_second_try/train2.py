@@ -564,8 +564,8 @@ def main():
     parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  # Reduced default
     parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
-    parser.add_argument('--latent_dim', type=int, default=256, help="Latent dimension")  # Reduced default
-    parser.add_argument('--beta', type=float, default=0.1, help="Beta parameter for β-VAE")
+    parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")  # Reduced default
+    parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") # 0.001 previously
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
     parser.add_argument('--embed_dim', type=int, default=50, help="Label embedding dimension")
     parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")

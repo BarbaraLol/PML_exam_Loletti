@@ -319,7 +319,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
             z_conditioned = torch.cat([z, label_embed], dim=1)
             samples = self.decoder(z_conditioned)
             
-            return samples
+            return samples 
 
     def encode(self, x, class_labels):
         pass
