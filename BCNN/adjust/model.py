@@ -13,16 +13,16 @@ class BayesianChickCallDetector(nn.Module):
         self.input_shape = in_features
 
         # Bayesian convolutional layers with batch normalization
-        self.conv1 = BayesianConv2d(1, 16, kernel_size=3, padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
+        self.conv1 = BayesianConv2d(1, 16, kernel_size=(3, 3), padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
         self.bn1 = nn.BatchNorm2d(16)
         
-        self.conv2 = BayesianConv2d(16, 32, kernel_size=3, padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
+        self.conv2 = BayesianConv2d(16, 32, kernel_size=(3, 3), padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
         self.bn2 = nn.BatchNorm2d(32)
         
-        self.conv3 = BayesianConv2d(32, 64, kernel_size=3, padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
+        self.conv3 = BayesianConv2d(32, 64, kernel_size=(3, 3), padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
         self.bn3 = nn.BatchNorm2d(64)
         
-        self.conv4 = BayesianConv2d(64, 128, kernel_size=3, padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
+        self.conv4 = BayesianConv2d(64, 128, kernel_size=(3, 3), padding=1, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
         self.bn4 = nn.BatchNorm2d(128)
 
         # Calculate flattened size after convolutions
@@ -46,10 +46,10 @@ class BayesianChickCallDetector(nn.Module):
             dummy = torch.zeros(1, 1, *shape)
             
             # Apply same operations as forward pass
-            x = F.max_pool2d(F.relu(self.bn1(self.conv1(dummy))), 2)
-            x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), 2)
-            x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), 2)
-            x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), 2)
+            x = F.max_pool2d(F.relu(self.bn1(self.conv1(dummy))), (2, 2))
+            x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), (2, 2))
+            x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), (2, 2))
+            x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), (2, 2))
             
             return x.view(1, -1).size(1)
 
@@ -61,10 +61,10 @@ class BayesianChickCallDetector(nn.Module):
             x = x.unsqueeze(1)
 
         # Bayesian feature extraction with batch normalization
-        x = F.max_pool2d(F.relu(self.bn1(self.conv1(x))), 2)  # /2
-        x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), 2)  # /4
-        x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), 2)  # /8
-        x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), 2)  # /16
+        x = F.max_pool2d(F.relu(self.bn1(self.conv1(x))), (2, 2))  # /2
+        x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), (2, 2))  # /4
+        x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), (2, 2))  # /8
+        x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), (2, 2))  # /16
 
         x = self.dropout1(x)
 

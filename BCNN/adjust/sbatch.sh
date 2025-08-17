@@ -4,6 +4,7 @@
 #SBATCH --output=logs/%x_%j.out        # Stdout (%x=job-name, %j=job-id)
 #SBATCH --error=logs/%x_%j.err         # Stderr
 #SBATCH --partition=GPU                # GPU partition
+#SBATCH --gres=gpu:1
 #SBATCH --nodes=1                      # Run on a single node
 #SBATCH --ntasks-per-node=1            # One task per node
 #SBATCH --cpus-per-task=24              # Number of CPU cores per task
