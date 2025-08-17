@@ -453,34 +453,46 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train Simple Spectrogram VAE')
+    parser = argparse.ArgumentParser(description='Enhanced VAE Training with Checkpointing')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  # Reduced default
-    parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
-    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
-    parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")  # Reduced default
-    parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") # 0.001 previously
+    parser.add_argument('--batch_size', type=int, default=8, help="Batch size for training")
+    parser.add_argument('--epochs', type=int, default=150, help="Number of training epochs")
+    parser.add_argument('--lr', type=float, default=5e-5, help="Learning rate")
+    parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")
+    parser.add_argument('--beta', type=float, default=0.005, help="Beta parameter for β-VAE")
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
-    parser.add_argument('--embed_dim', type=int, default=50, help="Label embedding dimension")
-    parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
-    parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
+    parser.add_argument('--embed_dim', type=int, default=100, help="Label embedding dimension")
+    parser.add_argument('--output_dir', default='enhanced_vae_results', help="Directory to save outputs")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")
-    parser.add_argument('--weight_decay', type=float, default=1e-4, help="Weight decay for optimizer")
     parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")
+    
+    # Checkpointing arguments
+    parser.add_argument('--resume', type=str, default=None, 
+                        help="Resume from checkpoint (path or 'auto' for latest)")
+    parser.add_argument('--checkpoint_freq', type=int, default=10, 
+                        help="Save checkpoint every N epochs")
+    parser.add_argument('--sample_freq', type=int, default=10, 
+                        help="Generate samples every N epochs")
+    
     args = parser.parse_args()
 
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    print(f"🚀 Using device: {device}")
     
     # Create output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = os.path.join(args.output_dir, f"simple_vae_experiment_{timestamp}")
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"Output directory: {output_dir}")
+    if args.resume and args.resume != 'auto':
+        # Use existing directory if resuming from specific checkpoint
+        output_dir = os.path.dirname(args.resume)
+    else:
+        output_dir = os.path.join(args.output_dir, f"vae_experiment_{timestamp}")
+        os.makedirs(output_dir, exist_ok=True)
+    
+    print(f"📁 Output directory: {output_dir}")
     
     # Data loading
-    print("Loading data...")
+    print("📊 Loading data...")
     file_paths = load_file_paths(args.data_dir)
     print(f"Found {len(file_paths)} spectrogram files")
     
@@ -494,9 +506,9 @@ def main():
         if labels:
             label_encoder = LabelEncoder()
             label_encoder.fit(labels)
-            print(f"Found {len(label_encoder.classes_)} classes: {label_encoder.classes_}")
+            print(f"🏷️ Found {len(label_encoder.classes_)} classes: {label_encoder.classes_}")
         else:
-            print("Warning: No labels found, switching to standard VAE")
+            print("⚠️ No labels found, switching to standard VAE")
             args.conditional = False
     
     # Create datasets
@@ -508,21 +520,18 @@ def main():
             augment=args.augment
         )
     except Exception as e:
-        print(f"Error creating datasets: {e}")
+        print(f"❌ Error creating datasets: {e}")
         return
     
-    print(f"Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
-    print(f"Spectrogram shape: {spectrogram_shape}")
-    
-    if len(train_dataset) == 0:
-        raise ValueError("Training dataset is empty")
+    print(f"📈 Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
+    print(f"🎼 Spectrogram shape: {spectrogram_shape}")
     
     # Create data loaders
     train_loader = DataLoader(
         train_dataset, 
         batch_size=args.batch_size, 
         shuffle=True, 
-        num_workers=2,  # Reduced for stability
+        num_workers=2,
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=True
     )
@@ -531,14 +540,13 @@ def main():
         val_dataset, 
         batch_size=args.batch_size, 
         shuffle=False,
-        num_workers=2,  # Reduced for stability
+        num_workers=2,
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=False
     )
     
-    # Initialize model - UPDATED MODEL INITIALIZATION
-    print(f"Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
-    print(f"Input shape for model: {spectrogram_shape} (type: {type(spectrogram_shape)})")
+    # Initialize model
+    print(f"🧠 Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
     
     try:
         if args.conditional and num_classes > 0:
@@ -549,54 +557,31 @@ def main():
                 embed_dim=args.embed_dim
             ).to(device)
         else:
-            spectrogram_shape = (1, 1025, 469)
             model = VariationalAutoEncoder(
                 input_shape=spectrogram_shape,
-                latent_dim=args.latent_dim
+                latent_dim=args.latent_dim,
+                beta=args.beta
             ).to(device)
     except Exception as e:
-        print(f"Error initializing model: {e}")
+        print(f"❌ Error initializing model: {e}")
         import traceback
         traceback.print_exc()
         return
     
-    print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
-    
-    # Save model configuration
-    with open(os.path.join(output_dir, 'model_config.txt'), 'w') as f:
-        f.write(f"Simple VAE Configuration\n")
-        f.write(f"========================\n")
-        f.write(f"Model Type: {'Conditional' if args.conditional else 'Standard'} VAE\n")
-        f.write(f"Input Shape: {spectrogram_shape}\n")
-        f.write(f"Latent Dimension: {args.latent_dim}\n")
-        f.write(f"Beta: {args.beta}\n")
-        f.write(f"Number of Classes: {num_classes}\n")
-        if args.conditional:
-            f.write(f"Embedding Dimension: {args.embed_dim}\n")
-        f.write(f"Total Parameters: {sum(p.numel() for p in model.parameters()):,}\n")
-        
-        if label_encoder:
-            f.write(f"\nClass Labels: {list(label_encoder.classes_)}\n")
+    print(f"📊 Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     
     # Start training
     try:
-        train_vae(model, train_loader, val_loader, device, args, output_dir, args.conditional)
+        train_vae_with_checkpoints(model, train_loader, val_loader, device, args, output_dir, args.conditional)
+    except KeyboardInterrupt:
+        print(f"\n⚠️ Training interrupted by user")
     except Exception as e:
-        print(f"Training error: {e}")
+        print(f"❌ Training error: {e}")
         import traceback
         traceback.print_exc()
         return
     
-    # Generate final samples
-    print("Generating final sample outputs...")
-    try:
-        save_sample_outputs(model, device, output_dir, "final", num_samples=16, 
-                           conditional=args.conditional, num_classes=num_classes)
-        plot_reconstruction(model, val_loader, device, output_dir, "final", conditional=args.conditional)
-    except Exception as e:
-        print(f"Error generating final samples: {e}")
-    
-    print(f"Training complete! Results saved in: {output_dir}")
+    print(f"✅ Training complete! Results saved in: {output_dir}")
 
 
 if __name__ == "__main__":
