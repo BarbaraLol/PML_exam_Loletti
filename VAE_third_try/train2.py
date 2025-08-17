@@ -135,20 +135,20 @@ def save_checkpoint_enhanced(model, optimizer, scheduler, epoch, val_loss, best_
     if is_best:
         best_path = os.path.join(output_dir, 'best_model.pth')
         torch.save(checkpoint, best_path)
-        print(f"✅ Saved best model at epoch {epoch} with val loss: {val_loss:.4f}")
+        print(f"Saved best model at epoch {epoch} with val loss: {val_loss:.4f}")
     
     # Save latest checkpoint (for easy resuming)
     latest_path = os.path.join(output_dir, 'latest_checkpoint.pth')
     torch.save(checkpoint, latest_path)
     
-    print(f"💾 Checkpoint saved: epoch {epoch}")
+    print(f"Checkpoint saved: epoch {epoch}")
     
     return checkpoint_path
 
 
 def load_checkpoint(checkpoint_path, model, optimizer, scheduler, device):
     """Load checkpoint and return training state"""
-    print(f"🔄 Loading checkpoint from: {checkpoint_path}")
+    print(f"Loading checkpoint from: {checkpoint_path}")
     
     checkpoint = torch.load(checkpoint_path, map_location=device)
     
@@ -167,9 +167,9 @@ def load_checkpoint(checkpoint_path, model, optimizer, scheduler, device):
     global_step = checkpoint.get('global_step', 0)
     best_val_loss = checkpoint.get('best_val_loss', float('inf'))
     
-    print(f"✅ Resumed from epoch {start_epoch}")
-    print(f"   Global step: {global_step}")
-    print(f"   Best val loss: {best_val_loss:.4f}")
+    print(f"Resumed from epoch {start_epoch}")
+    print(f"Global step: {global_step}")
+    print(f"Best val loss: {best_val_loss:.4f}")
     
     return start_epoch, global_step, best_val_loss
 
@@ -234,7 +234,7 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
                     checkpoint_path, model, optimizer, scheduler, device
                 )
             else:
-                print("🔍 No checkpoint found, starting fresh")
+                print("No checkpoint found, starting fresh")
         else:
             # Use specified checkpoint
             if os.path.exists(args.resume):
@@ -242,7 +242,7 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
                     args.resume, model, optimizer, scheduler, device
                 )
             else:
-                print(f"❌ Checkpoint not found: {args.resume}")
+                print(f"Checkpoint not found: {args.resume}")
                 return
     
     # Training logs
@@ -269,11 +269,11 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
     
     start_time = time.time()
     
-    print(f"\n🚀 {'Resuming' if start_epoch > 0 else 'Starting'} training:")
-    print(f"📊 Epochs: {start_epoch + 1} to {args.epochs}")
-    print(f"🎯 Target beta: {args.beta}")
-    print(f"📈 Best val loss so far: {best_val_loss:.4f}")
-    print(f"💾 Checkpoints every {args.checkpoint_freq} epochs")
+    print(f"\n{'Resuming' if start_epoch > 0 else 'Starting'} training:")
+    print(f"Epochs: {start_epoch + 1} to {args.epochs}")
+    print(f"Target beta: {args.beta}")
+    print(f"Best val loss so far: {best_val_loss:.4f}")
+    print(f"Checkpoints every {args.checkpoint_freq} epochs")
     
     for epoch in range(start_epoch, args.epochs):
         epoch_start = time.time()
@@ -332,10 +332,10 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
                     current_lr = optimizer.param_groups[0]['lr']
                     elapsed = time.time() - start_time
                     
-                    print(f"📊 Epoch {epoch+1} Batch {batch_idx}:")
-                    print(f"   LR: {current_lr:.2e} | β: {current_beta:.4f}")
-                    print(f"   Loss: {total_loss.item():.4f} (R: {recon_loss.item():.4f}, KL: {kl_loss.item():.4f})")
-                    print(f"   Grad: {grad_norm:.3f} | Step: {global_step}")
+                    print(f"Epoch {epoch+1} Batch {batch_idx}:")
+                    print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
+                    print(f"Loss: {total_loss.item():.4f} (R: {recon_loss.item():.4f}, KL: {kl_loss.item():.4f})")
+                    print(f"Grad: {grad_norm:.3f} | Step: {global_step}")
                     
                     # Log latent stats
                     if batch_idx % 100 == 0:
@@ -353,7 +353,7 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
                             ])
                 
             except Exception as e:
-                print(f"❌ Training batch error: {e}")
+                print(f"Training batch error: {e}")
                 continue
         
         # Validation phase
@@ -382,7 +382,7 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
                     val_batches += 1
                     
                 except Exception as e:
-                    print(f"❌ Validation batch error: {e}")
+                    print(f"Validation batch error: {e}")
                     continue
         
         # Calculate averages
@@ -397,12 +397,12 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
         
         # Epoch summary
         print(f"\n{'='*60}")
-        print(f"📈 EPOCH {epoch+1}/{args.epochs} SUMMARY")
+        print(f"EPOCH {epoch+1}/{args.epochs} SUMMARY")
         print(f"{'='*60}")
-        print(f"⏱️  Time: {epoch_time:.1f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
-        print(f"📊 Train Loss: {train_losses['total']:.4f} (R: {train_losses['recon']:.4f}, KL: {train_losses['kl']:.4f})")
-        print(f"📊 Val Loss:   {val_losses['total']:.4f} (R: {val_losses['recon']:.4f}, KL: {val_losses['kl']:.4f})")
-        print(f"⚙️  LR: {current_lr:.2e} | β: {current_beta:.4f}")
+        print(f"Time: {epoch_time:.1f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
+        print(f"Train Loss: {train_losses['total']:.4f} (R: {train_losses['recon']:.4f}, KL: {train_losses['kl']:.4f})")
+        print(f"Val Loss:   {val_losses['total']:.4f} (R: {val_losses['recon']:.4f}, KL: {val_losses['kl']:.4f})")
+        print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
         
         # Log to CSV
         with open(log_file, 'a') as f:
@@ -433,23 +433,23 @@ def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, ou
                                   num_classes=getattr(model, 'num_classes', None))
                 plot_reconstruction(model, val_loader, device, output_dir, epoch+1, 
                                   conditional=conditional)
-                print("🎨 Generated sample visualizations")
+                print("Generated sample visualizations")
             except Exception as e:
-                print(f"❌ Error generating samples: {e}")
+                print(f"Error generating samples: {e}")
         
         # Early stopping check
         patience_epochs = getattr(args, 'patience', 50)
         if epoch - (best_val_loss_epoch if 'best_val_loss_epoch' in locals() else 0) > patience_epochs:
-            print(f"🛑 Early stopping: no improvement for {patience_epochs} epochs")
+            print(f"Early stopping: no improvement for {patience_epochs} epochs")
             break
         
         if is_best:
             best_val_loss_epoch = epoch
     
-    print(f"\n🎉 Training completed!")
-    print(f"⏱️  Total time: {total_time//60:.0f}m {total_time%60:.0f}s")
-    print(f"🏆 Best validation loss: {best_val_loss:.4f}")
-    print(f"💾 Final checkpoint saved in: {output_dir}")
+    print(f"\nTraining completed!")
+    print(f"Total time: {total_time//60:.0f}m {total_time%60:.0f}s")
+    print(f"Best validation loss: {best_val_loss:.4f}")
+    print(f"Final checkpoint saved in: {output_dir}")
 
 
 def main():
@@ -478,7 +478,7 @@ def main():
 
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"🚀 Using device: {device}")
+    print(f"Using device: {device}")
     
     # Create output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -492,7 +492,7 @@ def main():
     print(f"📁 Output directory: {output_dir}")
     
     # Data loading
-    print("📊 Loading data...")
+    print("Loading data...")
     file_paths = load_file_paths(args.data_dir)
     print(f"Found {len(file_paths)} spectrogram files")
     
@@ -506,9 +506,9 @@ def main():
         if labels:
             label_encoder = LabelEncoder()
             label_encoder.fit(labels)
-            print(f"🏷️ Found {len(label_encoder.classes_)} classes: {label_encoder.classes_}")
+            print(f"Found {len(label_encoder.classes_)} classes: {label_encoder.classes_}")
         else:
-            print("⚠️ No labels found, switching to standard VAE")
+            print("No labels found, switching to standard VAE")
             args.conditional = False
     
     # Create datasets
@@ -520,11 +520,11 @@ def main():
             augment=args.augment
         )
     except Exception as e:
-        print(f"❌ Error creating datasets: {e}")
+        print(f"Error creating datasets: {e}")
         return
     
-    print(f"📈 Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
-    print(f"🎼 Spectrogram shape: {spectrogram_shape}")
+    print(f"Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
+    print(f"Spectrogram shape: {spectrogram_shape}")
     
     # Create data loaders
     train_loader = DataLoader(
@@ -546,7 +546,7 @@ def main():
     )
     
     # Initialize model
-    print(f"🧠 Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
+    print(f"Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
     
     try:
         if args.conditional and num_classes > 0:
@@ -563,25 +563,25 @@ def main():
                 beta=args.beta
             ).to(device)
     except Exception as e:
-        print(f"❌ Error initializing model: {e}")
+        print(f"Error initializing model: {e}")
         import traceback
         traceback.print_exc()
         return
     
-    print(f"📊 Model parameters: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     
     # Start training
     try:
         train_vae_with_checkpoints(model, train_loader, val_loader, device, args, output_dir, args.conditional)
     except KeyboardInterrupt:
-        print(f"\n⚠️ Training interrupted by user")
+        print(f"\nTraining interrupted by user")
     except Exception as e:
-        print(f"❌ Training error: {e}")
+        print(f"Training error: {e}")
         import traceback
         traceback.print_exc()
         return
     
-    print(f"✅ Training complete! Results saved in: {output_dir}")
+    print(f"Training complete! Results saved in: {output_dir}")
 
 
 if __name__ == "__main__":
