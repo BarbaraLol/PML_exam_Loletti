@@ -1,0 +1,3 @@
+[2025-08-17 09:20:08] Training started with args: {'data_dir': '../Chicks_Automatic_Detection_dataset_orfeo/Processed_Data_10sec/audio_segments/', 'target_shape': (1025, 469), 'normalize_per_sample': False, 'latent_dim': 512, 'beta': 0.1, 'conditional': False, 'embed_dim': 128, 'batch_size': 8, 'epochs': 150, 'lr': 0.0002, 'warmup_epochs': 15, 'patience': 25, 'grad_clip': 1.0, 'augment': False, 'strong_augment': False, 'output_dir': 'enhanced_vae_results', 'resume': None, 'inspect_data': False}
+[2025-08-17 09:20:45] Datasets created - Train: 7382, Val: 1581, Test: 1583
+[2025-08-17 09:20:45] Model initialization failed: name 'ImprovedVariationalAutoEncoder' is not defined
