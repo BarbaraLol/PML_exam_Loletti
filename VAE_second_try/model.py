@@ -22,7 +22,7 @@ class ResidualBlock(nn.Module):
 
 class Encoder(nn.Module):
     """Encoder part of the VAE"""
-    def __init__(self, input_shape, latent_dim=512):
+    def __init__(self, input_shape, latent_dim=1024):
         super(Encoder, self).__init__()
         # self.input_shape = input_shape
         # Ensure input_shape is (channels, height, width)
@@ -145,7 +145,7 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     """Decoder part of the VAE"""
-    def __init__(self, output_shape, encoder_shape, latent_dim=512):
+    def __init__(self, output_shape, encoder_shape, latent_dim=1024):
         super(Decoder, self).__init__()
         self.output_shape = output_shape
         self.latent_dim = latent_dim
@@ -216,7 +216,7 @@ class Decoder(nn.Module):
 
 class VariationalAutoEncoder(nn.Module):
     """Variationa Autoencoder form spectrograms"""
-    def __init__(self, input_shape, latent_dim = 512, beta = 1.0): # beta
+    def __init__(self, input_shape, latent_dim = 1024, beta = 1.0): # beta
         super(VariationalAutoEncoder, self).__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
@@ -279,7 +279,7 @@ class VariationalAutoEncoder(nn.Module):
 
 class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
     """VAE that is able to generate spectrograms for specific lables"""
-    def __init__(self, input_shape, latent_dim = 512, num_classes = 3, embed_dim=100):
+    def __init__(self, input_shape, latent_dim = 1024, num_classes = 3, embed_dim=100):
         super().__init__(input_shape, latent_dim)
         self.num_classes = num_classes
         self.embed_dim = embed_dim
