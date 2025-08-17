@@ -105,240 +105,101 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
                dpi=150, bbox_inches='tight')
     plt.close()
 
+def save_checkpoint_enhanced(model, optimizer, scheduler, epoch, val_loss, best_val_loss, 
+                           args, global_step, output_dir, is_best=False):
+    """Enhanced checkpoint saving with all training state"""
+    checkpoint = {
+        'epoch': epoch,
+        'global_step': global_step,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
+        'val_loss': val_loss,
+        'best_val_loss': best_val_loss,
+        'args': vars(args),
+        'model_config': {
+            'input_shape': model.input_shape,
+            'latent_dim': model.latent_dim,
+            'beta': model.beta,
+            'conditional': hasattr(model, 'num_classes'),
+            'num_classes': getattr(model, 'num_classes', None)
+        },
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    # Save regular checkpoint
+    checkpoint_path = os.path.join(output_dir, f'checkpoint_epoch_{epoch}.pth')
+    torch.save(checkpoint, checkpoint_path)
+    
+    # Save best model separately
+    if is_best:
+        best_path = os.path.join(output_dir, 'best_model.pth')
+        torch.save(checkpoint, best_path)
+        print(f"✅ Saved best model at epoch {epoch} with val loss: {val_loss:.4f}")
+    
+    # Save latest checkpoint (for easy resuming)
+    latest_path = os.path.join(output_dir, 'latest_checkpoint.pth')
+    torch.save(checkpoint, latest_path)
+    
+    print(f"💾 Checkpoint saved: epoch {epoch}")
+    
+    return checkpoint_path
 
-# def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-#     """Main training loop for VAE - SIMPLIFIED"""
-    
-#     # Setup optimizer
-#     optimizer = optim.Adam(
-#         model.parameters(), 
-#         lr=args.lr, 
-#         weight_decay=args.weight_decay,
-#         betas=(0.9, 0.999)
-#     )
-    
-#     # Learning rate scheduler
-#     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-#         optimizer, mode='min', factor=0.8, patience=10, min_lr=1e-6
-#     )
-    
-#     # Training log
-#     log_file = os.path.join(output_dir, "vae_training_log.csv")
-#     with open(log_file, 'w', newline='') as f:
-#         writer = csv.writer(f)
-#         writer.writerow(['epoch', 'train_loss', 'train_recon_loss', 'train_kl_loss', 
-#                         'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'time_elapsed'])
-    
-#     # Training state
-#     best_val_loss = float('inf')
-#     patience_counter = 0
-#     start_time = time.time()
-    
-#     print("Starting VAE training...")
-#     print(f"Model: {'Conditional' if conditional else 'Standard'} VAE")
-#     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
-#     print(f"Beta: {args.beta}")
-    
-#     for epoch in range(args.epochs):
-#         epoch_start = time.time()
-        
-#         # Training phase
-#         model.train()
-#         train_total_loss = 0
-#         train_recon_loss = 0  
-#         train_kl_loss = 0
-#         train_batches = 0
-        
-#         for batch_idx, batch in enumerate(train_loader):
-#             try:
-#                 if conditional:
-#                     data, labels = batch
-#                     data, labels = data.to(device), labels.to(device)
-#                 else:
-#                     data = batch.to(device)
-                
-#                 optimizer.zero_grad()
-                
-#                 # Forward pass - UPDATED CALLS
-#                 if conditional:
-#                     recon_x, mu, logvar = model(data, labels)
-#                 else:
-#                     recon_x, mu, logvar = model(data)
-                
-#                 # Compute loss - USING MODEL'S BUILT-IN LOSS FUNCTION
-#                 total_loss, recon_loss, kl_loss = model.loss_function(
-#                     recon_x, data, mu, logvar, args.beta
-#                 )
-                
-#                 # Check for NaN losses
-#                 if torch.isnan(total_loss):
-#                     print(f"NaN loss detected at epoch {epoch}, batch {batch_idx}")
-#                     continue
-                
-#                 # Backward pass
-#                 total_loss.backward()
-                
-#                 # Gradient clipping
-#                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip)
-                
-#                 optimizer.step()
-                
-#                 # Accumulate losses
-#                 train_total_loss += total_loss.item()
-#                 train_recon_loss += recon_loss.item()
-#                 train_kl_loss += kl_loss.item()
-#                 train_batches += 1
-                
-#                 # Progress updates
-#                 if batch_idx % 20 == 0:
-#                     print(f"Epoch {epoch+1}/{args.epochs} [{batch_idx}/{len(train_loader)}] "
-#                           f"Loss: {total_loss.item():.4f} | "
-#   VAE_second_try/train2.py                        f"Recon: {recon_loss.item():.4f} | "
-#                           f"KL: {kl_loss.item():.4f}")
-                          
-#             except Exception as e:
-#                 print(f"Training batch error: {e}")
-#                 continue
-        
-#         # Average training losses
-#         if train_batches > 0:
-#             train_total_loss /= train_batches
-#             train_recon_loss /= train_batches
-#             train_kl_loss /= train_batches
-#         else:
-#             print(f"No valid batches in epoch {epoch+1}")
-#             continue
-        
-#         # Validation phase
-#         model.eval()
-#         val_total_loss = 0
-#         val_recon_loss = 0
-#         val_kl_loss = 0
-#         val_batches = 0
-        
-#         with torch.no_grad():
-#             for batch in val_loader:
-#                 try:
-#                     if conditional:
-#                         data, labels = batch
-#                         data, labels = data.to(device), labels.to(device)
-#                         recon_x, mu, logvar = model(data, labels)
-#                     else:
-#                         data = batch.to(device)
-#                         recon_x, mu, logvar = model(data)
-                    
-#                     # Compute validation loss
-#                     total_loss, recon_loss, kl_loss = model.loss_function(
-#                         recon_x, data, mu, logvar, beta=args.beta
-#                     )
-                    
-#                     if not torch.isnan(total_loss):
-#                         val_total_loss += total_loss.item()
-#                         val_recon_loss += recon_loss.item()
-#                         val_kl_loss += kl_loss.item()
-#                         val_batches += 1
-                        
-#                 except Exception as e:
-#                     print(f"Validation batch error: {e}")
-#                     continue
-        
-#         # Average validation losses
-#         if val_batches > 0:
-#             val_total_loss /= val_batches
-#             val_recon_loss /= val_batches
-#             val_kl_loss /= val_batches
-#         else:
-#             val_total_loss = val_recon_loss = val_kl_loss = float('nan')
-        
-#         # Update learning rate
-#         if not np.isnan(val_total_loss):
-#             scheduler.step(val_total_loss)
-        
-#         current_lr = optimizer.param_groups[0]['lr']
-        
-#         # Time tracking
-#         epoch_time = time.time() - epoch_start
-#         total_time = time.time() - start_time
-        
-#         # Print epoch summary
-#         print(f"\nEpoch {epoch+1} Summary:")
-#         print(f"Time: {epoch_time:.2f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
-#         print(f"LR: {current_lr:.2e} | Beta: {args.beta:.4f}")
-#         print(f"Train - Total: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
-#         print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
-        
-#         # Log to CSV
-#         with open(log_file, 'a', newline='') as f:
-#             writer = csv.writer(f)
-#             writer.writerow([
-#                 epoch+1, train_total_loss, train_recon_loss, train_kl_loss,
-#                 val_total_loss, val_recon_loss, val_kl_loss, current_lr, total_time
-#             ])
-        
-#         # Save visualizations periodically
-#         if (epoch + 1) % 10 == 0 or epoch == 0:
-#             try:
-#                 save_sample_outputs(model, device, output_dir, epoch+1, conditional=conditional, num_classes=getattr(model, 'num_classes', None))
-#                 plot_reconstruction(model, val_loader, device, output_dir, epoch+1, conditional=conditional)
-#             except Exception as e:
-#                 print(f"Error saving visualizations: {e}")
-        
-#         # Model saving and early stopping
-#         if not np.isnan(val_total_loss) and val_total_loss < best_val_loss:
-#             best_val_loss = val_total_loss
-#             patience_counter = 0
-            
-#             # # Save best model
-#             # torch.save({
-#             #     'epoch': epoch+1,
-#             #     'model_state_dict': model.state_dict(),
-#             #     'optimizer_state_dict': optimizer.state_dict(),
-#             #     'val_loss': val_total_loss,
-#             #     'best_val_loss': best_val_loss,
-#             #     'model_config': {
-#             #         'input_shape': model.input_shape,
-#             #         'latent_dim': model.latent_dim,
-#             #         'beta': args.beta,
-#             #         'conditional': conditional,
-#             #         'num_classes': getattr(model, 'num_classes', None)
-#             #     }
-#             # }, os.path.join(output_dir, 'best_vae_model.pth'))
-            
-#             # print(f"✓ Saved best model at epoch {epoch+1} with val loss: {val_total_loss:.4f}")
-#         else:
-#             patience_counter += 1
-#             if patience_counter >= args.patience:
-#                 print(f"\nEarly stopping at epoch {epoch+1} after {args.patience} epochs without improvement")
-#                 print(f"Best validation loss: {best_val_loss:.4f}")
-#                 break
-        
-#         # Stop if learning rate becomes too small
-#         if current_lr < 1e-7:
-#             print(f"Learning rate too small ({current_lr:.2e}), stopping training")
-#             break
-    
-#     # Save final model
-#     # torch.save({
-#     #     'epoch': epoch+1,
-#     #     'model_state_dict': model.state_dict(),
-#     #     'optimizer_state_dict': optimizer.state_dict(),
-#     #     'val_loss': val_total_loss if not np.isnan(val_total_loss) else float('inf'),
-#     #     'model_config': {
-#     #         'input_shape': model.input_shape,
-#     #         'latent_dim': model.latent_dim,
-#     #         'beta': args.beta,
-#     #         'conditional': conditional,
-#     #         'num_classes': getattr(model, 'num_classes', None)
-#     #     }
-#     # }, os.path.join(output_dir, 'final_vae_model.pth'))
-    
-#     print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
-#     print(f"Best validation loss: {best_val_loss:.4f}")
 
-def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-    """Enhanced training loop with all requested features"""
+def load_checkpoint(checkpoint_path, model, optimizer, scheduler, device):
+    """Load checkpoint and return training state"""
+    print(f"🔄 Loading checkpoint from: {checkpoint_path}")
     
-    # Setup optimizer with weight decay
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    
+    # Load model state
+    model.load_state_dict(checkpoint['model_state_dict'])
+    
+    # Load optimizer state
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    
+    # Load scheduler state
+    if 'scheduler_state_dict' in checkpoint:
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+    
+    # Get training state
+    start_epoch = checkpoint['epoch']
+    global_step = checkpoint.get('global_step', 0)
+    best_val_loss = checkpoint.get('best_val_loss', float('inf'))
+    
+    print(f"✅ Resumed from epoch {start_epoch}")
+    print(f"   Global step: {global_step}")
+    print(f"   Best val loss: {best_val_loss:.4f}")
+    
+    return start_epoch, global_step, best_val_loss
+
+
+def find_latest_checkpoint(output_dir):
+    """Find the latest checkpoint in output directory"""
+    checkpoint_pattern = os.path.join(output_dir, 'checkpoint_epoch_*.pth')
+    checkpoints = glob.glob(checkpoint_pattern)
+    
+    if not checkpoints:
+        latest_path = os.path.join(output_dir, 'latest_checkpoint.pth')
+        if os.path.exists(latest_path):
+            return latest_path
+        return None
+    
+    # Sort by epoch number
+    def extract_epoch(path):
+        try:
+            return int(path.split('_epoch_')[1].split('.pth')[0])
+        except:
+            return 0
+    
+    latest = max(checkpoints, key=extract_epoch)
+    return latest
+
+
+def train_vae_with_checkpoints(model, train_loader, val_loader, device, args, output_dir, conditional=False):
+    """Enhanced training loop with checkpointing and resume functionality"""
+    
+    # Setup optimizer
     optimizer = optim.AdamW(
         model.parameters(),
         lr=args.lr,
@@ -348,55 +209,78 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
 
     # Learning rate scheduling with warmup
     total_steps = args.epochs * len(train_loader)
-    warmup_steps = int(0.1 * total_steps)  # 10% warmup
+    warmup_steps = int(0.1 * total_steps)
     
     def lr_lambda(current_step):
         if current_step < warmup_steps:
             return float(current_step) / float(max(1, warmup_steps))
-        # Cosine decay after warmup
         progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
         return 0.5 * (1.0 + math.cos(math.pi * progress))
     
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
     
-    # Training log with additional metrics
+    # Training state
+    start_epoch = 0
+    global_step = 0
+    best_val_loss = float('inf')
+    
+    # Resume from checkpoint if specified or auto-detect
+    if args.resume:
+        if args.resume == 'auto':
+            # Auto-find latest checkpoint
+            checkpoint_path = find_latest_checkpoint(output_dir)
+            if checkpoint_path:
+                start_epoch, global_step, best_val_loss = load_checkpoint(
+                    checkpoint_path, model, optimizer, scheduler, device
+                )
+            else:
+                print("🔍 No checkpoint found, starting fresh")
+        else:
+            # Use specified checkpoint
+            if os.path.exists(args.resume):
+                start_epoch, global_step, best_val_loss = load_checkpoint(
+                    args.resume, model, optimizer, scheduler, device
+                )
+            else:
+                print(f"❌ Checkpoint not found: {args.resume}")
+                return
+    
+    # Training logs
     log_file = os.path.join(output_dir, "vae_training_log.csv")
     latent_stats_file = os.path.join(output_dir, "latent_stats.csv")
     
-    # Initialize logs
-    with open(log_file, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss',
-            'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'beta', 
-            'grad_norm', 'time_elapsed'
-        ])
+    # Initialize logs (append mode if resuming)
+    log_mode = 'a' if start_epoch > 0 else 'w'
+    if log_mode == 'w':
+        with open(log_file, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss',
+                'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'beta', 
+                'grad_norm', 'time_elapsed'
+            ])
+        
+        with open(latent_stats_file, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'epoch', 'batch', 'mu_mean', 'mu_std', 'logvar_mean',
+                'logvar_std', 'actual_var'
+            ])
     
-    with open(latent_stats_file, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'epoch', 'batch', 'mu_mean', 'mu_std', 'logvar_mean',
-            'logvar_std', 'actual_var'
-        ])
-    
-    # Training state
-    best_val_loss = float('inf')
     start_time = time.time()
-    global_step = 0
     
-    print("Starting training with:")
-    print(f"- LR warmup ({warmup_steps} steps)")
-    print(f"- Beta warmup (target β={args.beta})")
-    print(f"- Gradient clipping (max_norm={args.grad_clip})")
+    print(f"\n🚀 {'Resuming' if start_epoch > 0 else 'Starting'} training:")
+    print(f"📊 Epochs: {start_epoch + 1} to {args.epochs}")
+    print(f"🎯 Target beta: {args.beta}")
+    print(f"📈 Best val loss so far: {best_val_loss:.4f}")
+    print(f"💾 Checkpoints every {args.checkpoint_freq} epochs")
     
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, args.epochs):
         epoch_start = time.time()
         
         # Training phase
         model.train()
-        train_total_loss = 0
-        train_recon_loss = 0
-        train_kl_loss = 0
+        train_losses = {'total': 0, 'recon': 0, 'kl': 0}
         train_batches = 0
         
         for batch_idx, batch in enumerate(train_loader):
@@ -410,7 +294,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 else:
                     data = batch.to(device)
                 
-                # Beta warmup (linear schedule)
+                # Beta warmup
                 current_beta = min(args.beta * (global_step / warmup_steps), args.beta)
                 
                 optimizer.zero_grad()
@@ -431,55 +315,50 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 
                 # Gradient clipping
                 grad_norm = torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), 
-                    max_norm=args.grad_clip
+                    model.parameters(), max_norm=args.grad_clip
                 )
                 
                 optimizer.step()
                 scheduler.step()
                 
                 # Accumulate losses
-                train_total_loss += total_loss.item()
-                train_recon_loss += recon_loss.item()
-                train_kl_loss += kl_loss.item()
+                train_losses['total'] += total_loss.item()
+                train_losses['recon'] += recon_loss.item()
+                train_losses['kl'] += kl_loss.item()
                 train_batches += 1
                 
-                # Log latent space statistics
-                if batch_idx % 100 == 0:
-                    # Calculate latent stats
-                    mu_mean = mu.mean().item()
-                    mu_std = mu.std().item()
-                    logvar_mean = logvar.mean().item()
-                    logvar_std = logvar.std().item()
-                    actual_var = torch.exp(logvar).mean().item()
-                    
-                    # Save to CSV
-                    with open(latent_stats_file, 'a') as f:
-                        writer = csv.writer(f)
-                        writer.writerow([
-                            epoch+1, batch_idx, mu_mean, mu_std,
-                            logvar_mean, logvar_std, actual_var
-                        ])
-                    
-                    # Print summary
+                # Detailed logging
+                if batch_idx % 50 == 0:
                     current_lr = optimizer.param_groups[0]['lr']
-                    print(f"\nEpoch {epoch+1} Batch {batch_idx}:")
-                    print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
-                    print(f"Train Loss: {total_loss.item():.4f}")
-                    print(f"  Recon: {recon_loss.item():.4f} | KL: {kl_loss.item():.4f}")
-                    print(f"Grad Norm: {grad_norm:.4f}")
-                    print(f"Latent μ: {mu_mean:.4f} ± {mu_std:.4f}")
-                    print(f"Latent σ²: {actual_var:.4f} (logvar: {logvar_mean:.4f})")
+                    elapsed = time.time() - start_time
+                    
+                    print(f"📊 Epoch {epoch+1} Batch {batch_idx}:")
+                    print(f"   LR: {current_lr:.2e} | β: {current_beta:.4f}")
+                    print(f"   Loss: {total_loss.item():.4f} (R: {recon_loss.item():.4f}, KL: {kl_loss.item():.4f})")
+                    print(f"   Grad: {grad_norm:.3f} | Step: {global_step}")
+                    
+                    # Log latent stats
+                    if batch_idx % 100 == 0:
+                        mu_mean = mu.mean().item()
+                        mu_std = mu.std().item()
+                        logvar_mean = logvar.mean().item()
+                        logvar_std = logvar.std().item()
+                        actual_var = torch.exp(logvar).mean().item()
+                        
+                        with open(latent_stats_file, 'a') as f:
+                            writer = csv.writer(f)
+                            writer.writerow([
+                                epoch+1, batch_idx, mu_mean, mu_std,
+                                logvar_mean, logvar_std, actual_var
+                            ])
                 
             except Exception as e:
-                print(f"Training batch error: {e}")
+                print(f"❌ Training batch error: {e}")
                 continue
         
         # Validation phase
         model.eval()
-        val_total_loss = 0
-        val_recon_loss = 0
-        val_kl_loss = 0
+        val_losses = {'total': 0, 'recon': 0, 'kl': 0}
         val_batches = 0
         
         with torch.no_grad():
@@ -493,69 +372,84 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                         data = batch.to(device)
                         recon_x, mu, logvar = model(data)
                     
-                    # Use final beta for validation
                     total_loss, recon_loss, kl_loss = model.loss_function(
                         recon_x, data, mu, logvar, beta=args.beta
                     )
                     
-                    val_total_loss += total_loss.item()
-                    val_recon_loss += recon_loss.item()
-                    val_kl_loss += kl_loss.item()
+                    val_losses['total'] += total_loss.item()
+                    val_losses['recon'] += recon_loss.item()
+                    val_losses['kl'] += kl_loss.item()
                     val_batches += 1
                     
                 except Exception as e:
-                    print(f"Validation batch error: {e}")
+                    print(f"❌ Validation batch error: {e}")
                     continue
         
         # Calculate averages
-        train_total_loss /= train_batches
-        train_recon_loss /= train_batches
-        train_kl_loss /= train_batches
-        
-        val_total_loss /= val_batches
-        val_recon_loss /= val_batches
-        val_kl_loss /= val_batches
+        for key in train_losses:
+            train_losses[key] /= max(train_batches, 1)
+            val_losses[key] /= max(val_batches, 1)
         
         # Time tracking
         epoch_time = time.time() - epoch_start
         total_time = time.time() - start_time
         current_lr = optimizer.param_groups[0]['lr']
         
-        # Save to log
+        # Epoch summary
+        print(f"\n{'='*60}")
+        print(f"📈 EPOCH {epoch+1}/{args.epochs} SUMMARY")
+        print(f"{'='*60}")
+        print(f"⏱️  Time: {epoch_time:.1f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
+        print(f"📊 Train Loss: {train_losses['total']:.4f} (R: {train_losses['recon']:.4f}, KL: {train_losses['kl']:.4f})")
+        print(f"📊 Val Loss:   {val_losses['total']:.4f} (R: {val_losses['recon']:.4f}, KL: {val_losses['kl']:.4f})")
+        print(f"⚙️  LR: {current_lr:.2e} | β: {current_beta:.4f}")
+        
+        # Log to CSV
         with open(log_file, 'a') as f:
             writer = csv.writer(f)
             writer.writerow([
-                epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
-                val_total_loss, val_recon_loss, val_kl_loss, current_lr, current_beta,
-                grad_norm.item() if batch_idx % 100 == 0 else float('nan'), total_time
+                epoch+1, len(train_loader), train_losses['total'], train_losses['recon'], train_losses['kl'],
+                val_losses['total'], val_losses['recon'], val_losses['kl'], current_lr, current_beta,
+                float('nan'), total_time
             ])
         
-        # Print epoch summary
-        print(f"\nEpoch {epoch+1} Summary:")
-        print(f"Time: {epoch_time:.2f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
-        print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
-        print(f"Train - Total: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
-        print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
-        
         # Save checkpoints
-        if val_total_loss < best_val_loss:
-            best_val_loss = val_total_loss
-            torch.save({
-                'epoch': epoch+1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'val_loss': val_total_loss,
-                'args': vars(args)
-            }, os.path.join(output_dir, 'best_model.pth'))
+        is_best = val_losses['total'] < best_val_loss
+        if is_best:
+            best_val_loss = val_losses['total']
         
-        # Save samples periodically
-        if (epoch + 1) % 10 == 0 or epoch == 0:
-            save_sample_outputs(model, device, output_dir, epoch+1, 
-                              conditional=conditional, 
-                              num_classes=getattr(model, 'num_classes', None))
+        # Save checkpoint based on frequency
+        if (epoch + 1) % args.checkpoint_freq == 0 or is_best or epoch == args.epochs - 1:
+            save_checkpoint_enhanced(
+                model, optimizer, scheduler, epoch + 1, val_losses['total'], 
+                best_val_loss, args, global_step, output_dir, is_best
+            )
+        
+        # Generate samples periodically
+        if (epoch + 1) % args.sample_freq == 0 or epoch == 0:
+            try:
+                save_sample_outputs(model, device, output_dir, epoch+1, 
+                                  conditional=conditional, 
+                                  num_classes=getattr(model, 'num_classes', None))
+                plot_reconstruction(model, val_loader, device, output_dir, epoch+1, 
+                                  conditional=conditional)
+                print("🎨 Generated sample visualizations")
+            except Exception as e:
+                print(f"❌ Error generating samples: {e}")
+        
+        # Early stopping check
+        patience_epochs = getattr(args, 'patience', 50)
+        if epoch - (best_val_loss_epoch if 'best_val_loss_epoch' in locals() else 0) > patience_epochs:
+            print(f"🛑 Early stopping: no improvement for {patience_epochs} epochs")
+            break
+        
+        if is_best:
+            best_val_loss_epoch = epoch
     
-    print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
-    print(f"Best validation loss: {best_val_loss:.4f}")
+    print(f"\n🎉 Training completed!")
+    print(f"⏱️  Total time: {total_time//60:.0f}m {total_time%60:.0f}s")
+    print(f"🏆 Best validation loss: {best_val_loss:.4f}")
+    print(f"💾 Final checkpoint saved in: {output_dir}")
 
 
 def main():
