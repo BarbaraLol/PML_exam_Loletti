@@ -1,1 +1,0 @@
-epoch,val_mse,val_mae,val_ssim,mu_mean,mu_std,logvar_mean,logvar_std,kl_div_per_dim
