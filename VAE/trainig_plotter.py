@@ -65,7 +65,7 @@ def load_latent_data(log_path):
 
 def plot_training_metrics(training_df, save_dir):
     """Create comprehensive training metrics plots"""
-    print("📊 Creating training metrics plots...")
+    print("Creating training metrics plots...")
     
     # Create figure with subplots
     fig = plt.figure(figsize=(20, 16))
@@ -77,7 +77,7 @@ def plot_training_metrics(training_df, save_dir):
                  label='Training Loss', linewidth=2.5, alpha=0.8)
     ax1.semilogy(training_df['epoch'], training_df['val_loss'], 
                  label='Validation Loss', linewidth=2.5, alpha=0.8)
-    ax1.set_title('📈 Training & Validation Loss (Log Scale)', fontweight='bold', fontsize=16)
+    ax1.set_title('Training & Validation Loss (Log Scale)', fontweight='bold', fontsize=16)
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss (log scale)')
     ax1.legend()
@@ -100,7 +100,7 @@ def plot_training_metrics(training_df, save_dir):
                  label='Val KL', linewidth=2, alpha=0.8)
         ax2.set_ylabel('KL Loss')
     
-    ax2.set_title('🔄 KL Divergence', fontweight='bold')
+    ax2.set_title('KL Divergence', fontweight='bold')
     ax2.set_xlabel('Epoch')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
@@ -126,7 +126,7 @@ def plot_training_metrics(training_df, save_dir):
     line2 = ax4_twin.plot(training_df['epoch'], training_df['beta'], 
                           'r-', label='Beta (β)', linewidth=2.5)
     
-    ax4.set_title('⚙️ LR & β Schedule', fontweight='bold')
+    ax4.set_title('LR & β Schedule', fontweight='bold')
     ax4.set_xlabel('Epoch')
     ax4.set_ylabel('Learning Rate', color='b')
     ax4_twin.set_ylabel('Beta (β)', color='r')
@@ -151,7 +151,7 @@ def plot_training_metrics(training_df, save_dir):
     ax5.fill_between(epochs, recon_loss, recon_loss + kl_loss, alpha=0.7, label='Weighted KL Loss')
     ax5.plot(epochs, training_df['train_loss'], 'k-', linewidth=3, label='Total Loss')
     
-    ax5.set_title('📊 Training Loss Components Breakdown', fontweight='bold', fontsize=16)
+    ax5.set_title('Training Loss Components Breakdown', fontweight='bold', fontsize=16)
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('Loss')
     ax5.legend()
@@ -192,21 +192,21 @@ BEST PERFORMANCE:
 
 TRAINING STABILITY:
 • Final 10 epochs val loss std: {training_df['val_loss'].tail(10).std():.4f}
-• Training converged: {'✅ Yes' if training_df['val_loss'].tail(10).std() < training_df['val_loss'].std() * 0.1 else '⚠️ Still learning'}
+• Training converged: {'Yes' if training_df['val_loss'].tail(10).std() < training_df['val_loss'].std() * 0.1 else '⚠️ Still learning'}
 """
     
     ax6.text(0.05, 0.95, summary_text, transform=ax6.transAxes, fontsize=12,
              verticalalignment='top', fontfamily='monospace',
              bbox=dict(boxstyle='round,pad=1', facecolor='lightblue', alpha=0.8))
     
-    plt.suptitle('🧠 VAE Training Metrics Analysis', fontsize=20, fontweight='bold', y=0.98)
+    plt.suptitle('VAE Training Metrics Analysis', fontsize=20, fontweight='bold', y=0.98)
     plt.savefig(os.path.join(save_dir, 'training_metrics.png'), dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"✅ Training metrics saved to: {save_dir}/training_metrics.png")
+    print(f"Training metrics saved to: {save_dir}/training_metrics.png")
 
 def plot_latent_analysis(latent_df, save_dir):
     """Create comprehensive latent space analysis plots"""
-    print("🎯 Creating latent space analysis plots...")
+    print("Creating latent space analysis plots...")
     
     # Create figure with subplots
     fig = plt.figure(figsize=(20, 16))
@@ -229,7 +229,7 @@ def plot_latent_analysis(latent_df, save_dir):
     ax1_twin.axhline(y=1, color='red', linestyle='--', alpha=0.7, label='Target σ² = 1')
     ax1_twin.fill_between(latent_df['epoch_progress'], 0.8, 1.2, alpha=0.2, color='green')
     
-    ax1.set_title('🎯 Latent Space Convergence to Standard Normal N(0,1)', fontweight='bold', fontsize=16)
+    ax1.set_title('Latent Space Convergence to Standard Normal N(0,1)', fontweight='bold', fontsize=16)
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('μ Mean', color='blue')
     ax1_twin.set_ylabel('σ² (Variance)', color='orange')
@@ -275,7 +275,7 @@ def plot_latent_analysis(latent_df, save_dir):
     
     ax5.plot(latent_df['epoch_progress'], distance_from_ideal, 
              linewidth=3, alpha=0.8, color='darkred')
-    ax5.set_title('📏 Distance from Ideal N(0,1) Distribution', fontweight='bold', fontsize=14)
+    ax5.set_title('Distance from Ideal N(0,1) Distribution', fontweight='bold', fontsize=14)
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('√(μ² + (σ² - 1)²)')
     ax5.grid(True, alpha=0.3)
@@ -292,7 +292,7 @@ def plot_latent_analysis(latent_df, save_dir):
     quality_score = 1 / (1 + distance_from_ideal)
     ax6.plot(latent_df['epoch_progress'], quality_score, 
              linewidth=3, alpha=0.8, color='darkgreen')
-    ax6.set_title('🏆 Quality Score', fontweight='bold')
+    ax6.set_title('Quality Score', fontweight='bold')
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('Score (0-1)')
     ax6.set_ylim(0, 1)
@@ -313,12 +313,12 @@ def plot_latent_analysis(latent_df, save_dir):
     improvement = ((initial_distance - final_distance) / initial_distance) * 100
     
     # Convergence assessment
-    mu_status = "✅ EXCELLENT" if abs(final_mu_mean) < 0.1 else ("🟡 GOOD" if abs(final_mu_mean) < 0.3 else "🔴 NEEDS WORK")
-    var_status = "✅ EXCELLENT" if 0.8 < final_var < 1.2 else ("🟡 GOOD" if 0.5 < final_var < 1.5 else "🔴 NEEDS WORK")
+    mu_status = "EXCELLENT" if abs(final_mu_mean) < 0.1 else ("GOOD" if abs(final_mu_mean) < 0.3 else "NEEDS WORK")
+    var_status = "EXCELLENT" if 0.8 < final_var < 1.2 else ("GOOD" if 0.5 < final_var < 1.5 else "NEEDS WORK")
     
     # Check if converged (stable in recent measurements)
     recent_stability = latent_df['mu_mean'].tail(20).std() if len(latent_df) >= 20 else latent_df['mu_mean'].std()
-    converged = "✅ CONVERGED" if recent_stability < 0.05 else "🟡 STILL LEARNING"
+    converged = "CONVERGED" if recent_stability < 0.05 else "STILL LEARNING"
     
     summary_text = f"""
 LATENT SPACE ANALYSIS SUMMARY
@@ -341,23 +341,23 @@ TARGETS vs ACTUAL:
 • σ² ≈ 1 (actual: {final_var:.6f})
 
 OVERALL ASSESSMENT:
-{'🎯 EXCELLENT! Your VAE has learned a high-quality latent representation.' if final_quality > 0.9 else 
- ('👍 GOOD! The latent space is well-structured.' if final_quality > 0.7 else 
-  '⚠️ NEEDS IMPROVEMENT. Consider adjusting β or training longer.')}
+{'EXCELLENT! Your VAE has learned a high-quality latent representation.' if final_quality > 0.9 else 
+ ('GOOD! The latent space is well-structured.' if final_quality > 0.7 else 
+  'NEEDS IMPROVEMENT. Consider adjusting β or training longer.')}
 """
     
     ax7.text(0.05, 0.95, summary_text, transform=ax7.transAxes, fontsize=11,
              verticalalignment='top', fontfamily='monospace',
              bbox=dict(boxstyle='round,pad=1', facecolor='lightgreen', alpha=0.8))
     
-    plt.suptitle('🎯 VAE Latent Space Analysis', fontsize=20, fontweight='bold', y=0.98)
+    plt.suptitle('VAE Latent Space Analysis', fontsize=20, fontweight='bold', y=0.98)
     plt.savefig(os.path.join(save_dir, 'latent_analysis.png'), dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"✅ Latent analysis saved to: {save_dir}/latent_analysis.png")
+    print(f"Latent analysis saved to: {save_dir}/latent_analysis.png")
 
 def plot_combined_overview(training_df, latent_df, save_dir):
     """Create a combined overview plot"""
-    print("📊 Creating combined overview plot...")
+    print("Creating combined overview plot...")
     
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
     
@@ -382,7 +382,7 @@ def plot_combined_overview(training_df, latent_df, save_dir):
                   'orange', label='σ² Variance', linewidth=2.5)
     ax2_twin.axhline(y=1, color='red', linestyle='--', alpha=0.7)
     
-    ax2.set_title('🎯 Latent Convergence', fontweight='bold', fontsize=14)
+    ax2.set_title('Latent Convergence', fontweight='bold', fontsize=14)
     ax2.set_xlabel('Epoch')
     ax2.set_ylabel('μ Mean', color='blue')
     ax2_twin.set_ylabel('σ² Variance', color='orange')
@@ -397,7 +397,7 @@ def plot_combined_overview(training_df, latent_df, save_dir):
     ax3_twin.plot(training_df['epoch'], scaled_kl, 
                   'red', label='Weighted KL', linewidth=2.5)
     
-    ax3.set_title('⚖️ Reconstruction vs KL Trade-off', fontweight='bold', fontsize=14)
+    ax3.set_title('Reconstruction vs KL Trade-off', fontweight='bold', fontsize=14)
     ax3.set_xlabel('Epoch')
     ax3.set_ylabel('Reconstruction Loss', color='blue')
     ax3_twin.set_ylabel('Weighted KL Loss', color='red')
@@ -407,20 +407,20 @@ def plot_combined_overview(training_df, latent_df, save_dir):
     distance_from_ideal = np.sqrt(latent_df['mu_mean']**2 + (latent_df['actual_var'] - 1)**2)
     ax4.plot(latent_df['epoch_progress'], distance_from_ideal, 
              linewidth=3, alpha=0.8, color='purple')
-    ax4.set_title('📏 Overall Quality Progress', fontweight='bold', fontsize=14)
+    ax4.set_title('Overall Quality Progress', fontweight='bold', fontsize=14)
     ax4.set_xlabel('Epoch')
     ax4.set_ylabel('Distance from N(0,1)')
     ax4.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.suptitle('🧠 VAE Training Overview', fontsize=18, fontweight='bold', y=0.98)
+    plt.suptitle('VAE Training Overview', fontsize=18, fontweight='bold', y=0.98)
     plt.savefig(os.path.join(save_dir, 'training_overview.png'), dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"✅ Overview saved to: {save_dir}/training_overview.png")
+    print(f"Overview saved to: {save_dir}/training_overview.png")
 
 def create_html_report(training_df, latent_df, save_dir):
     """Create an HTML report summarizing the training"""
-    print("📄 Creating HTML report...")
+    print("Creating HTML report...")
     
     # Calculate key metrics
     final_train_loss = training_df['train_loss'].iloc[-1]
@@ -457,35 +457,35 @@ def create_html_report(training_df, latent_df, save_dir):
     <body>
         <div class="container">
             <div class="header">
-                <h1>🧠 VAE Training Analysis Report</h1>
+                <h1>VAE Training Analysis Report</h1>
                 <p>Comprehensive analysis of your Variational Autoencoder training results</p>
                 <p><strong>Generated:</strong> {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
             </div>
             
             <div class="summary">
-                <h2 style="color: white; border: none;">📊 Executive Summary</h2>
+                <h2 style="color: white; border: none;">Executive Summary</h2>
                 <p><strong>Training completed with {total_epochs} epochs</strong></p>
-                <p><strong>Overall Quality:</strong> {'🎯 Excellent - VAE successfully learned a high-quality latent representation!' if overall_good else '⚠️ Good progress - consider additional tuning for optimal performance.'}</p>
+                <p><strong>Overall Quality:</strong> {'Excellent - VAE successfully learned a high-quality latent representation!' if overall_good else 'Good progress - consider additional tuning for optimal performance.'}</p>
             </div>
             
-            <h2>🔑 Key Metrics</h2>
+            <h2>Key Metrics</h2>
             <div class="metric {'good' if final_val_loss < 1000 else 'warning' if final_val_loss < 10000 else 'bad'}">
                 <strong>Final Validation Loss:</strong> {final_val_loss:.4f}
             </div>
             <div class="metric {'good' if mu_good else 'warning' if abs(final_mu_mean) < 0.3 else 'bad'}">
                 <strong>Final μ Mean:</strong> {final_mu_mean:.6f} (Target: ~0.000)
-                <br><small>{'✅ Excellent convergence to zero mean' if mu_good else '⚠️ Good progress, but could converge closer to zero' if abs(final_mu_mean) < 0.3 else '🔴 Needs improvement - mean should be closer to zero'}</small>
+                <br><small>{'Excellent convergence to zero mean' if mu_good else 'Good progress, but could converge closer to zero' if abs(final_mu_mean) < 0.3 else 'Needs improvement - mean should be closer to zero'}</small>
             </div>
             <div class="metric {'good' if var_good else 'warning' if 0.5 < final_var < 1.5 else 'bad'}">
                 <strong>Final Variance (σ²):</strong> {final_var:.6f} (Target: ~1.000)
-                <br><small>{'✅ Excellent convergence to unit variance' if var_good else '⚠️ Reasonable variance, but could be closer to 1.0' if 0.5 < final_var < 1.5 else '🔴 Variance needs adjustment'}</small>
+                <br><small>{'Excellent convergence to unit variance' if var_good else 'Reasonable variance, but could be closer to 1.0' if 0.5 < final_var < 1.5 else 'Variance needs adjustment'}</small>
             </div>
             <div class="metric">
                 <strong>Distance from N(0,1):</strong> {np.sqrt(final_mu_mean**2 + (final_var - 1)**2):.6f}
                 <br><small>Lower values indicate better convergence to standard normal distribution</small>
             </div>
             
-            <h2>📈 Training Progress Visualizations</h2>
+            <h2>Training Progress Visualizations</h2>
             <div class="images">
                 <div>
                     <h3>Training Metrics Overview</h3>
@@ -501,7 +501,7 @@ def create_html_report(training_df, latent_df, save_dir):
                 </div>
             </div>
             
-            <h2>🔍 Detailed Analysis</h2>
+            <h2>Detailed Analysis</h2>
             
             <h3>Training Performance</h3>
             <p><strong>Loss Evolution:</strong> {'Training shows good convergence with validation loss stabilizing.' if training_df['val_loss'].tail(10).std() < training_df['val_loss'].std() * 0.2 else 'Training may benefit from additional epochs or learning rate adjustment.'}</p>
@@ -511,13 +511,13 @@ def create_html_report(training_df, latent_df, save_dir):
             <h3>Latent Space Quality</h3>
             <p><strong>Convergence Assessment:</strong></p>
             <ul>
-                <li><strong>Mean Convergence:</strong> {'✅ Excellent' if mu_good else '⚠️ Needs improvement'} - The latent space means are {'very close to zero' if mu_good else 'approaching zero but could be better'}</li>
-                <li><strong>Variance Convergence:</strong> {'✅ Excellent' if var_good else '⚠️ Needs improvement'} - The latent space variance is {'very close to 1.0' if var_good else 'reasonable but could be closer to 1.0'}</li>
+                <li><strong>Mean Convergence:</strong> {'Excellent' if mu_good else 'Needs improvement'} - The latent space means are {'very close to zero' if mu_good else 'approaching zero but could be better'}</li>
+                <li><strong>Variance Convergence:</strong> {'Excellent' if var_good else 'Needs improvement'} - The latent space variance is {'very close to 1.0' if var_good else 'reasonable but could be closer to 1.0'}</li>
             </ul>
             
             <h3>Recommendations</h3>
             <ul>
-                {'<li>✅ Your VAE has achieved excellent latent space quality! The model is ready for generation and downstream tasks.</li>' if overall_good else ''}
+                {'<li>Your VAE has achieved excellent latent space quality! The model is ready for generation and downstream tasks.</li>' if overall_good else ''}
                 {'<li>Consider training for more epochs to improve μ convergence to zero.</li>' if not mu_good else ''}
                 {'<li>Adjust the β parameter to better balance reconstruction and KL losses for variance convergence.</li>' if not var_good else ''}
                 {'<li>Monitor the reconstruction quality to ensure the model preserves important features.</li>' if final_val_loss > 1000 else ''}
@@ -539,8 +539,8 @@ def create_html_report(training_df, latent_df, save_dir):
     with open(report_path, 'w') as f:
         f.write(html_content)
     
-    print(f"✅ HTML report saved to: {report_path}")
-    print(f"🌐 Open the report in your browser: file://{os.path.abspath(report_path)}")
+    print(f"HTML report saved to: {report_path}")
+    print(f"Open the report in your browser: file://{os.path.abspath(report_path)}")
 
 def main():
     """Main function to run the analysis"""
@@ -562,22 +562,22 @@ def main():
     # Create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
-    print(f"📁 Output directory: {output_dir.absolute()}")
+    print(f"Output directory: {output_dir.absolute()}")
     
     # Load data
-    print("📊 Loading training data...")
+    print("Loading training data...")
     training_df = load_training_data(args.training_log)
     if training_df is None:
-        print("❌ Failed to load training data")
+        print("Failed to load training data")
         return
     
-    print("🎯 Loading latent statistics...")
+    print("Loading latent statistics...")
     latent_df = load_latent_data(args.latent_stats)
     if latent_df is None:
-        print("❌ Failed to load latent data")
+        print("Failed to load latent data")
         return
     
-    print(f"✅ Successfully loaded data:")
+    print(f"Successfully loaded data:")
     print(f"   • Training: {len(training_df)} epochs")
     print(f"   • Latent: {len(latent_df)} measurements")
     
@@ -596,10 +596,10 @@ def main():
         create_html_report(training_df, latent_df, output_dir)
     
     print(f"\n{'='*60}")
-    print("🎉 ANALYSIS COMPLETE!")
+    print("ANALYSIS COMPLETE!")
     print(f"{'='*60}")
-    print(f"📁 All results saved in: {output_dir.absolute()}")
-    print(f"📊 Generated plots:")
+    print(f"All results saved in: {output_dir.absolute()}")
+    print(f"Generated plots:")
     if args.plot_type in ['training', 'all']:
         print(f"   • training_metrics.png")
     if args.plot_type in ['latent', 'all']:
@@ -607,7 +607,7 @@ def main():
     if args.plot_type in ['overview', 'all']:
         print(f"   • training_overview.png")
     if args.create_report:
-        print(f"📄 HTML Report: vae_training_report.html")
+        print(f"HTML Report: vae_training_report.html")
     print(f"\n💡 Quick start:")
     print(f"   python vae_analysis.py --training_log vae_training_log.csv --latent_stats latent_stats.csv")
 
@@ -634,7 +634,7 @@ def analyze_training_stability(training_df, window_size=10):
     print(f"  • Final {window_size}-epoch stability: {final_stability:.4f}")
     print(f"  • Overall loss std: {overall_std:.4f}")
     print(f"  • Stability ratio: {stability_ratio:.4f}")
-    print(f"  • Assessment: {'✅ Stable' if stability_ratio < 0.1 else '⚠️ Still learning' if stability_ratio < 0.3 else '🔴 Unstable'}")
+    print(f"  • Assessment: {'Stable' if stability_ratio < 0.1 else 'Still learning' if stability_ratio < 0.3 else 'Unstable'}")
     
     return stability_ratio
 
@@ -646,35 +646,35 @@ def detect_training_issues(training_df, latent_df):
     
     # Check for exploding gradients
     if training_df['train_loss'].max() > training_df['train_loss'].iloc[0] * 10:
-        issues.append("⚠️ Possible exploding gradients detected")
+        issues.append("Possible exploding gradients detected")
     
     # Check for mode collapse in latent space
     if latent_df['mu_std'].min() < 0.01:
-        issues.append("⚠️ Very low latent diversity - possible mode collapse")
+        issues.append("Very low latent diversity - possible mode collapse")
     
     # Check for KL vanishing
     if (latent_df['actual_var'] > 10).any():
-        issues.append("⚠️ Very high variance - KL divergence might be vanishing")
+        issues.append("Very high variance - KL divergence might be vanishing")
     
     # Check for poor reconstruction
     final_recon = training_df['val_recon_loss'].iloc[-1]
     if final_recon > training_df['val_recon_loss'].iloc[0] * 0.8:
-        issues.append("⚠️ Reconstruction loss not improving well")
+        issues.append("Reconstruction loss not improving well")
     
     # Check for beta too high/low
     final_beta = training_df['beta'].iloc[-1]
     final_kl = training_df['val_kl_loss'].iloc[-1]
     if final_kl < 0.1 and final_beta > 0.001:
-        issues.append("⚠️ KL loss very low - consider reducing β")
+        issues.append("KL loss very low - consider reducing β")
     elif final_kl > 1000 and final_beta < 0.01:
-        issues.append("⚠️ KL loss very high - consider increasing β")
+        issues.append("KL loss very high - consider increasing β")
     
     if issues:
         print("Potential issues detected:")
         for issue in issues:
             print(f"  {issue}")
     else:
-        print("✅ No major training issues detected")
+        print("No major training issues detected")
     
     return issues
 
@@ -686,7 +686,7 @@ def create_training_comparison(results_dir):
     experiment_dirs = [d for d in results_path.iterdir() if d.is_dir() and 'experiment' in d.name]
     
     if len(experiment_dirs) > 1:
-        print(f"🔄 Found {len(experiment_dirs)} experiments for comparison")
+        print(f"Found {len(experiment_dirs)} experiments for comparison")
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         
@@ -718,13 +718,13 @@ def create_training_comparison(results_dir):
         axes[1, 1].grid(True, alpha=0.3)
         
         plt.tight_layout()
-        plt.suptitle('🔄 Training Runs Comparison', fontsize=16, fontweight='bold', y=0.98)
+        plt.suptitle('Training Runs Comparison', fontsize=16, fontweight='bold', y=0.98)
         plt.savefig(results_path / 'experiments_comparison.png', dpi=300, bbox_inches='tight')
         plt.show()
         
-        print(f"✅ Comparison plot saved to: {results_path}/experiments_comparison.png")
+        print(f"Comparison plot saved to: {results_path}/experiments_comparison.png")
     else:
-        print("ℹ️ Only one experiment found, skipping comparison")
+        print("Only one experiment found, skipping comparison")
 
 
 # Example usage and testing

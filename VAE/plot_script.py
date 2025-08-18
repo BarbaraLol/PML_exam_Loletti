@@ -301,12 +301,12 @@ def plot_summary_stats(df, save_path=None):
     axes[1, 1].axis('off')
     
     # Calculate final assessment
-    mu_status = "✅ GOOD" if abs(final_mu_mean) < 0.1 else ("⚠️ OK" if abs(final_mu_mean) < 0.3 else "❌ POOR")
-    var_status = "✅ GOOD" if 0.8 < final_var < 1.2 else ("⚠️ OK" if 0.5 < final_var < 1.5 else "❌ POOR")
+    mu_status = "GOOD" if abs(final_mu_mean) < 0.1 else ("OK" if abs(final_mu_mean) < 0.3 else "POOR")
+    var_status = "GOOD" if 0.8 < final_var < 1.2 else ("OK" if 0.5 < final_var < 1.5 else "POOR")
     
     # Check if converged (low variance in recent epochs)
     recent_stability = df['mu_mean'].tail(20).std() if len(df) >= 20 else df['mu_mean'].std()
-    converged = "✅ CONVERGED" if recent_stability < 0.01 else "⚠️ STILL LEARNING"
+    converged = "CONVERGED" if recent_stability < 0.01 else "STILL LEARNING"
     
     # Calculate improvement
     initial_distance = np.sqrt(df['mu_mean'].iloc[0]**2 + (df['actual_var'].iloc[0] - 1)**2)
@@ -332,7 +332,7 @@ TARGETS:
 
 ASSESSMENT:
 Quality Score: {performance.iloc[-1]:.3f}/1.000
-Overall: {'🎯 EXCELLENT' if performance.iloc[-1] > 0.9 else ('👍 GOOD' if performance.iloc[-1] > 0.8 else '⚠️ NEEDS WORK')}
+Overall: {'EXCELLENT' if performance.iloc[-1] > 0.9 else ('GOOD' if performance.iloc[-1] > 0.8 else 'NEEDS WORK')}
 """
     
     axes[1, 1].text(0.05, 0.95, summary_text, transform=axes[1, 1].transAxes,
@@ -363,16 +363,16 @@ def create_latent_report(log_path, output_dir=None):
     print(f"Report will analyze {len(df)} epochs of latent statistics")
     
     # Generate all plots
-    print("📊 Generating latent evolution plots...")
+    print("Generating latent evolution plots...")
     plot_latent_evolution(df, output_dir / "01_latent_evolution.png")
     
-    print("📊 Generating latent distributions...")
+    print("Generating latent distributions...")
     plot_latent_distributions(df, output_dir / "02_latent_distributions.png")
     
-    print("📊 Generating convergence analysis...")
+    print("Generating convergence analysis...")
     plot_convergence_analysis(df, output_dir / "03_convergence_analysis.png")
     
-    print("📊 Generating summary statistics...")
+    print("Generating summary statistics...")
     plot_summary_stats(df, output_dir / "04_summary_stats.png")
     
     # Save processed data
@@ -381,8 +381,8 @@ def create_latent_report(log_path, output_dir=None):
     # Create HTML report
     create_html_report(df, output_dir)
     
-    print(f"✅ Latent space analysis complete! Files saved in: {output_dir}")
-    print(f"🌐 Open {output_dir / 'report.html'} in your browser for a summary")
+    print(f"Latent space analysis complete! Files saved in: {output_dir}")
+    print(f"Open {output_dir / 'report.html'} in your browser for a summary")
 
 def create_html_report(df, output_dir):
     """Create a simple HTML report for latent space analysis"""
@@ -409,9 +409,9 @@ def create_html_report(df, output_dir):
         </style>
     </head>
     <body>
-        <h1>🧠 VAE Latent Space Analysis Report</h1>
+        <h1>VAE Latent Space Analysis Report</h1>
         
-        <h2>📈 Key Metrics</h2>
+        <h2>Key Metrics</h2>
         <div class="metric {'good' if mu_good else 'warning' if abs(final_mu_mean) < 0.3 else 'bad'}">
             <strong>Final μ Mean:</strong> {final_mu_mean:.4f} (Target: ~0.000)
         </div>
@@ -425,10 +425,10 @@ def create_html_report(df, output_dir):
             <strong>Total Training Epochs:</strong> {len(df)}
         </div>
         <div class="metric {'good' if overall_good else 'warning'}">
-            <strong>Overall Assessment:</strong> {'🎯 Excellent latent space!' if overall_good else '⚠️ Needs improvement'}
+            <strong>Overall Assessment:</strong> {'Excellent latent space!' if overall_good else 'Needs improvement'}
         </div>
         
-        <h2>📊 Visualizations</h2>
+        <h2>Visualizations</h2>
         <h3>Latent Space Evolution</h3>
         <img src="01_latent_evolution.png" alt="Latent space evolution over training">
         
@@ -441,22 +441,22 @@ def create_html_report(df, output_dir):
         <h3>Summary Statistics</h3>
         <img src="04_summary_stats.png" alt="Summary statistics">
         
-        <h2>🔍 Analysis</h2>
+        <h2>Analysis</h2>
         <p><strong>Mean Convergence:</strong> 
-        {'✅ Excellent! The latent means are very close to 0.' if mu_good else 
-         ('⚠️ Acceptable, but could be closer to 0.' if abs(final_mu_mean) < 0.3 else 
-          '❌ Poor convergence - latent means are far from 0.')}
+        {'Excellent! The latent means are very close to 0.' if mu_good else 
+         ('Acceptable, but could be closer to 0.' if abs(final_mu_mean) < 0.3 else 
+          'Poor convergence - latent means are far from 0.')}
         </p>
         
         <p><strong>Variance Convergence:</strong> 
-        {'✅ Excellent! The latent variance is very close to 1.' if var_good else
-         ('⚠️ Acceptable, but variance could be closer to 1.' if 0.5 < final_var < 1.5 else
-          '❌ Poor convergence - variance is far from 1.')}
+        {'Excellent! The latent variance is very close to 1.' if var_good else
+         ('Acceptable, but variance could be closer to 1.' if 0.5 < final_var < 1.5 else
+          'Poor convergence - variance is far from 1.')}
         </p>
         
         <p><strong>Overall Latent Space Quality:</strong> 
-        {'🎯 Your VAE has learned an excellent latent representation that closely follows a standard normal distribution.' if overall_good else
-         '⚠️ Consider adjusting the β parameter in your loss function or training for more epochs.'}
+        {'Your VAE has learned an excellent latent representation that closely follows a standard normal distribution.' if overall_good else
+         'Consider adjusting the β parameter in your loss function or training for more epochs.'}
         </p>
         
         <hr>
