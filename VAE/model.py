@@ -3,26 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F 
 import numpy as np 
 
-class ResidualBlock(nn.Module):
-    def __init__(self, in_channels):
-        super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size = 3, padding = 1)
-        self.bn1 = nn.BatchNorm2d(in_channels)
-        self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size = 3, padding = 1)
-        self.bn2 = nn.BatchNorm2d(in_channels)
-        self.relu = nn.LeakyReLU(0.2)
-        
-    def forward(self, x):
-        residual = x
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += residual  # Skip connection
-        return self.relu(out)
-
-
 class Encoder(nn.Module):
     """Encoder part of the VAE"""
-    def __init__(self, input_shape, latent_dim=1024):
+    def __init__(self, input_shape, latent_dim=512):
         super(Encoder, self).__init__()
         # self.input_shape = input_shape
         # Ensure input_shape is (channels, height, width)
@@ -39,17 +22,6 @@ class Encoder(nn.Module):
             nn.Conv2d(1, 32, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2), 
-
-            # Residual blocks
-            # ResidualBlock(32),
-            # nn.Conv2d(32, 64, kernel_size = 2, stride=2, padding = 1),
-            # nn.BatchNorm2d(64),
-            # nn.LeakyReLU(0.2),
-            
-            # ResidualBlock(64),
-            # nn.Conv2d(64, 128, kernel_size = 2, stride=2, padding = 1),
-            # nn.BatchNorm2d(128), 
-            # nn.LeakyReLU(0.2),
 
             nn.Conv2d(32, 64, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(64),
@@ -145,7 +117,7 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     """Decoder part of the VAE"""
-    def __init__(self, output_shape, encoder_shape, latent_dim=1024):
+    def __init__(self, output_shape, encoder_shape, latent_dim=512):
         super(Decoder, self).__init__()
         self.output_shape = output_shape
         self.latent_dim = latent_dim
@@ -175,12 +147,10 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(512, 512, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2),
-            # ResidualBlock(512),
 
             nn.ConvTranspose2d(512, 256, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2),
-            # ResidualBlock(256),
 
             nn.ConvTranspose2d(256, 128, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(128),
@@ -216,7 +186,7 @@ class Decoder(nn.Module):
 
 class VariationalAutoEncoder(nn.Module):
     """Variationa Autoencoder form spectrograms"""
-    def __init__(self, input_shape, latent_dim = 1024, beta = 1.0): # beta
+    def __init__(self, input_shape, latent_dim = 512, beta = 1.0): # beta
         super(VariationalAutoEncoder, self).__init__()
         self.input_shape = input_shape
         self.latent_dim = latent_dim
@@ -243,14 +213,12 @@ class VariationalAutoEncoder(nn.Module):
     def loss_function(self, recon_x, x, mu, logvar, beta=None):
         """VAE Loss = reconstruction + KL divergence"""
         # Reconstruction loss with MSE
-        reconstruction_loss = F.mse_loss(recon_x, x, reduction = 'sum') / x.size(0) # Mean per batch
+        reconstruction_loss = F.mse_loss(recon_x, x, reduction = 'mean')
 
         # KL divergence loss
-        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / x.size(0) # Mean per batch
+        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) -logvar.exp(), dim = 1).mean()
 
-        # Use beta if provided, else use class default
-        effective_beta = self.beta if beta is None else beta
-        total_loss = reconstruction_loss + (effective_beta * kl_loss)
+        total_loss = reconstruction_loss + (self.beta * kl_loss)
 
         return total_loss, reconstruction_loss, kl_loss
 
@@ -279,7 +247,7 @@ class VariationalAutoEncoder(nn.Module):
 
 class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
     """VAE that is able to generate spectrograms for specific lables"""
-    def __init__(self, input_shape, latent_dim = 1024, num_classes = 3, embed_dim=100):
+    def __init__(self, input_shape, latent_dim = 512, num_classes = 3, embed_dim=100):
         super().__init__(input_shape, latent_dim)
         self.num_classes = num_classes
         self.embed_dim = embed_dim
@@ -319,7 +287,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
             z_conditioned = torch.cat([z, label_embed], dim=1)
             samples = self.decoder(z_conditioned)
             
-            return samples 
+            return samples
 
     def encode(self, x, class_labels):
         pass

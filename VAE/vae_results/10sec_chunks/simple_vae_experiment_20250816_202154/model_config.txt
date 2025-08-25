@@ -1,8 +1,0 @@
-Simple VAE Configuration
-========================
-Model Type: Standard VAE
-Input Shape: (1, 1025, 469)
-Latent Dimension: 256
-Beta: 0.001
-Number of Classes: 0
-Total Parameters: 63,738,435

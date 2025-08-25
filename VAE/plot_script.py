@@ -10,225 +10,183 @@ from pathlib import Path
 plt.style.use('seaborn-v0_8')
 sns.set_palette("husl")
 
-def load_latent_stats(log_path):
-    """Load the latent statistics CSV file"""
+def load_training_log(log_path):
+    """Load the training log CSV file"""
     try:
         df = pd.read_csv(log_path)
-        print(f"Loaded latent statistics with {len(df)} records")
+        print(f"Loaded training log with {len(df)} epochs")
         print(f"Columns: {list(df.columns)}")
         return df
     except Exception as e:
         print(f"Error loading log file: {e}")
         return None
 
-def plot_latent_evolution(df, save_path=None):
-    """Plot how latent statistics evolve during training"""
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    
-    # Mean of mu (should converge towards 0)
-    axes[0, 0].plot(df['epoch'], df['mu_mean'], linewidth=2, color='blue')
-    axes[0, 0].axhline(y=0, color='red', linestyle='--', alpha=0.5, label='Target (0)')
-    axes[0, 0].set_title('Mean of μ (Latent Means)\nShould converge to ~0', fontsize=14, fontweight='bold')
-    axes[0, 0].set_xlabel('Epoch')
-    axes[0, 0].set_ylabel('μ Mean')
-    axes[0, 0].legend()
-    axes[0, 0].grid(True, alpha=0.3)
-    
-    # Std of mu (diversity of latent means)
-    axes[0, 1].plot(df['epoch'], df['mu_std'], linewidth=2, color='green')
-    axes[0, 1].set_title('Std of μ (Diversity of Means)\nHigher = more diverse latent codes', fontsize=14, fontweight='bold')
-    axes[0, 1].set_xlabel('Epoch')
-    axes[0, 1].set_ylabel('μ Std')
-    axes[0, 1].grid(True, alpha=0.3)
-    
-    # Mean of logvar (log variance evolution)
-    axes[0, 2].plot(df['epoch'], df['logvar_mean'], linewidth=2, color='orange')
-    axes[0, 2].axhline(y=0, color='red', linestyle='--', alpha=0.5, label='Target (0)')
-    axes[0, 2].set_title('Mean of log(σ²)\nShould converge to ~0', fontsize=14, fontweight='bold')
-    axes[0, 2].set_xlabel('Epoch')
-    axes[0, 2].set_ylabel('log(σ²) Mean')
-    axes[0, 2].legend()
-    axes[0, 2].grid(True, alpha=0.3)
-    
-    # Std of logvar
-    axes[1, 0].plot(df['epoch'], df['logvar_std'], linewidth=2, color='purple')
-    axes[1, 0].set_title('Std of log(σ²)\nVariability in uncertainties', fontsize=14, fontweight='bold')
-    axes[1, 0].set_xlabel('Epoch')
-    axes[1, 0].set_ylabel('log(σ²) Std')
-    axes[1, 0].grid(True, alpha=0.3)
-    
-    # Actual variance (exp of logvar)
-    axes[1, 1].plot(df['epoch'], df['actual_var'], linewidth=2, color='red')
-    axes[1, 1].axhline(y=1, color='black', linestyle='--', alpha=0.5, label='Target (1)')
-    axes[1, 1].set_title('Actual Variance σ²\nShould converge to ~1', fontsize=14, fontweight='bold')
-    axes[1, 1].set_xlabel('Epoch')
-    axes[1, 1].set_ylabel('σ² (Actual Variance)')
-    axes[1, 1].legend()
-    axes[1, 1].grid(True, alpha=0.3)
-    
-    # KL divergence approximation (how close to standard normal)
-    # KL ≈ 0.5 * (μ² + σ² - log(σ²) - 1)
-    kl_approx = 0.5 * (df['mu_mean']**2 + df['actual_var'] - df['logvar_mean'] - 1)
-    axes[1, 2].plot(df['epoch'], kl_approx, linewidth=2, color='darkred')
-    axes[1, 2].axhline(y=0, color='black', linestyle='--', alpha=0.5, label='Target (0)')
-    axes[1, 2].set_title('Approximate KL Divergence\nLower = closer to N(0,1)', fontsize=14, fontweight='bold')
-    axes[1, 2].set_xlabel('Epoch')
-    axes[1, 2].set_ylabel('KL ≈ 0.5(μ²+σ²-log(σ²)-1)')
-    axes[1, 2].legend()
-    axes[1, 2].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Latent evolution plots saved to: {save_path}")
-    
-    plt.show()
-
-def plot_latent_distributions(df, save_path=None):
-    """Plot distributions of latent statistics"""
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    
-    # Distribution of mu means over time
-    recent_epochs = max(1, len(df) // 4)  # Last 25% of training
-    early_data = df.head(recent_epochs)
-    late_data = df.tail(recent_epochs)
-    
-    axes[0, 0].hist(early_data['mu_mean'], bins=30, alpha=0.6, label='Early Training', 
-                   density=True, color='lightblue')
-    axes[0, 0].hist(late_data['mu_mean'], bins=30, alpha=0.6, label='Late Training', 
-                   density=True, color='darkblue')
-    axes[0, 0].axvline(x=0, color='red', linestyle='--', label='Target (0)')
-    axes[0, 0].set_title('Distribution of μ Means', fontsize=14, fontweight='bold')
-    axes[0, 0].set_xlabel('μ Mean Value')
-    axes[0, 0].set_ylabel('Density')
-    axes[0, 0].legend()
-    axes[0, 0].grid(True, alpha=0.3)
-    
-    # Distribution of mu stds
-    axes[0, 1].hist(early_data['mu_std'], bins=30, alpha=0.6, label='Early Training', 
-                   density=True, color='lightgreen')
-    axes[0, 1].hist(late_data['mu_std'], bins=30, alpha=0.6, label='Late Training', 
-                   density=True, color='darkgreen')
-    axes[0, 1].set_title('Distribution of μ Stds', fontsize=14, fontweight='bold')
-    axes[0, 1].set_xlabel('μ Std Value')
-    axes[0, 1].set_ylabel('Density')
-    axes[0, 1].legend()
-    axes[0, 1].grid(True, alpha=0.3)
-    
-    # Distribution of logvar means
-    axes[0, 2].hist(early_data['logvar_mean'], bins=30, alpha=0.6, label='Early Training', 
-                   density=True, color='lightyellow')
-    axes[0, 2].hist(late_data['logvar_mean'], bins=30, alpha=0.6, label='Late Training', 
-                   density=True, color='orange')
-    axes[0, 2].axvline(x=0, color='red', linestyle='--', label='Target (0)')
-    axes[0, 2].set_title('Distribution of log(σ²) Means', fontsize=14, fontweight='bold')
-    axes[0, 2].set_xlabel('log(σ²) Mean Value')
-    axes[0, 2].set_ylabel('Density')
-    axes[0, 2].legend()
-    axes[0, 2].grid(True, alpha=0.3)
-    
-    # Distribution of actual variances
-    axes[1, 0].hist(early_data['actual_var'], bins=30, alpha=0.6, label='Early Training', 
-                   density=True, color='lightcoral')
-    axes[1, 0].hist(late_data['actual_var'], bins=30, alpha=0.6, label='Late Training', 
-                   density=True, color='darkred')
-    axes[1, 0].axvline(x=1, color='black', linestyle='--', label='Target (1)')
-    axes[1, 0].set_title('Distribution of Actual Variance σ²', fontsize=14, fontweight='bold')
-    axes[1, 0].set_xlabel('σ² Value')
-    axes[1, 0].set_ylabel('Density')
-    axes[1, 0].legend()
-    axes[1, 0].grid(True, alpha=0.3)
-    
-    # Correlation between mu_mean and actual_var over time
-    correlation_early = np.corrcoef(early_data['mu_mean'], early_data['actual_var'])[0, 1]
-    correlation_late = np.corrcoef(late_data['mu_mean'], late_data['actual_var'])[0, 1]
-    
-    scatter_early = axes[1, 1].scatter(early_data['mu_mean'], early_data['actual_var'], 
-                                      alpha=0.6, s=20, label=f'Early (r={correlation_early:.3f})',
-                                      color='lightblue')
-    scatter_late = axes[1, 1].scatter(late_data['mu_mean'], late_data['actual_var'], 
-                                     alpha=0.6, s=20, label=f'Late (r={correlation_late:.3f})',
-                                     color='darkblue')
-    axes[1, 1].axhline(y=1, color='black', linestyle='--', alpha=0.5)
-    axes[1, 1].axvline(x=0, color='red', linestyle='--', alpha=0.5)
-    axes[1, 1].set_title('μ Mean vs σ² Correlation', fontsize=14, fontweight='bold')
-    axes[1, 1].set_xlabel('μ Mean')
-    axes[1, 1].set_ylabel('σ² (Actual Variance)')
-    axes[1, 1].legend()
-    axes[1, 1].grid(True, alpha=0.3)
-    
-    # Training progress visualization
-    progress_metric = np.sqrt(df['mu_mean']**2 + (df['actual_var'] - 1)**2)
-    axes[1, 2].plot(df['epoch'], progress_metric, linewidth=2, color='purple')
-    axes[1, 2].set_title('Distance from Ideal N(0,1)\n√(μ² + (σ²-1)²)', fontsize=14, fontweight='bold')
-    axes[1, 2].set_xlabel('Epoch')
-    axes[1, 2].set_ylabel('Distance from N(0,1)')
-    axes[1, 2].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Latent distribution plots saved to: {save_path}")
-    
-    plt.show()
-
-def plot_convergence_analysis(df, save_path=None):
-    """Analyze convergence of latent space to standard normal"""
+def plot_losses(df, save_path=None):
+    """Plot training and validation losses"""
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     
-    # Rolling averages to smooth out noise
-    window_size = max(1, len(df) // 20)
-    
-    mu_mean_smooth = df['mu_mean'].rolling(window=window_size, center=True).mean()
-    actual_var_smooth = df['actual_var'].rolling(window=window_size, center=True).mean()
-    
-    # Convergence to zero mean
-    axes[0, 0].plot(df['epoch'], df['mu_mean'], alpha=0.3, color='blue', label='Raw')
-    axes[0, 0].plot(df['epoch'], mu_mean_smooth, linewidth=2, color='darkblue', label='Smoothed')
-    axes[0, 0].axhline(y=0, color='red', linestyle='--', alpha=0.7, label='Target')
-    axes[0, 0].fill_between(df['epoch'], -0.1, 0.1, alpha=0.2, color='green', label='Good range')
-    axes[0, 0].set_title('Convergence of μ Mean to 0', fontsize=14, fontweight='bold')
+    # Total Loss
+    axes[0, 0].plot(df['epoch'], df['train_loss'], label='Train Loss', linewidth=2, color='blue')
+    axes[0, 0].plot(df['epoch'], df['val_loss'], label='Val Loss', linewidth=2, color='red')
+    axes[0, 0].set_title('Total VAE Loss', fontsize=14, fontweight='bold')
     axes[0, 0].set_xlabel('Epoch')
-    axes[0, 0].set_ylabel('μ Mean')
+    axes[0, 0].set_ylabel('Loss')
     axes[0, 0].legend()
     axes[0, 0].grid(True, alpha=0.3)
     
-    # Convergence to unit variance
-    axes[0, 1].plot(df['epoch'], df['actual_var'], alpha=0.3, color='red', label='Raw')
-    axes[0, 1].plot(df['epoch'], actual_var_smooth, linewidth=2, color='darkred', label='Smoothed')
-    axes[0, 1].axhline(y=1, color='black', linestyle='--', alpha=0.7, label='Target')
-    axes[0, 1].fill_between(df['epoch'], 0.8, 1.2, alpha=0.2, color='green', label='Good range')
-    axes[0, 1].set_title('Convergence of σ² to 1', fontsize=14, fontweight='bold')
+    # Reconstruction Loss
+    axes[0, 1].plot(df['epoch'], df['train_recon_loss'], label='Train Recon Loss', 
+                   linewidth=2, color='blue')
+    axes[0, 1].plot(df['epoch'], df['val_recon_loss'], label='Val Recon Loss', 
+                   linewidth=2, color='red')
+    axes[0, 1].set_title('Reconstruction Loss (BCE/MSE)', fontsize=14, fontweight='bold')
     axes[0, 1].set_xlabel('Epoch')
-    axes[0, 1].set_ylabel('σ² (Actual Variance)')
+    axes[0, 1].set_ylabel('Reconstruction Loss')
     axes[0, 1].legend()
     axes[0, 1].grid(True, alpha=0.3)
     
-    # Overall convergence metric
-    distance_from_ideal = np.sqrt((df['mu_mean'] - 0)**2 + (df['actual_var'] - 1)**2)
-    distance_smooth = distance_from_ideal.rolling(window=window_size, center=True).mean()
-    
-    axes[1, 0].plot(df['epoch'], distance_from_ideal, alpha=0.3, color='purple', label='Raw')
-    axes[1, 0].plot(df['epoch'], distance_smooth, linewidth=2, color='darkmagenta', label='Smoothed')
-    axes[1, 0].set_title('Overall Distance from N(0,1)', fontsize=14, fontweight='bold')
+    # KL Divergence Loss
+    axes[1, 0].plot(df['epoch'], df['train_kl_loss'], label='Train KL Loss', 
+                   linewidth=2, color='blue')
+    axes[1, 0].plot(df['epoch'], df['val_kl_loss'], label='Val KL Loss', 
+                   linewidth=2, color='red')
+    axes[1, 0].set_title('KL Divergence Loss', fontsize=14, fontweight='bold')
     axes[1, 0].set_xlabel('Epoch')
-    axes[1, 0].set_ylabel('√((μ-0)² + (σ²-1)²)')
+    axes[1, 0].set_ylabel('KL Loss')
     axes[1, 0].legend()
     axes[1, 0].grid(True, alpha=0.3)
     
-    # Stability analysis (variance of recent measurements)
-    stability_window = max(10, len(df) // 10)
-    mu_stability = df['mu_mean'].rolling(window=stability_window).std()
-    var_stability = df['actual_var'].rolling(window=stability_window).std()
+    # Learning Rate
+    axes[1, 1].semilogy(df['epoch'], df['lr'], linewidth=2, color='orange')
+    axes[1, 1].set_title('Learning Rate Schedule', fontsize=14, fontweight='bold')
+    axes[1, 1].set_xlabel('Epoch')
+    axes[1, 1].set_ylabel('Learning Rate (log scale)')
+    axes[1, 1].grid(True, alpha=0.3)
     
-    axes[1, 1].plot(df['epoch'], mu_stability, label='μ Mean Stability', linewidth=2, color='blue')
-    axes[1, 1].plot(df['epoch'], var_stability, label='σ² Stability', linewidth=2, color='red')
-    axes[1, 1].set_title(f'Training Stability\n(Rolling Std, window={stability_window})', 
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Loss plots saved to: {save_path}")
+    
+    plt.show()
+
+def plot_loss_components(df, save_path=None):
+    """Plot the components of the VAE loss to understand the trade-off"""
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    
+    # Loss ratio plot
+    recon_ratio = df['train_recon_loss'] / df['train_loss']
+    kl_ratio = df['train_kl_loss'] / df['train_loss']
+    
+    axes[0].plot(df['epoch'], recon_ratio, label='Reconstruction Ratio', linewidth=2, color='green')
+    axes[0].plot(df['epoch'], kl_ratio, label='KL Ratio', linewidth=2, color='purple')
+    axes[0].set_title('Loss Component Ratios\n(What % of total loss)', fontsize=14, fontweight='bold')
+    axes[0].set_xlabel('Epoch')
+    axes[0].set_ylabel('Ratio of Total Loss')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+    axes[0].set_ylim(0, 1)
+    
+    # Absolute loss components
+    axes[1].plot(df['epoch'], df['train_recon_loss'], label='Reconstruction Loss', 
+                linewidth=2, color='green')
+    axes[1].plot(df['epoch'], df['train_kl_loss'], label='KL Divergence Loss', 
+                linewidth=2, color='purple')
+    axes[1].set_title('Absolute Loss Components', fontsize=14, fontweight='bold')
+    axes[1].set_xlabel('Epoch')
+    axes[1].set_ylabel('Loss Value')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+    
+    # KL vs Reconstruction scatter (to see relationship)
+    axes[2].scatter(df['train_recon_loss'], df['train_kl_loss'], 
+                   alpha=0.6, c=df['epoch'], cmap='viridis', s=30)
+    axes[2].set_title('KL vs Reconstruction\n(Colored by Epoch)', fontsize=14, fontweight='bold')
+    axes[2].set_xlabel('Reconstruction Loss')
+    axes[2].set_ylabel('KL Loss')
+    axes[2].grid(True, alpha=0.3)
+    
+    # Add colorbar for epoch
+    cbar = plt.colorbar(axes[2].collections[0], ax=axes[2])
+    cbar.set_label('Epoch')
+    
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Loss component plots saved to: {save_path}")
+    
+    plt.show()
+
+def plot_training_dynamics(df, save_path=None):
+    """Plot training dynamics and convergence indicators"""
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+    
+    # Overfitting indicator
+    loss_diff = df['val_loss'] - df['train_loss']
+    axes[0, 0].plot(df['epoch'], loss_diff, linewidth=2, color='red')
+    axes[0, 0].axhline(y=0, color='black', linestyle='--', alpha=0.5)
+    axes[0, 0].fill_between(df['epoch'], loss_diff, 0, where=(loss_diff > 0), 
+                           color='red', alpha=0.3, label='Overfitting')
+    axes[0, 0].fill_between(df['epoch'], loss_diff, 0, where=(loss_diff <= 0), 
+                           color='green', alpha=0.3, label='Good fit')
+    axes[0, 0].set_title('Overfitting Indicator\n(Val Loss - Train Loss)', 
+                        fontsize=14, fontweight='bold')
+    axes[0, 0].set_xlabel('Epoch')
+    axes[0, 0].set_ylabel('Loss Difference')
+    axes[0, 0].legend()
+    axes[0, 0].grid(True, alpha=0.3)
+    
+    # Loss smoothness (rolling average)
+    window_size = max(1, len(df) // 20)
+    train_loss_smooth = df['train_loss'].rolling(window=window_size, center=True).mean()
+    val_loss_smooth = df['val_loss'].rolling(window=window_size, center=True).mean()
+    
+    axes[0, 1].plot(df['epoch'], df['train_loss'], alpha=0.3, color='blue', label='Train (raw)')
+    axes[0, 1].plot(df['epoch'], df['val_loss'], alpha=0.3, color='red', label='Val (raw)')
+    axes[0, 1].plot(df['epoch'], train_loss_smooth, linewidth=2, color='blue', label='Train (smooth)')
+    axes[0, 1].plot(df['epoch'], val_loss_smooth, linewidth=2, color='red', label='Val (smooth)')
+    axes[0, 1].set_title('Smoothed Loss Curves', fontsize=14, fontweight='bold')
+    axes[0, 1].set_xlabel('Epoch')
+    axes[0, 1].set_ylabel('Loss')
+    axes[0, 1].legend()
+    axes[0, 1].grid(True, alpha=0.3)
+    
+    # Training time analysis
+    if 'time_elapsed' in df.columns:
+        # Calculate time per epoch
+        time_per_epoch = df['time_elapsed'].diff().fillna(df['time_elapsed'].iloc[0]) / 60
+        axes[1, 0].plot(df['epoch'], time_per_epoch, linewidth=2, color='green')
+        axes[1, 0].set_title('Time per Epoch', fontsize=14, fontweight='bold')
+        axes[1, 0].set_xlabel('Epoch')
+        axes[1, 0].set_ylabel('Time (minutes)')
+        axes[1, 0].grid(True, alpha=0.3)
+        
+        # Add average line
+        avg_time = time_per_epoch.mean()
+        axes[1, 0].axhline(y=avg_time, color='red', linestyle='--', 
+                          label=f'Avg: {avg_time:.2f}min')
+        axes[1, 0].legend()
+    else:
+        axes[1, 0].text(0.5, 0.5, 'No timing data\navailable', 
+                       transform=axes[1, 0].transAxes, ha='center', va='center',
+                       fontsize=12)
+        axes[1, 0].set_title('Time per Epoch', fontsize=14, fontweight='bold')
+    
+    # Loss improvement rate (derivative)
+    train_loss_improvement = -df['train_loss'].diff().rolling(window=5).mean()
+    val_loss_improvement = -df['val_loss'].diff().rolling(window=5).mean()
+    
+    axes[1, 1].plot(df['epoch'], train_loss_improvement, 
+                   label='Train Improvement Rate', linewidth=2, color='blue')
+    axes[1, 1].plot(df['epoch'], val_loss_improvement, 
+                   label='Val Improvement Rate', linewidth=2, color='red')
+    axes[1, 1].axhline(y=0, color='black', linestyle='--', alpha=0.5)
+    axes[1, 1].set_title('Loss Improvement Rate\n(Negative of derivative, smoothed)', 
                         fontsize=14, fontweight='bold')
     axes[1, 1].set_xlabel('Epoch')
-    axes[1, 1].set_ylabel('Rolling Standard Deviation')
+    axes[1, 1].set_ylabel('Loss Decrease per Epoch')
     axes[1, 1].legend()
     axes[1, 1].grid(True, alpha=0.3)
     
@@ -236,103 +194,93 @@ def plot_convergence_analysis(df, save_path=None):
     
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Convergence analysis plots saved to: {save_path}")
+        print(f"Training dynamics plots saved to: {save_path}")
     
     plt.show()
 
 def plot_summary_stats(df, save_path=None):
-    """Plot summary statistics and final assessment"""
+    """Plot summary statistics and final results"""
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     
-    # Final values assessment
-    final_mu_mean = df['mu_mean'].iloc[-1]
-    final_var = df['actual_var'].iloc[-1]
-    final_distance = np.sqrt(final_mu_mean**2 + (final_var - 1)**2)
+    # Best epoch identification
+    best_epoch = df.loc[df['val_loss'].idxmin(), 'epoch']
+    best_val_loss = df['val_loss'].min()
+    final_val_loss = df['val_loss'].iloc[-1]
     
-    # Performance over time
-    epochs = df['epoch'].values
-    performance = 1 / (1 + np.sqrt(df['mu_mean']**2 + (df['actual_var'] - 1)**2))
-    
-    axes[0, 0].plot(epochs, performance, linewidth=2, color='darkgreen')
-    axes[0, 0].set_title('Latent Space Quality Score\n1/(1+distance from N(0,1))', 
+    axes[0, 0].plot(df['epoch'], df['val_loss'], linewidth=2, color='red')
+    axes[0, 0].axvline(x=best_epoch, color='green', linestyle='--', alpha=0.7, 
+                      label=f'Best epoch: {best_epoch}')
+    axes[0, 0].axhline(y=best_val_loss, color='green', linestyle='--', alpha=0.7)
+    axes[0, 0].scatter([best_epoch], [best_val_loss], color='green', s=100, zorder=5)
+    axes[0, 0].scatter([df['epoch'].iloc[-1]], [final_val_loss], color='red', s=100, zorder=5,
+                      label=f'Final: {final_val_loss:.4f}')
+    axes[0, 0].set_title(f'Validation Loss Progress\nBest: {best_val_loss:.4f} at epoch {best_epoch}', 
                         fontsize=14, fontweight='bold')
     axes[0, 0].set_xlabel('Epoch')
-    axes[0, 0].set_ylabel('Quality Score (0-1)')
+    axes[0, 0].set_ylabel('Validation Loss')
+    axes[0, 0].legend()
     axes[0, 0].grid(True, alpha=0.3)
-    axes[0, 0].set_ylim(0, 1)
     
-    # Box plots of early vs late training
-    split_point = len(df) // 2
-    early_data = df.iloc[:split_point]
-    late_data = df.iloc[split_point:]
-    
-    box_data = [
-        early_data['mu_mean'], late_data['mu_mean'],
-        early_data['actual_var'], late_data['actual_var']
-    ]
-    box_labels = ['μ Early', 'μ Late', 'σ² Early', 'σ² Late']
-    
-    bp = axes[0, 1].boxplot(box_data, labels=box_labels, patch_artist=True)
-    colors = ['lightblue', 'darkblue', 'lightcoral', 'darkred']
-    for patch, color in zip(bp['boxes'], colors):
-        patch.set_facecolor(color)
-    
-    axes[0, 1].axhline(y=0, color='black', linestyle='--', alpha=0.5)
-    axes[0, 1].axhline(y=1, color='black', linestyle='--', alpha=0.5)
-    axes[0, 1].set_title('Early vs Late Training Comparison', fontsize=14, fontweight='bold')
-    axes[0, 1].set_ylabel('Value')
+    # Loss distribution comparison
+    axes[0, 1].hist(df['train_loss'], bins=20, alpha=0.6, label='Train Loss', 
+                   density=True, color='blue')
+    axes[0, 1].hist(df['val_loss'], bins=20, alpha=0.6, label='Val Loss', 
+                   density=True, color='red')
+    axes[0, 1].axvline(x=df['train_loss'].mean(), color='blue', linestyle='--', 
+                      label=f'Train mean: {df["train_loss"].mean():.4f}')
+    axes[0, 1].axvline(x=df['val_loss'].mean(), color='red', linestyle='--',
+                      label=f'Val mean: {df["val_loss"].mean():.4f}')
+    axes[0, 1].set_title('Loss Distribution', fontsize=14, fontweight='bold')
+    axes[0, 1].set_xlabel('Loss Value')
+    axes[0, 1].set_ylabel('Density')
+    axes[0, 1].legend()
     axes[0, 1].grid(True, alpha=0.3)
     
-    # Learning curve derivatives (rate of change)
-    mu_rate = -np.gradient(np.abs(df['mu_mean']))  # Negative because we want decreasing absolute value
-    var_rate = -np.gradient(np.abs(df['actual_var'] - 1))  # Rate of approaching 1
-    
-    axes[1, 0].plot(epochs, mu_rate, label='μ Improvement Rate', linewidth=2, color='blue')
-    axes[1, 0].plot(epochs, var_rate, label='σ² Improvement Rate', linewidth=2, color='red')
-    axes[1, 0].axhline(y=0, color='black', linestyle='--', alpha=0.5)
-    axes[1, 0].set_title('Improvement Rates\n(Negative gradient of |error|)', 
+    # Component correlation analysis
+    correlation = np.corrcoef(df['train_recon_loss'], df['train_kl_loss'])[0, 1]
+    scatter = axes[1, 0].scatter(df['train_recon_loss'], df['train_kl_loss'], 
+                                alpha=0.6, c=df['epoch'], cmap='viridis', s=30)
+    axes[1, 0].set_title(f'Reconstruction vs KL Loss\nCorrelation: {correlation:.3f}', 
                         fontsize=14, fontweight='bold')
-    axes[1, 0].set_xlabel('Epoch')
-    axes[1, 0].set_ylabel('Rate of Improvement')
-    axes[1, 0].legend()
+    axes[1, 0].set_xlabel('Reconstruction Loss')
+    axes[1, 0].set_ylabel('KL Loss')
     axes[1, 0].grid(True, alpha=0.3)
+    plt.colorbar(scatter, ax=axes[1, 0], label='Epoch')
     
-    # Summary text box
+    # Training summary text
     axes[1, 1].axis('off')
     
-    # Calculate final assessment
-    mu_status = "GOOD" if abs(final_mu_mean) < 0.1 else ("OK" if abs(final_mu_mean) < 0.3 else "POOR")
-    var_status = "GOOD" if 0.8 < final_var < 1.2 else ("OK" if 0.5 < final_var < 1.5 else "POOR")
+    # Calculate improvements
+    initial_train_loss = df['train_loss'].iloc[0]
+    final_train_loss = df['train_loss'].iloc[-1]
+    initial_val_loss = df['val_loss'].iloc[0]
     
-    # Check if converged (low variance in recent epochs)
-    recent_stability = df['mu_mean'].tail(20).std() if len(df) >= 20 else df['mu_mean'].std()
-    converged = "CONVERGED" if recent_stability < 0.01 else "STILL LEARNING"
-    
-    # Calculate improvement
-    initial_distance = np.sqrt(df['mu_mean'].iloc[0]**2 + (df['actual_var'].iloc[0] - 1)**2)
-    improvement = ((initial_distance - final_distance) / initial_distance) * 100
+    train_improvement = ((initial_train_loss - final_train_loss) / initial_train_loss) * 100
+    val_improvement = ((initial_val_loss - best_val_loss) / initial_val_loss) * 100
     
     summary_text = f"""
-LATENT SPACE ANALYSIS
-====================
+TRAINING SUMMARY
+================
 
-FINAL VALUES:
-μ Mean: {final_mu_mean:.4f} {mu_status}
-σ² (Var): {final_var:.4f} {var_status}
-Distance from N(0,1): {final_distance:.4f}
-
-TRAINING PROGRESS:
 Total Epochs: {len(df)}
-Improvement: {improvement:.1f}%
-Status: {converged}
+Best Epoch: {best_epoch}
 
-TARGETS:
-μ Mean ≈ 0 (current: {abs(final_mu_mean):.4f})
-σ² ≈ 1 (current: {final_var:.4f})
+FINAL LOSSES:
+Train: {final_train_loss:.4f}
+Validation: {final_val_loss:.4f}
+Best Val: {best_val_loss:.4f}
 
-ASSESSMENT:
-Quality Score: {performance.iloc[-1]:.3f}/1.000
-Overall: {'EXCELLENT' if performance.iloc[-1] > 0.9 else ('GOOD' if performance.iloc[-1] > 0.8 else 'NEEDS WORK')}
+IMPROVEMENTS:
+Train: {train_improvement:.1f}%
+Val: {val_improvement:.1f}%
+
+COMPONENTS (Final):
+Recon: {df['train_recon_loss'].iloc[-1]:.4f}
+KL: {df['train_kl_loss'].iloc[-1]:.4f}
+
+Final LR: {df['lr'].iloc[-1]:.2e}
+
+STATUS: {'✓ CONVERGED' if patience_check(df) else '⚠ MAY NEED MORE TRAINING'}
 """
     
     axes[1, 1].text(0.05, 0.95, summary_text, transform=axes[1, 1].transAxes,
@@ -347,58 +295,61 @@ Overall: {'EXCELLENT' if performance.iloc[-1] > 0.9 else ('GOOD' if performance.
     
     plt.show()
 
-def create_latent_report(log_path, output_dir=None):
-    """Create a comprehensive latent space analysis report"""
-    df = load_latent_stats(log_path)
+def patience_check(df, window=10):
+    """Check if model has converged based on recent loss trends"""
+    if len(df) < window:
+        return False
+    
+    recent_val_loss = df['val_loss'].iloc[-window:]
+    trend = np.polyfit(range(len(recent_val_loss)), recent_val_loss, 1)[0]
+    
+    # If slope is very small, consider converged
+    return abs(trend) < 0.001
+
+def create_training_report(log_path, output_dir=None):
+    """Create a comprehensive training report with all plots"""
+    df = load_training_log(log_path)
     if df is None:
         return
     
     if output_dir is None:
-        output_dir = Path(log_path).parent / "latent_analysis"
+        output_dir = Path(log_path).parent / "training_plots"
     
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
     
-    print(f"Creating comprehensive latent space report in: {output_dir}")
-    print(f"Report will analyze {len(df)} epochs of latent statistics")
+    print(f"Creating comprehensive training report in: {output_dir}")
+    print(f"Report will include {len(df)} epochs of training data")
     
     # Generate all plots
-    print("Generating latent evolution plots...")
-    plot_latent_evolution(df, output_dir / "01_latent_evolution.png")
+    print("📊 Generating loss plots...")
+    plot_losses(df, output_dir / "01_losses.png")
     
-    print("Generating latent distributions...")
-    plot_latent_distributions(df, output_dir / "02_latent_distributions.png")
+    print("📊 Generating loss component analysis...")
+    plot_loss_components(df, output_dir / "02_loss_components.png")
     
-    print("Generating convergence analysis...")
-    plot_convergence_analysis(df, output_dir / "03_convergence_analysis.png")
+    print("📊 Generating training dynamics...")
+    plot_training_dynamics(df, output_dir / "03_training_dynamics.png")
     
-    print("Generating summary statistics...")
+    print("📊 Generating summary statistics...")
     plot_summary_stats(df, output_dir / "04_summary_stats.png")
     
     # Save processed data
-    df.to_csv(output_dir / "processed_latent_stats.csv", index=False)
+    df.to_csv(output_dir / "processed_training_log.csv", index=False)
     
-    # Create HTML report
+    # Create a simple HTML report
     create_html_report(df, output_dir)
     
-    print(f"Latent space analysis complete! Files saved in: {output_dir}")
-    print(f"Open {output_dir / 'report.html'} in your browser for a summary")
+    print(f"✅ Training report complete! Files saved in: {output_dir}")
+    print(f"🌐 Open {output_dir / 'report.html'} in your browser for a summary")
 
 def create_html_report(df, output_dir):
-    """Create a simple HTML report for latent space analysis"""
-    final_mu_mean = df['mu_mean'].iloc[-1]
-    final_var = df['actual_var'].iloc[-1]
-    final_distance = np.sqrt(final_mu_mean**2 + (final_var - 1)**2)
-    
-    mu_good = abs(final_mu_mean) < 0.1
-    var_good = 0.8 < final_var < 1.2
-    overall_good = mu_good and var_good
-    
+    """Create a simple HTML report"""
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>VAE Latent Space Analysis Report</title>
+        <title>VAE Training Report</title>
         <style>
             body {{ font-family: Arial, sans-serif; margin: 40px; }}
             .metric {{ background: #f0f0f0; padding: 10px; margin: 5px 0; border-radius: 5px; }}
@@ -409,54 +360,44 @@ def create_html_report(df, output_dir):
         </style>
     </head>
     <body>
-        <h1>VAE Latent Space Analysis Report</h1>
+        <h1>🤖 VAE Training Report</h1>
         
-        <h2>Key Metrics</h2>
-        <div class="metric {'good' if mu_good else 'warning' if abs(final_mu_mean) < 0.3 else 'bad'}">
-            <strong>Final μ Mean:</strong> {final_mu_mean:.4f} (Target: ~0.000)
-        </div>
-        <div class="metric {'good' if var_good else 'warning' if 0.5 < final_var < 1.5 else 'bad'}">
-            <strong>Final σ² (Variance):</strong> {final_var:.4f} (Target: ~1.000)
+        <h2>📈 Key Metrics</h2>
+        <div class="metric {'good' if df['val_loss'].iloc[-1] < df['val_loss'].iloc[0] else 'bad'}">
+            <strong>Final Validation Loss:</strong> {df['val_loss'].iloc[-1]:.4f}
         </div>
         <div class="metric">
-            <strong>Distance from N(0,1):</strong> {final_distance:.4f}
+            <strong>Best Validation Loss:</strong> {df['val_loss'].min():.4f} (Epoch {df.loc[df['val_loss'].idxmin(), 'epoch']})
         </div>
         <div class="metric">
-            <strong>Total Training Epochs:</strong> {len(df)}
+            <strong>Total Epochs:</strong> {len(df)}
         </div>
-        <div class="metric {'good' if overall_good else 'warning'}">
-            <strong>Overall Assessment:</strong> {'Excellent latent space!' if overall_good else 'Needs improvement'}
+        <div class="metric {'good' if patience_check(df) else 'warning'}">
+            <strong>Convergence Status:</strong> {'Converged ✅' if patience_check(df) else 'May need more training ⚠️'}
         </div>
         
-        <h2>Visualizations</h2>
-        <h3>Latent Space Evolution</h3>
-        <img src="01_latent_evolution.png" alt="Latent space evolution over training">
+        <h2>📊 Visualizations</h2>
+        <h3>Loss Curves</h3>
+        <img src="01_losses.png" alt="Loss curves">
         
-        <h3>Distribution Analysis</h3>
-        <img src="02_latent_distributions.png" alt="Latent space distributions">
+        <h3>Loss Components</h3>
+        <img src="02_loss_components.png" alt="Loss components">
         
-        <h3>Convergence Analysis</h3>
-        <img src="03_convergence_analysis.png" alt="Convergence to standard normal">
+        <h3>Training Dynamics</h3>
+        <img src="03_training_dynamics.png" alt="Training dynamics">
         
         <h3>Summary Statistics</h3>
         <img src="04_summary_stats.png" alt="Summary statistics">
         
-        <h2>Analysis</h2>
-        <p><strong>Mean Convergence:</strong> 
-        {'Excellent! The latent means are very close to 0.' if mu_good else 
-         ('Acceptable, but could be closer to 0.' if abs(final_mu_mean) < 0.3 else 
-          'Poor convergence - latent means are far from 0.')}
+        <h2>🔍 Analysis</h2>
+        <p><strong>Reconstruction vs KL Balance:</strong> 
+        The final reconstruction loss is {df['train_recon_loss'].iloc[-1]:.4f} 
+        and KL loss is {df['train_kl_loss'].iloc[-1]:.4f}. 
+        {'This suggests good balance.' if abs(df['train_recon_loss'].iloc[-1] / df['train_kl_loss'].iloc[-1] - 1) < 2 else 'Consider adjusting beta parameter.'}
         </p>
         
-        <p><strong>Variance Convergence:</strong> 
-        {'Excellent! The latent variance is very close to 1.' if var_good else
-         ('Acceptable, but variance could be closer to 1.' if 0.5 < final_var < 1.5 else
-          'Poor convergence - variance is far from 1.')}
-        </p>
-        
-        <p><strong>Overall Latent Space Quality:</strong> 
-        {'Your VAE has learned an excellent latent representation that closely follows a standard normal distribution.' if overall_good else
-         'Consider adjusting the β parameter in your loss function or training for more epochs.'}
+        <p><strong>Overfitting Check:</strong> 
+        {'No significant overfitting detected.' if (df['val_loss'] - df['train_loss']).iloc[-1] < 0.1 else 'Some overfitting may be present.'}
         </p>
         
         <hr>
@@ -469,38 +410,38 @@ def create_html_report(df, output_dir):
         f.write(html_content)
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyze VAE Latent Space Statistics')
+    parser = argparse.ArgumentParser(description='Plot VAE Training Metrics')
     parser.add_argument('--log_path', required=True, 
-                       help='Path to latent_stats.csv file')
+                       help='Path to vae_training_log.csv file')
     parser.add_argument('--output_dir', default=None,
                        help='Directory to save plots (default: same as log file)')
     parser.add_argument('--plot_type', default='all',
-                       choices=['evolution', 'distributions', 'convergence', 'summary', 'all'],
+                       choices=['losses', 'components', 'dynamics', 'summary', 'all'],
                        help='Type of plot to generate')
     
     args = parser.parse_args()
     
     # Load data
-    df = load_latent_stats(args.log_path)
+    df = load_training_log(args.log_path)
     if df is None:
         return
     
     # Set output directory
     if args.output_dir is None:
-        args.output_dir = Path(args.log_path).parent / "latent_analysis"
+        args.output_dir = Path(args.log_path).parent / "training_plots"
     
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
     
     # Generate plots based on selection
     if args.plot_type == 'all':
-        create_latent_report(args.log_path, args.output_dir)
-    elif args.plot_type == 'evolution':
-        plot_latent_evolution(df, output_dir / "latent_evolution.png")
-    elif args.plot_type == 'distributions':
-        plot_latent_distributions(df, output_dir / "latent_distributions.png")
-    elif args.plot_type == 'convergence':
-        plot_convergence_analysis(df, output_dir / "convergence_analysis.png")
+        create_training_report(args.log_path, args.output_dir)
+    elif args.plot_type == 'losses':
+        plot_losses(df, output_dir / "losses.png")
+    elif args.plot_type == 'components':
+        plot_loss_components(df, output_dir / "loss_components.png")
+    elif args.plot_type == 'dynamics':
+        plot_training_dynamics(df, output_dir / "training_dynamics.png")
     elif args.plot_type == 'summary':
         plot_summary_stats(df, output_dir / "summary_stats.png")
 

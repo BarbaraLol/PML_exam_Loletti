@@ -1,9 +1,7 @@
-import math
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torch.nn.utils import clip_grad_norm_
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
@@ -13,7 +11,8 @@ import csv
 from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
 
-from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
+# Import your modules
+from audio_generation_model import SpectrogramVAE, ConditionalSpectrogramVAE
 from data_loading import create_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint
 
@@ -67,13 +66,8 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
             if conditional:
                 originals = batch[0].to(device)
                 labels = batch[1].to(device)
-                # Get reconstruction - UPDATED CALL
-                reconstructed, _, _ = model(originals, labels)
             else:  # Non-conditional
                 originals = batch.to(device)
-                # Get reconstruction - UPDATED CALL
-                reconstructed, _, _ = model(originals)
-            break
     
     # Adjust number of samples to actual batch size
     num_samples = min(num_samples, originals.size(0))
@@ -104,59 +98,39 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
                dpi=150, bbox_inches='tight')
     plt.close()
 
-def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-    """Enhanced training loop with all requested features"""
-    
-    # Setup optimizer with weight decay
-    optimizer = optim.AdamW(
-        model.parameters(),
-        lr=args.lr,
-        weight_decay=1e-5,
-        betas=(0.9, 0.999)
-    ) 
 
-    # Learning rate scheduling with warmup
-    total_steps = args.epochs * len(train_loader)
-    warmup_steps = int(0.1 * total_steps)  # 10% warmup
+def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
+    """Main training loop for VAE"""
     
-    def lr_lambda(current_step):
-        if current_step < warmup_steps:
-            return float(current_step) / float(max(1, warmup_steps))
-        # Cosine decay after warmup
-        progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-        return 0.5 * (1.0 + math.cos(math.pi * progress))
+    # Setup optimizer with reasonable parameters
+    optimizer = optim.Adam(
+        model.parameters(), 
+        lr=args.lr, 
+        weight_decay=args.weight_decay,
+        betas=(0.9, 0.999)
+    )
     
-    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+    # Learning rate scheduler
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.8, patience=10, min_lr=1e-6
+    )
     
-    # Training log with additional metrics
+    # Training log
     log_file = os.path.join(output_dir, "vae_training_log.csv")
-    latent_stats_file = os.path.join(output_dir, "latent_stats.csv")
-    
-    # Initialize logs
-    with open(log_file, 'w') as f:
+    with open(log_file, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow([
-            'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss',
-            'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'beta', 
-            'grad_norm', 'time_elapsed'
-        ])
-    
-    with open(latent_stats_file, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'epoch', 'batch', 'mu_mean', 'mu_std', 'logvar_mean',
-            'logvar_std', 'actual_var'
-        ])
+        writer.writerow(['epoch', 'train_loss', 'train_recon_loss', 'train_kl_loss', 
+                        'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'time_elapsed'])
     
     # Training state
     best_val_loss = float('inf')
+    patience_counter = 0
     start_time = time.time()
-    global_step = 0
     
-    print("Starting training with:")
-    print(f"- LR warmup ({warmup_steps} steps)")
-    print(f"- Beta warmup (target β={args.beta})")
-    print(f"- Gradient clipping (max_norm={args.grad_clip})")
+    print("Starting VAE training...")
+    print(f"Model: {'Conditional' if conditional else 'Standard'} VAE")
+    print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Beta: {args.beta}")
     
     for epoch in range(args.epochs):
         epoch_start = time.time()
@@ -164,85 +138,63 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         # Training phase
         model.train()
         train_total_loss = 0
-        train_recon_loss = 0
+        train_recon_loss = 0  
         train_kl_loss = 0
         train_batches = 0
         
         for batch_idx, batch in enumerate(train_loader):
-            global_step += 1
+            if conditional:
+                data, labels = batch
+                data, labels = data.to(device), labels.to(device)
+                recon_x, mu, logvar, z = model(data, labels)
+            else:
+                data = batch.to(device)
             
-            try:
-                # Prepare batch
-                if conditional:
-                    data, labels = batch
-                    data, labels = data.to(device), labels.to(device)
-                else:
-                    data = batch.to(device)
-                
-                # Beta warmup (linear schedule)
-                current_beta = min(args.beta * (global_step / warmup_steps), args.beta)
-                
-                optimizer.zero_grad()
-                
-                # Forward pass
-                if conditional:
-                    recon_x, mu, logvar = model(data, labels)
-                else:
-                    recon_x, mu, logvar = model(data)
-                
-                # Compute loss
-                total_loss, recon_loss, kl_loss = model.loss_function(
-                    recon_x, data, mu, logvar, beta=current_beta
-                )
-                
-                # Backward pass
-                total_loss.backward()
-                
-                # Gradient clipping
-                grad_norm = torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), 
-                    max_norm=args.grad_clip
-                )
-                
-                optimizer.step()
-                scheduler.step()
-                
-                # Accumulate losses
-                train_total_loss += total_loss.item()
-                train_recon_loss += recon_loss.item()
-                train_kl_loss += kl_loss.item()
-                train_batches += 1
-                
-                # Log latent space statistics
-                if batch_idx % 100 == 0:
-                    # Calculate latent stats
-                    mu_mean = mu.mean().item()
-                    mu_std = mu.std().item()
-                    logvar_mean = logvar.mean().item()
-                    logvar_std = logvar.std().item()
-                    actual_var = torch.exp(logvar).mean().item()
-                    
-                    # Save to CSV
-                    with open(latent_stats_file, 'a') as f:
-                        writer = csv.writer(f)
-                        writer.writerow([
-                            epoch+1, batch_idx, mu_mean, mu_std,
-                            logvar_mean, logvar_std, actual_var
-                        ])
-                    
-                    # Print summary
-                    current_lr = optimizer.param_groups[0]['lr']
-                    print(f"\nEpoch {epoch+1} Batch {batch_idx}:")
-                    print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
-                    print(f"Train Loss: {total_loss.item():.4f}")
-                    print(f"  Recon: {recon_loss.item():.4f} | KL: {kl_loss.item():.4f}")
-                    print(f"Grad Norm: {grad_norm:.4f}")
-                    print(f"Latent μ: {mu_mean:.4f} ± {mu_std:.4f}")
-                    print(f"Latent σ²: {actual_var:.4f} (logvar: {logvar_mean:.4f})")
-                
-            except Exception as e:
-                print(f"Training batch error: {e}")
+            optimizer.zero_grad()
+            
+            # Forward pass
+            if conditional:
+                recon_x, mu, logvar, z = model(data, labels)
+            else:
+                recon_x, mu, logvar, z = model(data)
+            
+            # Compute loss
+            total_loss, recon_loss, kl_loss = model.loss_function(recon_x, data, mu, logvar)
+            
+            # Check for NaN losses
+            if torch.isnan(total_loss):
+                print(f"NaN loss detected at epoch {epoch}, batch {batch_idx}")
                 continue
+            
+            # Backward pass
+            total_loss.backward()
+            
+            # Gradient clipping (less aggressive than original)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip)
+            
+            optimizer.step()
+            
+            # Accumulate losses
+            train_total_loss += total_loss.item()
+            train_recon_loss += recon_loss.item()
+            train_kl_loss += kl_loss.item()
+            train_batches += 1
+            
+            # Progress updates
+            if batch_idx % 20 == 0:
+                print(f"Epoch {epoch+1}/{args.epochs} [{batch_idx}/{len(train_loader)}] "
+                      f"Loss: {total_loss.item():.4f} | "
+                      f"Recon: {recon_loss.item():.4f} | "
+                      f"KL: {kl_loss.item():.4f}")
+        
+        # Average training losses
+        if train_batches > 0:
+            train_total_loss /= train_batches
+            train_recon_loss /= train_batches
+            train_kl_loss /= train_batches
+        else:
+            print(f"No valid batches in epoch {epoch+1}")
+            continue
         
         # Validation phase
         model.eval()
@@ -257,88 +209,121 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                     if conditional:
                         data, labels = batch
                         data, labels = data.to(device), labels.to(device)
-                        recon_x, mu, logvar = model(data, labels)
-                    else:
+                    else:  # Non-conditional: batch is single tensor
                         data = batch.to(device)
-                        recon_x, mu, logvar = model(data)
-                    
-                    # Use final beta for validation
-                    total_loss, recon_loss, kl_loss = model.loss_function(
-                        recon_x, data, mu, logvar, beta=args.beta
-                    )
-                    
-                    val_total_loss += total_loss.item()
-                    val_recon_loss += recon_loss.item()
-                    val_kl_loss += kl_loss.item()
-                    val_batches += 1
-                    
+                        
                 except Exception as e:
-                    print(f"Validation batch error: {e}")
+                    print(f"Validation error: {e}")
                     continue
         
-        # Calculate averages
-        train_total_loss /= train_batches
-        train_recon_loss /= train_batches
-        train_kl_loss /= train_batches
+        # Average validation losses
+        if val_batches > 0:
+            val_total_loss /= val_batches
+            val_recon_loss /= val_batches
+            val_kl_loss /= val_batches
+        else:
+            val_total_loss = val_recon_loss = val_kl_loss = float('nan')
         
-        val_total_loss /= val_batches
-        val_recon_loss /= val_batches
-        val_kl_loss /= val_batches
+        # Update learning rate
+        if not np.isnan(val_total_loss):
+            scheduler.step(val_total_loss)
+        
+        current_lr = optimizer.param_groups[0]['lr']
         
         # Time tracking
         epoch_time = time.time() - epoch_start
         total_time = time.time() - start_time
-        current_lr = optimizer.param_groups[0]['lr']
-        
-        # Save to log
-        with open(log_file, 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
-                val_total_loss, val_recon_loss, val_kl_loss, current_lr, current_beta,
-                grad_norm.item() if batch_idx % 100 == 0 else float('nan'), total_time
-            ])
         
         # Print epoch summary
         print(f"\nEpoch {epoch+1} Summary:")
         print(f"Time: {epoch_time:.2f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
-        print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
+        print(f"LR: {current_lr:.2e} | Beta: {model.beta:.4f}")
         print(f"Train - Total: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
         print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
         
-        # Save checkpoints
-        if val_total_loss < best_val_loss:
-            best_val_loss = val_total_loss
-            torch.save({
-                'epoch': epoch+1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'val_loss': val_total_loss,
-                'args': vars(args)
-            }, os.path.join(output_dir, 'best_model.pth'))
+        # Log to CSV
+        with open(log_file, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                epoch+1, train_total_loss, train_recon_loss, train_kl_loss,
+                val_total_loss, val_recon_loss, val_kl_loss, current_lr, total_time
+            ])
         
-        # Save samples periodically
+        # Save visualizations periodically
         if (epoch + 1) % 10 == 0 or epoch == 0:
-            save_sample_outputs(model, device, output_dir, epoch+1, 
-                              conditional=conditional, 
-                              num_classes=getattr(model, 'num_classes', None))
+            try:
+                save_sample_outputs(model, device, output_dir, epoch+1, conditional=conditional)
+                plot_reconstruction(model, val_loader, device, output_dir, epoch+1)
+            except Exception as e:
+                print(f"Error saving visualizations: {e}")
+        
+        # Model saving and early stopping
+        if not np.isnan(val_total_loss) and val_total_loss < best_val_loss:
+            best_val_loss = val_total_loss
+            patience_counter = 0
+            
+            # Save best model
+            # torch.save({
+            #     'epoch': epoch+1,
+            #     'model_state_dict': model.state_dict(),
+            #     'optimizer_state_dict': optimizer.state_dict(),
+            #     'val_loss': val_total_loss,
+            #     'best_val_loss': best_val_loss,
+            #     'model_config': {
+            #         'input_shape': model.input_shape,
+            #         'latent_dim': model.latent_dim,
+            #         'beta': args.beta,
+            #         'conditional': conditional,
+            #         'num_classes': getattr(model, 'num_classes', None)
+            #     }
+            # }, os.path.join(output_dir, 'best_vae_model.pth'))
+            
+            # print(f"✓ Saved best model at epoch {epoch+1} with val loss: {val_total_loss:.4f}")
+        else:
+            patience_counter += 1
+            if patience_counter >= args.patience:
+                print(f"\nEarly stopping at epoch {epoch+1} after {args.patience} epochs without improvement")
+                print(f"Best validation loss: {best_val_loss:.4f}")
+                break
+        
+        # Stop if learning rate becomes too small
+        if current_lr < 1e-7:
+            print(f"Learning rate too small ({current_lr:.2e}), stopping training")
+            break
     
-    print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
-    print(f"Best validation loss: {best_val_loss:.4f}")
+    # Save final model
+    # torch.save({
+    #     'epoch': epoch+1,
+    #     'model_state_dict': model.state_dict(),
+    #     'optimizer_state_dict': optimizer.state_dict(),
+    #     'val_loss': val_total_loss if not np.isnan(val_total_loss) else float('inf'),
+    #     'model_config': {
+    #         'input_shape': model.input_shape,
+    #         'latent_dim': model.latent_dim,
+    #         'beta': args.beta,
+    #         'conditional': conditional,
+    #         'num_classes': getattr(model, 'num_classes', None)
+    #     }
+    # }, os.path.join(output_dir, 'final_vae_model.pth'))
+    
+    # print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
+    # print(f"Best validation loss: {best_val_loss:.4f}")
+
+def single_item_collate(batch):
+    return torch.stack(batch)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train Simple Spectrogram VAE')
+    parser = argparse.ArgumentParser(description='Train Corrected Spectrogram VAE')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  # Reduced default
+    parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")
     parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
-    parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")  # Reduced default
-    parser.add_argument('--beta', type=float, default=0.001, help="Beta parameter for β-VAE") 
+    parser.add_argument('--latent_dim', type=int, default=128, help="Latent dimension")
+    parser.add_argument('--beta', type=float, default=0.001, help="Beta parameter for β-VAE")
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
-    parser.add_argument('--embed_dim', type=int, default=50, help="Label embedding dimension")
-    parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
-    parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
+    parser.add_argument('--output_dir', default='vae_results', help="Directory to save outputs")
+    parser.add_argument('--patience', type=int, default=20, help="Patience for early stopping")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")
     parser.add_argument('--weight_decay', type=float, default=1e-4, help="Weight decay for optimizer")
     parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")
@@ -350,7 +335,7 @@ def main():
     
     # Create output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = os.path.join(args.output_dir, f"simple_vae_experiment_{timestamp}")
+    output_dir = os.path.join(args.output_dir, f"vae_experiment_{timestamp}")
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}")
     
@@ -397,7 +382,7 @@ def main():
         train_dataset, 
         batch_size=args.batch_size, 
         shuffle=True, 
-        num_workers=2,  # Reduced for stability
+        num_workers=4,
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=True
     )
@@ -406,49 +391,52 @@ def main():
         val_dataset, 
         batch_size=args.batch_size, 
         shuffle=False,
-        num_workers=2,  # Reduced for stability
+        num_workers=4,
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=False
     )
     
-    # Initialize model - UPDATED MODEL INITIALIZATION
+    # Initialize model
     print(f"Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
-    print(f"Input shape for model: {spectrogram_shape} (type: {type(spectrogram_shape)})")
     
     try:
         if args.conditional and num_classes > 0:
-            model = ConditionalVariationalAutoEncoder(
+            model = ConditionalSpectrogramVAE(
                 input_shape=spectrogram_shape,
-                latent_dim=args.latent_dim,
                 num_classes=num_classes,
-                embed_dim=args.embed_dim
+                latent_dim=args.latent_dim,
+                beta=args.beta
             ).to(device)
         else:
-            spectrogram_shape = (1, 1025, 469)
-            model = VariationalAutoEncoder(
+            model = SpectrogramVAE(
                 input_shape=spectrogram_shape,
-                latent_dim=args.latent_dim
+                latent_dim=args.latent_dim,
+                beta=args.beta
             ).to(device)
     except Exception as e:
         print(f"Error initializing model: {e}")
-        import traceback
-        traceback.print_exc()
         return
     
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     
     # Save model configuration
     with open(os.path.join(output_dir, 'model_config.txt'), 'w') as f:
-        f.write(f"Simple VAE Configuration\n")
-        f.write(f"========================\n")
+        f.write(f"Corrected VAE Configuration\n")
+        f.write(f"============================\n")
         f.write(f"Model Type: {'Conditional' if args.conditional else 'Standard'} VAE\n")
         f.write(f"Input Shape: {spectrogram_shape}\n")
         f.write(f"Latent Dimension: {args.latent_dim}\n")
         f.write(f"Beta: {args.beta}\n")
         f.write(f"Number of Classes: {num_classes}\n")
-        if args.conditional:
-            f.write(f"Embedding Dimension: {args.embed_dim}\n")
         f.write(f"Total Parameters: {sum(p.numel() for p in model.parameters()):,}\n")
+        f.write(f"\nTraining Arguments:\n")
+        f.write(f"Batch Size: {args.batch_size}\n")
+        f.write(f"Learning Rate: {args.lr}\n")
+        f.write(f"Weight Decay: {args.weight_decay}\n")
+        f.write(f"Gradient Clipping: {args.grad_clip}\n")
+        f.write(f"Epochs: {args.epochs}\n")
+        f.write(f"Data Augmentation: {args.augment}\n")
+        f.write(f"Early Stopping Patience: {args.patience}\n")
         
         if label_encoder:
             f.write(f"\nClass Labels: {list(label_encoder.classes_)}\n")
@@ -467,7 +455,7 @@ def main():
     try:
         save_sample_outputs(model, device, output_dir, "final", num_samples=16, 
                            conditional=args.conditional, num_classes=num_classes)
-        plot_reconstruction(model, val_loader, device, output_dir, "final", conditional=args.conditional)
+        plot_reconstruction(model, val_loader, device, output_dir, "final")
     except Exception as e:
         print(f"Error generating final samples: {e}")
     
