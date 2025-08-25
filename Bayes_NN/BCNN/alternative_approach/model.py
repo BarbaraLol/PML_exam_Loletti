@@ -20,11 +20,11 @@ class BayesianChickCallDetector(nn.Module):
 
         # Fully connected Bayesian convolutional layers
         self.conv1 = BayesianConv2d(1, 32, kernel_size=(3, 3), padding=1, prior_sigma_1=prior_sigma_1, prior_sigma_2=prior_sigma_2, prior_pi=prior_pi)
-        self.bn1 = nn.BatchNorm2d(16)
+        self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = BayesianConv2d(32, 64, kernel_size=(3, 3), padding=1, prior_sigma_1=prior_sigma_1, prior_sigma_2=prior_sigma_2, prior_pi=prior_pi)
-        self.bn2 = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = BayesianConv2d(64, 128, kernel_size=(3, 3), padding=1, prior_sigma_1=prior_sigma_1, prior_sigma_2=prior_sigma_2, prior_pi=prior_pi)
-        self.bn3 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(128)
         # self.conv4 = BayesianConv2d(64, 128, kernel_size=(3, 3), padding=1, prior_sigma_1=prior_sigma_1, prior_sigma_2=prior_sigma_2, prior_pi=prior_pi)
         # self.bn4 = nn.BatchNorm2d(128)
 
@@ -52,7 +52,7 @@ class BayesianChickCallDetector(nn.Module):
             # Apply the same operations as in forward pass
             x = F.max_pool2d(F.relu(self.bn1(self.conv1(dummy))), (2, 2))
             x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), (2, 2))
-            x = F.max_pool2d(F.relu(self.bn1(self.conv3(x))), (2, 2))
+            x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), (2, 2))
             # x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), (2, 2))
             
             return x.view(1, -1).size(1)
