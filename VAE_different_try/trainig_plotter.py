@@ -14,8 +14,8 @@ plt.style.use('seaborn-v0_8')
 sns.set_palette("husl")
 
 # Load the data
-training_df = pd.read_csv('vae_results/10sec_chunks/simple_vae_experiment_20250817_160711/vae_training_log.csv')
-latent_df = pd.read_csv('vae_results/10sec_chunks/simple_vae_experiment_20250817_160711/latent_stats.csv')
+training_df = pd.read_csv('results/vae_experiment_20250817_130717/vae_training_log.csv')
+latent_df = pd.read_csv('results/vae_experiment_20250817_130717/latent_stats.csv')
 
 # Create a comprehensive figure with multiple subplots
 fig = plt.figure(figsize=(20, 24))
