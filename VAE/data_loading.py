@@ -154,25 +154,57 @@ class SpectrogramVAEDataset(Dataset):
                 if self.transform:
                     spectrogram = self.transform(spectrogram)
                 
-                # Handle conditional case
-                if self.conditional and 'label' in data and self.label_encoder:
-                    return spectrogram, label
+                # Return based on conditional mode - FIXED LOGIC
+                if self.conditional:
+                    if 'label' in data and self.label_encoder is not None:
+                        try:
+                            encoded_label = self.label_encoder.transform([data['label']])[0]
+                            return spectrogram, torch.tensor(encoded_label, dtype=torch.long)
+                        except Exception as label_error:
+                            print(f"Label encoding error for {data.get('label', 'unknown')}: {label_error}")
+                            # Return with default label if encoding fails
+                            return spectrogram, torch.tensor(0, dtype=torch.long)
+                    else:
+                        # Missing label but conditional mode - use default label
+                        print(f"Warning: Missing label in conditional mode for {self.file_paths[file_idx]}")
+                        return spectrogram, torch.tensor(0, dtype=torch.long)
                 else:
-                    return spectrogram 
+                    # Non-conditional case - just return spectrogram
+                    return spectrogram
                     
             except Exception as e:
                 print(f"Error loading {self.file_paths[file_idx]} (attempt {attempt+1}): {e}")
                 if attempt == max_retries - 1:
-                    # Last resort: return a valid dummy tensor
+                    # Last resort: return a valid dummy tensor with correct shape
                     print(f"Creating dummy data for index {idx}")
-                    dummy_shape = (1, 1025, 938)  # Your spectrogram shape
-                    dummy_tensor = torch.rand(dummy_shape) * 0.1  # Small random values
+                    
+                    # Use the actual spectrogram shape from your data
+                    # Get shape from first valid file if possible
+                    try:
+                        sample_data = torch.load(self.file_paths[0], map_location='cpu')
+                        actual_shape = sample_data['spectrogram'].shape
+                        if len(actual_shape) == 2:
+                            dummy_shape = (1, actual_shape[0], actual_shape[1])
+                        else:
+                            dummy_shape = actual_shape
+                    except:
+                        dummy_shape = (1, 1025, 469)  # Fallback shape
+                    
+                    dummy_tensor = torch.rand(dummy_shape) * 0.1
                     
                     if self.conditional:
                         return dummy_tensor, torch.tensor(0, dtype=torch.long)
                     else:
                         return dummy_tensor
                 continue
+        
+        # This should never be reached, but just in case
+        print(f"ERROR: Could not load any data for index {idx}")
+        dummy_tensor = torch.rand((1, 1025, 469)) * 0.1
+        if self.conditional:
+            return dummy_tensor, torch.tensor(0, dtype=torch.long)
+        else:
+            return dummy_tensor
     
     def _preprocess_spectrogram(self, spectrogram):
         """Enhanced preprocessing for dB-scaled spectrograms"""
@@ -334,13 +366,13 @@ def inspect_spectrogram_files(data_dir, num_samples=10):
                 
                 # Check if all values are identical
                 if torch.unique(spec_real).numel() == 1:
-                    print(f"  ⚠️  WARNING: All values are identical!")
+                    print(f"WARNING: All values are identical!")
                 
             if 'label' in data:
                 print(f"  Label: {data['label']}")
                 
         except Exception as e:
-            print(f"  ❌ Error loading: {e}")
+            print(f"Error loading: {e}")
     
     print("\n" + "="*50)
 
@@ -398,10 +430,10 @@ def create_vae_datasets(data_dir, label_encoder=None, conditional=False,
                     print(f"  Sample {i}: spec shape {spec.shape}")
                     
             except Exception as e:
-                print(f"    ❌ Error loading sample {i}: {e}")
+                print(f"Error loading sample {i}: {e}")
         
     except Exception as e:
-        print(f"❌ Failed to create base dataset: {e}")
+        print(f"Failed to create base dataset: {e}")
         raise
     
     # Split dataset

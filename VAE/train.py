@@ -127,7 +127,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         return 0.5 * (1.0 + math.cos(math.pi * progress))
     
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    
+    16
     # Training log with additional metrics
     log_file = os.path.join(output_dir, "vae_training_log.csv")
     latent_stats_file = os.path.join(output_dir, "latent_stats.csv")
