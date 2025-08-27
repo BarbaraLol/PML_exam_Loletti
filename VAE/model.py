@@ -353,3 +353,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         recon_x = self.decoder(z_conditioned)
         
         return recon_x, mu, logvar
+
+
+        # Condizione al lable
+        # spazio latente cluster 

@@ -38,8 +38,8 @@ class BayesianChickCallDetector(nn.Module):
         # self.fcbayesian4 = BayesianLinear(128, out_features, prior_sigma_1=0.1, prior_sigma_2=0.01, prior_pi=0.25)
 
         # self.dropout1 = nn.Dropout(0.2)  # Light dropout after conv layers
-        self.dropout2 = nn.Dropout(0.3)  # Heavier dropout in classifier
-        self.dropout3 = nn.Dropout(0.5)  # Progressive dropout
+        self.dropout1 = nn.Dropout(0.3)  # Heavier dropout in classifier
+        self.dropout2 = nn.Dropout(0.5)  # Progressive dropout
 
         # Layer normalization for stability
         self.ln1 = nn.LayerNorm(256)
