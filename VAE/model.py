@@ -305,21 +305,39 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
             original_fc.out_features
         )
 
-    def sample_class(self, class_label, num_samples, device='cpu'):
-        """Generate samples for a specific class"""
-        with torch.no_grad():
-            # Create latent samples
-            z = torch.randn(num_samples, self.latent_dim).to(device)
+    # def sample_class(self, class_label, num_samples, device='cpu'):
+    #     """Generate samples for a specific class"""
+    #     with torch.no_grad():
+    #         # Create latent samples
+    #         z = torch.randn(num_samples, self.latent_dim).to(device)
             
-            # Create class labels
+    #         # Create class labels
+    #         labels = torch.full((num_samples,), class_label, dtype=torch.long).to(device)
+    #         label_embed = self.label_embedding(labels)
+            
+    #         # Concatenate and decode
+    #         z_conditioned = torch.cat([z, label_embed], dim=1)
+    #         samples = self.decoder(z_conditioned)
+            
+    #         return samples 
+    def sample_class(self, class_label, num_samples, device='cpu'):
+        with torch.no_grad():
+            z = torch.randn(num_samples, self.latent_dim).to(device)
             labels = torch.full((num_samples,), class_label, dtype=torch.long).to(device)
             label_embed = self.label_embedding(labels)
-            
-            # Concatenate and decode
             z_conditioned = torch.cat([z, label_embed], dim=1)
             samples = self.decoder(z_conditioned)
             
-            return samples 
+            # Interpolate to target size
+            if samples.shape[-2:] != self.input_shape[-2:]:
+                samples = F.interpolate(
+                    samples,
+                    size=self.input_shape[-2:],
+                    mode='bilinear',
+                    align_corners=False
+                )
+            
+            return samples
 
     def encode(self, x, class_labels):
         pass
@@ -351,6 +369,15 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         
         # Decode
         recon_x = self.decoder(z_conditioned)
+
+        # Add interpolation to match input size
+        if recon_x.shape[-2:] != x.shape[-2:]:
+            recon_x = F.interpolate(
+                recon_x,
+                size=x.shape[-2:],
+                mode='bilinear',
+                align_corners=False
+        )
         
         return recon_x, mu, logvar
 

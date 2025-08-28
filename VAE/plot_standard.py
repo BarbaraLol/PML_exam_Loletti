@@ -63,9 +63,9 @@ def detect_and_load_model(model_path, spectrogram_shape, device='cpu'):
     # Load state dict
     try:
         model.load_state_dict(checkpoint['model_state_dict'])
-        print("✅ Model loaded successfully")
+        print("Model loaded successfully")
     except Exception as e:
-        print(f"❌ Error loading model: {e}")
+        print(f"Error loading model: {e}")
         print("Available keys in checkpoint:")
         for key in list(checkpoint['model_state_dict'].keys())[:10]:
             print(f"  {key}: {checkpoint['model_state_dict'][key].shape}")

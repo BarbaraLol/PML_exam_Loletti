@@ -1,7 +1,7 @@
 Simple VAE Configuration
 ========================
 Model Type: Conditional VAE
-Input Shape: torch.Size([1025, 938])
+Input Shape: (1025, 938)
 Latent Dimension: 1024
 Beta: 0.01
 Number of Classes: 3

@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset, random_split
+import torch.nn.functional as F
 import numpy as np
 import os
 from torchvision import transforms
@@ -32,6 +33,9 @@ class SpectrogramVAEDataset(Dataset):
         self.label_encoder = label_encoder
         self.transform = transform
         self.conditional = conditional
+        
+        # Define target shape for consistency
+        self.target_shape = (1025, 938)  # (freq, time)
         
         # Compute dataset statistics with better error handling
         self._compute_dataset_stats()
@@ -89,6 +93,9 @@ class SpectrogramVAEDataset(Dataset):
                     data = torch.load(file_path, map_location='cpu')
                     spec = data['spectrogram'].float()
                     
+                    # Normalize to target shape first for consistent statistics
+                    spec = self._resize_spectrogram(spec)
+                    
                     # Only process 10% of values per file to save memory
                     flat = spec.flatten()
                     if flat.numel() > 10000:
@@ -125,6 +132,29 @@ class SpectrogramVAEDataset(Dataset):
         print(f"  Std: {self.dataset_std:.6f}")
         print(f"  Total values processed: {count:,}")
     
+    def _resize_spectrogram(self, spectrogram):
+        """Resize spectrogram to target shape consistently"""
+        target_shape = (1025, 938)  # Your expected shape
+        current_shape = spectrogram.shape
+        
+        if current_shape == target_shape:
+            return spectrogram
+        
+        # Use interpolation for smooth resizing
+        # Add batch and channel dimensions for interpolation
+        spec_4d = spectrogram.unsqueeze(0).unsqueeze(0)  # [1, 1, freq, time]
+        
+        # Resize using bilinear interpolation
+        resized = torch.nn.functional.interpolate(
+            spec_4d,
+            size=target_shape,
+            mode='bilinear',
+            align_corners=False
+        )
+        
+        # Remove added dimensions
+        return resized.squeeze(0).squeeze(0)  # [freq, time]
+    
     def __len__(self):
         return len(self.file_paths)
     
@@ -145,6 +175,10 @@ class SpectrogramVAEDataset(Dataset):
                 # Validate the result
                 if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
                     raise ValueError("NaN/Inf in preprocessed spectrogram")
+                
+                # Ensure correct shape
+                if spectrogram.shape != self.target_shape:
+                    raise ValueError(f"Shape mismatch: got {spectrogram.shape}, expected {self.target_shape}")
                 
                 # Add channel dimension if needed [1, freq, time]
                 if spectrogram.dim() == 2:
@@ -178,19 +212,8 @@ class SpectrogramVAEDataset(Dataset):
                     # Last resort: return a valid dummy tensor with correct shape
                     print(f"Creating dummy data for index {idx}")
                     
-                    # Use the actual spectrogram shape from your data
-                    # Get shape from first valid file if possible
-                    try:
-                        sample_data = torch.load(self.file_paths[0], map_location='cpu')
-                        actual_shape = sample_data['spectrogram'].shape
-                        if len(actual_shape) == 2:
-                            dummy_shape = (1, actual_shape[0], actual_shape[1])
-                        else:
-                            dummy_shape = actual_shape
-                    except:
-                        dummy_shape = (1, 1025, 469)  # Fallback shape
-                    
-                    dummy_tensor = torch.rand(dummy_shape) * 0.1
+                    # Use the target shape
+                    dummy_tensor = torch.rand((1,) + self.target_shape) * 0.1
                     
                     if self.conditional:
                         return dummy_tensor, torch.tensor(0, dtype=torch.long)
@@ -200,14 +223,18 @@ class SpectrogramVAEDataset(Dataset):
         
         # This should never be reached, but just in case
         print(f"ERROR: Could not load any data for index {idx}")
-        dummy_tensor = torch.rand((1, 1025, 469)) * 0.1
+        dummy_tensor = torch.rand((1,) + self.target_shape) * 0.1
         if self.conditional:
             return dummy_tensor, torch.tensor(0, dtype=torch.long)
         else:
             return dummy_tensor
     
     def _preprocess_spectrogram(self, spectrogram):
-        """Enhanced preprocessing for dB-scaled spectrograms"""
+        """Enhanced preprocessing for dB-scaled spectrograms with size normalization"""
+        
+        # FIRST: Ensure consistent size - ADD THIS LINE
+        spectrogram = self._resize_spectrogram(spectrogram)
+        
         # Handle complex spectrograms (if any)
         if torch.is_complex(spectrogram):
             spectrogram = torch.abs(spectrogram)
@@ -289,12 +316,20 @@ class SpectrogramDataAugmentation:
             
         def __call__(self, spectrogram):
             if random.random() < self.prob:
-                time_size = spectrogram.shape[-1]
+                # Ensure we maintain exact tensor dimensions
+                if spectrogram.dim() == 3:  # [C, H, W]
+                    time_size = spectrogram.shape[2]
+                else:  # [H, W]
+                    time_size = spectrogram.shape[1]
+                    
                 mask_size = random.randint(1, min(self.max_mask_size, time_size // 8))
                 mask_start = random.randint(0, time_size - mask_size)
                 
                 spectrogram_masked = spectrogram.clone()
-                spectrogram_masked[..., :, mask_start:mask_start + mask_size] = 0
+                if spectrogram.dim() == 3:
+                    spectrogram_masked[..., :, mask_start:mask_start + mask_size] = 0
+                else:
+                    spectrogram_masked[..., mask_start:mask_start + mask_size] = 0
                 return spectrogram_masked
             return spectrogram
 
@@ -464,4 +499,7 @@ def create_vae_datasets(data_dir, label_encoder=None, conditional=False,
     
     num_classes = len(label_encoder.classes_) if label_encoder else 0
     
-    return train_dataset, val_dataset, test_dataset, spectrogram_shape, num_classes
+    # Force consistent target shape for return
+    target_shape = (1025, 938)
+    
+    return train_dataset, val_dataset, test_dataset, target_shape, num_classes
