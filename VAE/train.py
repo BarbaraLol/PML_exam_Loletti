@@ -330,13 +330,13 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
 def main():
     parser = argparse.ArgumentParser(description='Train Simple Spectrogram VAE')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  # Reduced default
-    parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
+    parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")  # Reduced default
+    parser.add_argument('--epochs', type=int, default=500, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")  # Reduced default
-    parser.add_argument('--beta', type=float, default=0.001, help="Beta parameter for β-VAE") 
+    parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") 
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
-    parser.add_argument('--embed_dim', type=int, default=50, help="Label embedding dimension")
+    parser.add_argument('--embed_dim', type=int, default=256, help="Label embedding dimension")
     parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")

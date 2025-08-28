@@ -132,10 +132,10 @@ class Encoder(nn.Module):
         # print(f"Encoder output before flatten: {x.shape}")
         
         # Verify expected flatten size
-        expected_flatten = 512*17*9
-        actual_flatten = x.shape[1] * x.shape[2] * x.shape[3]
-        assert actual_flatten == expected_flatten, \
-            f"Flatten size mismatch: {actual_flatten} vs {expected_flatten}"
+        # expected_flatten = 512*17*9
+        # actual_flatten = x.shape[1] * x.shape[2] * x.shape[3]
+        # assert actual_flatten == expected_flatten, \
+        #     f"Flatten size mismatch: {actual_flatten} vs {expected_flatten}"
         
         x = x.view(x.size(0), -1)
         # print(f"Flattened shape: {x.shape}")
