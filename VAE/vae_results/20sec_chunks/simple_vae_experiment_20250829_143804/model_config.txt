@@ -3,7 +3,7 @@ Simple VAE Configuration
 Model Type: Conditional VAE
 Input Shape: (1025, 938)
 Latent Dimension: 1024
-Beta: 0.01
+Beta: 1e-05
 Number of Classes: 3
 Embedding Dimension: 256
 Total Parameters: 467,142,979

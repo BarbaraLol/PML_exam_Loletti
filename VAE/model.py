@@ -263,6 +263,10 @@ class VariationalAutoEncoder(nn.Module):
 
     def forward(self, x):
         mu, logvar = self.encoder(x)
+
+        # Prevent logvar explosion
+        logvar = torch.clamp(logvar, min=-5, max=5)  # Reasonable range
+
         z = self.reparameterize(mu, logvar)
         recon_x = self.decoder(z)
 

@@ -43,8 +43,10 @@ def save_sample_outputs(model, device, output_dir, epoch, num_samples=8,
         
         fig, axes = plt.subplots(2, 4, figsize=(16, 8))
         axes = axes.flatten()
+
+        actual_num_samples = min(samples_np.shape[0], len(axes))  # Use the smaller of generated samples or available axes
         
-        for i in range(min(num_samples, len(axes))):
+        for i in range(actual_num_samples): # , len(axes))
             ax = axes[i]
             # Remove channel dimension for visualization
             spec_vis = samples_np[i, 0] if samples_np[i].ndim == 3 else samples_np[i]
@@ -355,7 +357,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         return 0.5 * (1.0 + math.cos(math.pi * progress))
     
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    
+
     # Training log with additional metrics - CHOOSE THE RIGHT LOGGING FORMAT
     if conditional:
         log_file = os.path.join(output_dir, "conditional_vae_training_log.csv")
@@ -468,6 +470,17 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                     logvar_mean = logvar.mean().item()
                     logvar_std = logvar.std().item()
                     actual_var = torch.exp(logvar).mean().item()
+
+                    print(f"=== LATENT STATS CSV DEBUG ===")
+                    print(f"Writing to: {latent_stats_file}")
+
+                    # Prepare latent stats data
+                    latent_row_data = [
+                        epoch+1, batch_idx, mu_mean, mu_std,
+                        logvar_mean, logvar_std, actual_var
+                    ]
+                    print(f"Latent stats row data ({len(latent_row_data)} values): {latent_row_data}")
+
                     
                     # Save to CSV
                     with open(latent_stats_file, 'a') as f:
@@ -476,6 +489,9 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                             epoch+1, batch_idx, mu_mean, mu_std,
                             logvar_mean, logvar_std, actual_var
                         ])
+        
+                    print("Latent stats CSV write successful!")
+                    print(f"==============================")
                     
                     # Print summary
                     current_lr = optimizer.param_groups[0]['lr']
@@ -548,23 +564,48 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         total_time = time.time() - start_time
         current_lr = optimizer.param_groups[0]['lr']
         
-        # Save to log with correct columns based on conditional flag
         with open(log_file, 'a') as f:
             writer = csv.writer(f)
+            
+            # DEBUG: Print header and data information
+            print(f"\n=== CSV DEBUG INFO ===")
+            print(f"Conditional mode: {conditional}")
+            
+            # Read and print the header from the CSV file
+            log_file_read = open(log_file, 'r')
+            header = log_file_read.readline().strip().split(',')
+            log_file_read.close()
+            print(f"CSV Header ({len(header)} columns): {header}")
+            
             if conditional:
                 # Write conditional VAE log with accuracy
-                writer.writerow([
+                row_data = [
                     epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss, train_accuracy,
                     val_total_loss, val_recon_loss, val_kl_loss, val_accuracy, current_lr, current_beta,
                     grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
-                ])
+                ]
+                print(f"Data values ({len(row_data)} values):")
+                for i, (col_name, value) in enumerate(zip(header, row_data)):
+                    print(f"  {i}: {col_name} = {value}")
             else:
                 # Write standard VAE log without accuracy
-                writer.writerow([
+                row_data = [
                     epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
                     val_total_loss, val_recon_loss, val_kl_loss, current_lr, current_beta,
                     grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
-                ])
+                ]
+                print(f"Data values ({len(row_data)} values):")
+                for i, (col_name, value) in enumerate(zip(header, row_data)):
+                    print(f"  {i}: {col_name} = {value}")
+            
+            print(f"======================\n")
+            
+            try:
+                writer.writerow(row_data)
+                print("CSV write successful!")
+            except Exception as e:
+                print(f"CSV write failed: {e}")
+                print(f"Attempted to write {len(row_data)} values to {len(header)} columns")
         
         # Print epoch summary
         print(f"\nEpoch {epoch+1} Summary:")
@@ -576,27 +617,50 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
         if conditional:
             print(f"      - Accuracy: {val_accuracy:.4f}")
+
+        ######
+        print("About to save checkpoint...")
+        ######
         
         # Save checkpoints
         if val_total_loss < best_val_loss:
             best_val_loss = val_total_loss
-            checkpoint_data = {
-                'epoch': epoch+1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'val_loss': val_total_loss,
-                'args': vars(args)
-            }
-            if conditional:
-                checkpoint_data['val_accuracy'] = val_accuracy
-            
-            torch.save(checkpoint_data, os.path.join(output_dir, 'best_model.pth'))
+            print("Saving best model checkpoint...")
+            try:
+                checkpoint_data = {
+                    'epoch': epoch+1,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'val_loss': val_total_loss,
+                    'args': vars(args)
+                }
+                if conditional:
+                    checkpoint_data['val_accuracy'] = val_accuracy
+                
+                torch.save(checkpoint_data, os.path.join(output_dir, 'best_model.pth'))
+                print("Checkpoint saved successfully!")
+            except Exception as e:
+                print(f"Error saving checkpoint: {e}")
+                import traceback
+                traceback.print_exc()
+
+        print("About to save sample outputs...")
         
         # Save samples periodically
         if (epoch + 1) % 10 == 0 or epoch == 0:
-            save_sample_outputs(model, device, output_dir, epoch+1, 
-                              conditional=conditional, 
-                              num_classes=getattr(model, 'num_classes', None))
+            try:
+                print(f"Generating samples for epoch {epoch+1}...")
+                print(f"Conditional: {conditional}, num_classes: {getattr(model, 'num_classes', None)}")
+                save_sample_outputs(model, device, output_dir, epoch+1, 
+                                conditional=conditional, 
+                                num_classes=getattr(model, 'num_classes', None))
+                print("Sample outputs saved successfully!")
+            except Exception as e:
+                print(f"Error saving sample outputs: {e}")
+                import traceback
+                traceback.print_exc()
+
+        print("Epoch completed successfully!")
     
     print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
     print(f"Best validation loss: {best_val_loss:.4f}")
@@ -606,16 +670,16 @@ def main():
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
     parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")  # Reduced default
     parser.add_argument('--epochs', type=int, default=500, help="Number of training epochs")
-    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
+    parser.add_argument('--lr', type=float, default=5e-7, help="Learning rate")
     parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")  # Reduced default
-    parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") 
+    parser.add_argument('--beta', type=float, default=0.00001, help="Beta parameter for β-VAE") 
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
     parser.add_argument('--embed_dim', type=int, default=256, help="Label embedding dimension")
     parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")
     parser.add_argument('--weight_decay', type=float, default=1e-4, help="Weight decay for optimizer")
-    parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")
+    parser.add_argument('--grad_clip', type=float, default=0.01, help="Gradient clipping max norm")
     args = parser.parse_args()
 
     # Setup device
