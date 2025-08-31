@@ -39,8 +39,7 @@ python -c "import torch; print(f'PyTorch: {torch.__version__}'); \
 # --- Run your training script ---
 # python3 train.py --data_dir ../../../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/ --batch_size 8 --output_dir results/20sec_chunks
 # Run k-fold cross-validation
-python train.py --data_dir ../../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/ --output_dir results/20sec_chunks --epochs 100 --batch_size 8
-
+python train.py --data_dir ../../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/ --output_dir results/20sec_chunks --epochs 100 --batch_size 4
 # Plot the k-fold results
 # python plot_kfold_results.py --kfold_dir results/k_fold_results
 

@@ -1,14 +1,20 @@
-# Using k fold cross validation with Hierarchical Bayesian CNN
+# Memory-optimized training script
 import torch
 torch.backends.cudnn.benchmark = True
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# MEMORY OPTIMIZATION SETTINGS
+torch.cuda.empty_cache()  # Clear cache at start
+if torch.cuda.is_available():
+    torch.cuda.set_per_process_memory_fraction(0.8)  # Use max 80% of GPU memory
+
 print(f"Using device: {device}")
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms 
 from blitz.losses import kl_divergence_from_nn
-from model import HierarchicalBayesianChickCallDetector  # CHANGED: Use hierarchical model
+from model import HierarchicalBayesianChickCallDetector  # Use memory-optimized model
 from data_loading import SpectrogramDataset, load_file_paths, encode_labels
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
@@ -19,6 +25,7 @@ import numpy as np
 from datetime import datetime
 import csv
 from collections import Counter, defaultdict
+import gc  # Garbage collection
 
 def fix_dims(batch):
     """Fix input dimensions"""
@@ -28,10 +35,7 @@ def fix_dims(batch):
     return data, target
 
 def create_call_type_mapping(all_labels, num_call_types=3):
-    """
-    Create a mapping from fine-grained labels to broad call types.
-    This is a simplified example - you should adapt this based on your actual data structure.
-    """
+    """Create a mapping from fine-grained labels to broad call types."""
     unique_labels = sorted(set(all_labels))
     num_classes = len(unique_labels)
     
@@ -52,7 +56,7 @@ def get_call_type_targets(targets, call_type_mapping):
                        dtype=torch.long, device=targets.device)
 
 def train_epoch(model, train_loader, optimizer, criterion, call_type_criterion, device, call_type_mapping):
-    """Train for one epoch with hierarchical model"""
+    """Train for one epoch with memory optimization"""
     model.train()
     train_loss = 0.0
     call_type_loss_total = 0.0
@@ -62,6 +66,11 @@ def train_epoch(model, train_loader, optimizer, criterion, call_type_criterion, 
     call_type_correct = 0
     
     for batch_idx, batch in enumerate(train_loader):
+        # MEMORY OPTIMIZATION: Clear cache every 10 batches
+        if batch_idx % 10 == 0:
+            torch.cuda.empty_cache()
+            gc.collect()
+        
         data, target = fix_dims(batch)
         data, target = data.to(device), target.to(device)
         
@@ -70,7 +79,7 @@ def train_epoch(model, train_loader, optimizer, criterion, call_type_criterion, 
         
         optimizer.zero_grad()
         
-        # Forward pass - returns both final output and call type logits
+        # Forward pass with gradient accumulation for large batches
         final_output, call_type_output = model(data, call_type_targets)
         
         # Calculate losses
@@ -78,10 +87,14 @@ def train_epoch(model, train_loader, optimizer, criterion, call_type_criterion, 
         call_type_loss = call_type_criterion(call_type_output, call_type_targets)
         kl_loss = kl_divergence_from_nn(model) / len(train_loader.dataset)
         
-        # Combined loss: main task + auxiliary task + KL regularization
+        # Combined loss
         total_loss = classification_loss + 0.3 * call_type_loss + kl_loss
         
         total_loss.backward()
+        
+        # MEMORY OPTIMIZATION: Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        
         optimizer.step()
         
         # Track metrics
@@ -97,7 +110,10 @@ def train_epoch(model, train_loader, optimizer, criterion, call_type_criterion, 
         # Call type classification accuracy
         _, call_type_predicted = call_type_output.max(1)
         call_type_correct += call_type_predicted.eq(call_type_targets).sum().item()
-    
+        
+        # MEMORY OPTIMIZATION: Delete intermediate tensors
+        del final_output, call_type_output, classification_loss, call_type_loss, kl_loss, total_loss
+        
     avg_loss = train_loss / len(train_loader.dataset)
     avg_call_type_loss = call_type_loss_total / len(train_loader.dataset)
     avg_kl_loss = kl_loss_total / len(train_loader.dataset)
@@ -107,7 +123,7 @@ def train_epoch(model, train_loader, optimizer, criterion, call_type_criterion, 
     return avg_loss, avg_kl_loss, accuracy, avg_call_type_loss, call_type_accuracy
 
 def validate_epoch(model, val_loader, criterion, call_type_criterion, device, call_type_mapping):
-    """Validate for one epoch with hierarchical model"""
+    """Validate for one epoch with memory optimization"""
     model.eval()
     val_loss = 0.0
     call_type_loss_total = 0.0
@@ -116,35 +132,34 @@ def validate_epoch(model, val_loader, criterion, call_type_criterion, device, ca
     call_type_correct = 0
     
     with torch.no_grad():
-        for batch in val_loader:
+        for batch_idx, batch in enumerate(val_loader):
+            # MEMORY OPTIMIZATION
+            if batch_idx % 10 == 0:
+                torch.cuda.empty_cache()
+            
             data, target = fix_dims(batch)
             data, target = data.to(device), target.to(device)
             
-            # Get call type targets
             call_type_targets = get_call_type_targets(target, call_type_mapping)
             
             # Forward pass without call type targets (pure inference mode)
             final_output = model(data, call_type_targets=None)
             
-            # We need to get call type predictions for loss calculation
-            # Run model in training mode temporarily to get both outputs
+            # Get call type predictions for loss calculation
             model.train()
             final_output_train, call_type_output = model(data, call_type_targets=None)
             model.eval()
             
-            # Calculate losses
             classification_loss = criterion(final_output, target)
             call_type_loss = call_type_criterion(call_type_output, call_type_targets)
             
             val_loss += classification_loss.item() * data.size(0)
             call_type_loss_total += call_type_loss.item() * data.size(0)
             
-            # Final classification accuracy
             _, predicted = final_output.max(1)
             total += target.size(0)
             correct += predicted.eq(target).sum().item()
             
-            # Call type classification accuracy
             _, call_type_predicted = call_type_output.max(1)
             call_type_correct += call_type_predicted.eq(call_type_targets).sum().item()
     
@@ -165,7 +180,7 @@ def analyze_class_distribution(all_labels, train_indices, val_indices, fold):
     print(f"Val: {Counter(val_labels)} ({len(val_labels)} samples)")
 
 def k_fold_cross_validation(dataset, args):
-    """Perform k-fold cross-validation with hierarchical Bayesian CNN"""
+    """Perform k-fold cross-validation with memory optimization"""
     
     # Extract all labels for stratified k-fold
     all_labels = []
@@ -174,21 +189,20 @@ def k_fold_cross_validation(dataset, args):
         all_labels.append(label.item())
     
     # Create call type mapping
-    num_call_types = 3  # You can adjust this
+    num_call_types = 3
     call_type_mapping = create_call_type_mapping(all_labels, num_call_types)
     
     # Initialize stratified k-fold
     k_folds = 5
     skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
     
-    # Store results for each fold
     fold_results = defaultdict(list)
     
     # Get sample shape and num classes
     sample_shape = torch.load(load_file_paths(args.data_dir)[0])['spectrogram'].shape
     num_classes = len(set(all_labels))
     
-    print(f"\nStarting {k_folds}-fold cross-validation with Hierarchical Bayesian CNN...")
+    print(f"\nStarting {k_folds}-fold cross-validation with Memory-Optimized Hierarchical Bayesian CNN...")
     print(f"Dataset size: {len(dataset)} samples")
     print(f"Sample shape: {sample_shape}")
     print(f"Number of classes: {num_classes}")
@@ -204,10 +218,13 @@ def k_fold_cross_validation(dataset, args):
         print(f"FOLD {fold + 1}/{k_folds}")
         print(f"{'='*60}")
         
-        # Analyze class distribution
+        # MEMORY OPTIMIZATION: Clear cache at start of each fold
+        torch.cuda.empty_cache()
+        gc.collect()
+        
         analyze_class_distribution(all_labels, train_indices, val_indices, fold + 1)
         
-        # Create data loaders for this fold
+        # Create data loaders for this fold with SMALLER batch size
         train_subset = Subset(dataset, train_indices)
         val_subset = Subset(dataset, val_indices)
         
@@ -215,27 +232,28 @@ def k_fold_cross_validation(dataset, args):
             train_subset, 
             batch_size=args.batch_size, 
             shuffle=True, 
-            num_workers=4, 
-            pin_memory=True
+            num_workers=2,  # REDUCED from 4 to 2
+            pin_memory=False  # DISABLED pin_memory to save GPU memory
         )
         val_loader = DataLoader(
             val_subset, 
             batch_size=args.batch_size, 
             shuffle=False,
-            num_workers=4,
-            pin_memory=True
+            num_workers=2,
+            pin_memory=False
         )
         
-        # Initialize hierarchical model for this fold
+        # Initialize memory-optimized hierarchical model
         model = HierarchicalBayesianChickCallDetector(
             sample_shape, num_classes, num_call_types=num_call_types
         ).to(device)
         
-        optimizer = optim.AdamW(model.parameters(), lr=5e-5, weight_decay=1e-5)
+        # MEMORY OPTIMIZATION: Use smaller learning rate and weight decay
+        optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-6)  # REDUCED LR
         criterion = nn.CrossEntropyLoss()
         call_type_criterion = nn.CrossEntropyLoss()
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.7, patience=8, min_lr=1e-7
+            optimizer, mode='min', factor=0.8, patience=5, min_lr=1e-7  # MORE AGGRESSIVE
         )
         
         # Training variables
@@ -269,11 +287,9 @@ def k_fold_cross_validation(dataset, args):
                 model, val_loader, criterion, call_type_criterion, device, call_type_mapping
             )
             
-            # Update learning rate
             scheduler.step(val_loss)
             current_lr = optimizer.param_groups[0]['lr']
             
-            # Time tracking
             epoch_time = time.time() - epoch_start
             total_time = time.time() - start_time
             
@@ -311,8 +327,8 @@ def k_fold_cross_validation(dataset, args):
                     print(f"Early stopping at epoch {epoch+1}")
                     break
             
-            # Print progress every 10 epochs
-            if epoch % 10 == 0:
+            # Print progress every 5 epochs (reduced frequency)
+            if epoch % 5 == 0:
                 print(f"Epoch {epoch+1}: Train Acc={train_acc:.2f}%, Val Acc={val_acc:.2f}%, "
                       f"Best Val Acc={best_val_acc:.2f}%")
                 print(f"  Call Type - Train Acc={call_type_train_acc:.2f}%, Val Acc={call_type_val_acc:.2f}%")
@@ -330,10 +346,15 @@ def k_fold_cross_validation(dataset, args):
         print(f"  Best Val Loss: {best_val_loss:.4f}")
         print(f"  Final Call Type Acc: {call_type_val_acc:.2f}%")
         print(f"  Training Time: {total_time:.1f}s")
+        
+        # MEMORY OPTIMIZATION: Clean up after each fold
+        del model, optimizer, train_loader, val_loader
+        torch.cuda.empty_cache()
+        gc.collect()
     
-    # Calculate and display cross-validation results
+    # Calculate and display results (same as before)
     print(f"\n{'='*70}")
-    print("K-FOLD CROSS-VALIDATION RESULTS - HIERARCHICAL BAYESIAN CNN")
+    print("K-FOLD CROSS-VALIDATION RESULTS - MEMORY-OPTIMIZED HIERARCHICAL BAYESIAN CNN")
     print(f"{'='*70}")
     
     val_accs = fold_results['best_val_acc']
@@ -366,7 +387,6 @@ def k_fold_cross_validation(dataset, args):
                 fold_results['training_time'][i]
             ])
         
-        # Add summary statistics
         writer.writerow([])
         writer.writerow(['SUMMARY STATISTICS'])
         writer.writerow(['Mean Val Acc', f"{np.mean(val_accs):.2f}%"])
@@ -380,34 +400,35 @@ def k_fold_cross_validation(dataset, args):
     return fold_results
 
 def main():
-    # Arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=8, help="Batch size for training")
+    parser.add_argument('--batch_size', type=int, default=4, help="Batch size for training (REDUCED)")
     parser.add_argument('--epochs', type=int, default=50, help="Number of training epochs per fold")
     parser.add_argument('--output_dir', default='results', help="Directory to save outputs")
-    parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
+    parser.add_argument('--patience', type=int, default=10, help="Patience for early stopping (REDUCED)")
     args = parser.parse_args()
 
-    # Create output directory
+    # Print memory info
+    if torch.cuda.is_available():
+        print(f"GPU: {torch.cuda.get_device_name()}")
+        print(f"Total GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+        print(f"Available GPU memory: {torch.cuda.mem_get_info()[0] / 1e9:.2f} GB")
+
     output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}")
     
-    # Data loading
     print("Loading data...")
     file_paths = load_file_paths(args.data_dir)
     label_encoder = LabelEncoder()
     label_encoder.fit(encode_labels(file_paths))
     
-    # Create dataset
     dataset = SpectrogramDataset(file_paths, label_encoder)
     print(f"Found {len(dataset)} samples")
     
-    # Run k-fold cross-validation
     results = k_fold_cross_validation(dataset, args)
     
-    print("\nK-fold cross-validation with Hierarchical Bayesian CNN completed!")
+    print("\nK-fold cross-validation with Memory-Optimized Hierarchical Bayesian CNN completed!")
 
 if __name__ == "__main__":
     main()

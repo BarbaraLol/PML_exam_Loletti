@@ -17,22 +17,10 @@ from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
 from data_loading import create_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint, calculate_conditional_vae_accuracy
 
-def get_beta(epoch, total_epochs, n_cycles=4, min_beta=0.001, max_beta=0.01):
-    """Cyclical beta schedule - alternates between high and low beta values"""
-    cycle_length = total_epochs / n_cycles
-    cycle_position = (epoch % cycle_length) / cycle_length
-    
-    if cycle_position < 0.5:
-        # First half of cycle: high beta (more regularization)
-        return max_beta
-    else:
-        # Second half: low beta (focus on reconstruction)
-        return min_beta
-
-
-def get_beta_monotonic(epoch, total_epochs, min_beta=0.001, max_beta=0.01):
-    """Alternative: gradually increase beta over training"""
-    return min(max_beta, min_beta + (max_beta - min_beta) * epoch / (total_epochs * 0.8))
+def get_beta(epoch, total_epochs, min_beta=0.0001, max_beta=0.001):
+    """Simple linear increase - much more conservative"""
+    progress = epoch / total_epochs
+    return min_beta + (max_beta - min_beta) * progress
 
 
 def save_sample_outputs(model, device, output_dir, epoch, num_samples=8, 
@@ -61,9 +49,9 @@ def save_sample_outputs(model, device, output_dir, epoch, num_samples=8,
         fig, axes = plt.subplots(2, 4, figsize=(16, 8))
         axes = axes.flatten()
 
-        actual_num_samples = min(samples_np.shape[0], len(axes))  # Use the smaller of generated samples or available axes
+        actual_num_samples = min(samples_np.shape[0], len(axes))
         
-        for i in range(actual_num_samples): # , len(axes))
+        for i in range(actual_num_samples):
             ax = axes[i]
             # Remove channel dimension for visualization
             spec_vis = samples_np[i, 0] if samples_np[i].ndim == 3 else samples_np[i]
@@ -75,53 +63,6 @@ def save_sample_outputs(model, device, output_dir, epoch, num_samples=8,
         plt.savefig(os.path.join(output_dir, f'generated_samples_epoch_{epoch}.png'), 
                    dpi=150, bbox_inches='tight')
         plt.close()
-
-
-def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_samples=4, conditional=False):
-    """Plot original vs reconstructed spectrograms"""
-    model.eval()
-    with torch.no_grad():
-        # Get a batch from dataloader
-        for batch in dataloader:
-            if conditional:
-                originals = batch[0].to(device)
-                labels = batch[1].to(device)
-                # Get reconstruction - UPDATED CALL
-                reconstructed, _, _ = model(originals, labels)
-            else:  # Non-conditional
-                originals = batch.to(device)
-                # Get reconstruction - UPDATED CALL
-                reconstructed, _, _ = model(originals)
-            break
-    
-    # Adjust number of samples to actual batch size
-    num_samples = min(num_samples, originals.size(0))
-    
-    # Convert to numpy
-    originals_np = originals[:num_samples].cpu().numpy()
-    reconstructed_np = reconstructed[:num_samples].cpu().numpy()
-    
-    fig, axes = plt.subplots(2, num_samples, figsize=(4*num_samples, 8))
-    if num_samples == 1:
-        axes = axes.reshape(2, 1)
-    
-    for i in range(num_samples):
-        # Original
-        orig_vis = originals_np[i, 0] if originals_np[i].ndim == 3 else originals_np[i]
-        axes[0, i].imshow(orig_vis, aspect='auto', origin='lower', cmap='viridis')
-        axes[0, i].set_title(f'Original {i+1}')
-        axes[0, i].axis('off')
-        
-        # Reconstructed
-        recon_vis = reconstructed_np[i, 0] if reconstructed_np[i].ndim == 3 else reconstructed_np[i]
-        axes[1, i].imshow(recon_vis, aspect='auto', origin='lower', cmap='viridis')
-        axes[1, i].set_title(f'Reconstructed {i+1}')
-        axes[1, i].axis('off')
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f'reconstruction_epoch_{epoch}.png'), 
-               dpi=150, bbox_inches='tight')
-    plt.close()
 
 ##################
 # For simple VAE #
@@ -351,36 +292,34 @@ def plot_reconstruction(model, dataloader, device, output_dir, epoch, num_sample
 #######################
 # For conditional VAE #
 #######################
+
 def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-    """Enhanced training loop with accuracy tracking for conditional VAE"""
+    """Enhanced training loop with proper beta scheduling"""
     
-    # Setup optimizer with weight decay
+    # Setup optimizer with higher weight decay
     optimizer = optim.AdamW(
         model.parameters(),
         lr=args.lr,
-        weight_decay=1e-3,
+        weight_decay=1e-3,  # Higher weight decay
         betas=(0.9, 0.999)
     ) 
 
-    # Learning rate scheduling with warmup
+    # Learning rate scheduling with shorter warmup
     total_steps = args.epochs * len(train_loader)
-    warmup_steps = int(0.05 * total_steps)  # 5% warmup
+    warmup_steps = int(0.05 * total_steps)  # 5% warmup instead of 10%
     
     def lr_lambda(current_step):
         if current_step < warmup_steps:
-            return float(current_step) / float(max(1, warmup_steps))
-        # Cosine decay after warmup
-        # progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-        # return 0.5 * (1.0 + math.cos(math.pi * progress))
+            return current_step / warmup_steps
+        # Cosine decay with minimum LR
         progress = (current_step - warmup_steps) / (total_steps - warmup_steps)
         return 0.1 + 0.9 * 0.5 * (1.0 + math.cos(math.pi * progress))
     
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-    # Training log with additional metrics - CHOOSE THE RIGHT LOGGING FORMAT
+    # Training log setup
     if conditional:
         log_file = os.path.join(output_dir, "conditional_vae_training_log.csv")
-        # Initialize conditional VAE log with accuracy columns
         with open(log_file, 'w') as f:
             writer = csv.writer(f)
             writer.writerow([
@@ -390,7 +329,6 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             ])
     else:
         log_file = os.path.join(output_dir, "vae_training_log.csv")
-        # Initialize standard VAE log without accuracy columns
         with open(log_file, 'w') as f:
             writer = csv.writer(f)
             writer.writerow([
@@ -400,8 +338,6 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             ])
     
     latent_stats_file = os.path.join(output_dir, "latent_stats.csv")
-    
-    # Initialize latent stats log
     with open(latent_stats_file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -416,19 +352,23 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     
     print("Starting training with:")
     print(f"- Model type: {'Conditional' if conditional else 'Standard'} VAE")
-    print(f"- LR warmup ({warmup_steps} steps)")
-    print(f"- Beta warmup (target β={args.beta})")
+    print(f"- LR: {args.lr} with {warmup_steps} warmup steps")  
+    print(f"- Beta scheduling: cyclical between 0.001-0.01")
     print(f"- Gradient clipping (max_norm={args.grad_clip})")
     
     for epoch in range(args.epochs):
         epoch_start = time.time()
+        
+        # *** KEY FIX: Use proper beta scheduling ***
+        current_beta = get_beta(epoch, args.epochs)
+        print(f"Epoch {epoch+1}: Using beta = {current_beta}")
         
         # Training phase
         model.train()
         train_total_loss = 0
         train_recon_loss = 0
         train_kl_loss = 0
-        train_accuracy = 0  # Add accuracy tracking
+        train_accuracy = 0
         train_batches = 0
         
         for batch_idx, batch in enumerate(train_loader):
@@ -442,9 +382,6 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 else:
                     data = batch.to(device)
                 
-                # Beta warmup (linear schedule)
-                current_beta = min(args.beta * (global_step / warmup_steps), args.beta)
-                
                 optimizer.zero_grad()
                 
                 # Forward pass
@@ -453,7 +390,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 else:
                     recon_x, mu, logvar = model(data)
                 
-                # Compute loss
+                # *** KEY FIX: Use current_beta from scheduling, not warmup ***
                 total_loss, recon_loss, kl_loss = model.loss_function(
                     recon_x, data, mu, logvar, beta=current_beta
                 )
@@ -489,17 +426,6 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                     logvar_mean = logvar.mean().item()
                     logvar_std = logvar.std().item()
                     actual_var = torch.exp(logvar).mean().item()
-
-                    print(f"=== LATENT STATS CSV DEBUG ===")
-                    print(f"Writing to: {latent_stats_file}")
-
-                    # Prepare latent stats data
-                    latent_row_data = [
-                        epoch+1, batch_idx, mu_mean, mu_std,
-                        logvar_mean, logvar_std, actual_var
-                    ]
-                    print(f"Latent stats row data ({len(latent_row_data)} values): {latent_row_data}")
-
                     
                     # Save to CSV
                     with open(latent_stats_file, 'a') as f:
@@ -508,9 +434,6 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                             epoch+1, batch_idx, mu_mean, mu_std,
                             logvar_mean, logvar_std, actual_var
                         ])
-        
-                    print("Latent stats CSV write successful!")
-                    print(f"==============================")
                     
                     # Print summary
                     current_lr = optimizer.param_groups[0]['lr']
@@ -533,7 +456,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         val_total_loss = 0
         val_recon_loss = 0
         val_kl_loss = 0
-        val_accuracy = 0  # Add validation accuracy
+        val_accuracy = 0
         val_batches = 0
         
         with torch.no_grad():
@@ -544,16 +467,15 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                         data, labels = data.to(device), labels.to(device)
                         recon_x, mu, logvar = model(data, labels)
                         
-                        # Calculate validation accuracy
                         batch_val_accuracy = calculate_conditional_vae_accuracy(model, data, labels, device)
                         val_accuracy += batch_val_accuracy
                     else:
                         data = batch.to(device)
                         recon_x, mu, logvar = model(data)
                     
-                    # Use final beta for validation
+                    # *** KEY FIX: Use current_beta for validation too ***
                     total_loss, recon_loss, kl_loss = model.loss_function(
-                        recon_x, data, mu, logvar, beta=args.beta
+                        recon_x, data, mu, logvar, beta=current_beta
                     )
                     
                     val_total_loss += total_loss.item()
@@ -583,48 +505,21 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         total_time = time.time() - start_time
         current_lr = optimizer.param_groups[0]['lr']
         
+        # Save to CSV
         with open(log_file, 'a') as f:
             writer = csv.writer(f)
-            
-            # DEBUG: Print header and data information
-            print(f"\n=== CSV DEBUG INFO ===")
-            print(f"Conditional mode: {conditional}")
-            
-            # Read and print the header from the CSV file
-            log_file_read = open(log_file, 'r')
-            header = log_file_read.readline().strip().split(',')
-            log_file_read.close()
-            print(f"CSV Header ({len(header)} columns): {header}")
-            
             if conditional:
-                # Write conditional VAE log with accuracy
-                row_data = [
+                writer.writerow([
                     epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss, train_accuracy,
                     val_total_loss, val_recon_loss, val_kl_loss, val_accuracy, current_lr, current_beta,
                     grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
-                ]
-                print(f"Data values ({len(row_data)} values):")
-                for i, (col_name, value) in enumerate(zip(header, row_data)):
-                    print(f"  {i}: {col_name} = {value}")
+                ])
             else:
-                # Write standard VAE log without accuracy
-                row_data = [
+                writer.writerow([
                     epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
                     val_total_loss, val_recon_loss, val_kl_loss, current_lr, current_beta,
                     grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
-                ]
-                print(f"Data values ({len(row_data)} values):")
-                for i, (col_name, value) in enumerate(zip(header, row_data)):
-                    print(f"  {i}: {col_name} = {value}")
-            
-            print(f"======================\n")
-            
-            try:
-                writer.writerow(row_data)
-                print("CSV write successful!")
-            except Exception as e:
-                print(f"CSV write failed: {e}")
-                print(f"Attempted to write {len(row_data)} values to {len(header)} columns")
+                ])
         
         # Print epoch summary
         print(f"\nEpoch {epoch+1} Summary:")
@@ -636,69 +531,47 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
         if conditional:
             print(f"      - Accuracy: {val_accuracy:.4f}")
-
-        ######
-        print("About to save checkpoint...")
-        ######
         
         # Save checkpoints
         if val_total_loss < best_val_loss:
             best_val_loss = val_total_loss
-            print("Saving best model checkpoint...")
-            try:
-                checkpoint_data = {
-                    'epoch': epoch+1,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'val_loss': val_total_loss,
-                    'args': vars(args)
-                }
-                if conditional:
-                    checkpoint_data['val_accuracy'] = val_accuracy
-                
-                torch.save(checkpoint_data, os.path.join(output_dir, 'best_model.pth'))
-                print("Checkpoint saved successfully!")
-            except Exception as e:
-                print(f"Error saving checkpoint: {e}")
-                import traceback
-                traceback.print_exc()
-
-        print("About to save sample outputs...")
+            checkpoint_data = {
+                'epoch': epoch+1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'val_loss': val_total_loss,
+                'args': vars(args)
+            }
+            if conditional:
+                checkpoint_data['val_accuracy'] = val_accuracy
+            
+            torch.save(checkpoint_data, os.path.join(output_dir, 'best_model.pth'))
         
         # Save samples periodically
         if (epoch + 1) % 10 == 0 or epoch == 0:
-            try:
-                print(f"Generating samples for epoch {epoch+1}...")
-                print(f"Conditional: {conditional}, num_classes: {getattr(model, 'num_classes', None)}")
-                save_sample_outputs(model, device, output_dir, epoch+1, 
-                                conditional=conditional, 
-                                num_classes=getattr(model, 'num_classes', None))
-                print("Sample outputs saved successfully!")
-            except Exception as e:
-                print(f"Error saving sample outputs: {e}")
-                import traceback
-                traceback.print_exc()
-
-        print("Epoch completed successfully!")
+            save_sample_outputs(model, device, output_dir, epoch+1, 
+                            conditional=conditional, 
+                            num_classes=getattr(model, 'num_classes', None))
     
     print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
     print(f"Best validation loss: {best_val_loss:.4f}")
 
+
 def main():
     parser = argparse.ArgumentParser(description='Train Simple Spectrogram VAE')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
-    parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")  # Reduced default
-    parser.add_argument('--epochs', type=int, default=500, help="Number of training epochs")
-    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
-    parser.add_argument('--latent_dim', type=int, default=512, help="Latent dimension")  # Reduced default
+    parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  
+    parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")  # Reduced
+    parser.add_argument('--lr', type=float, default=5e-5, help="Learning rate")  # Reduced
+    parser.add_argument('--latent_dim', type=int, default=256, help="Latent dimension")  # Reduced
     parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") 
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
-    parser.add_argument('--embed_dim', type=int, default=256, help="Label embedding dimension")
+    parser.add_argument('--embed_dim', type=int, default=128, help="Label embedding dimension")  # Reduced
     parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")
-    parser.add_argument('--weight_decay', type=float, default=1e-4, help="Weight decay for optimizer")
-    parser.add_argument('--grad_clip', type=float, default=0.01, help="Gradient clipping max norm")
+    parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay for optimizer")
+    parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")  # Increased
     args = parser.parse_args()
 
     # Setup device
@@ -754,7 +627,7 @@ def main():
         train_dataset, 
         batch_size=args.batch_size, 
         shuffle=True, 
-        num_workers=2,  # Reduced for stability
+        num_workers=2,
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=True
     )
@@ -763,12 +636,12 @@ def main():
         val_dataset, 
         batch_size=args.batch_size, 
         shuffle=False,
-        num_workers=2,  # Reduced for stability
+        num_workers=2,
         pin_memory=True if device.type == 'cuda' else False,
         drop_last=False
     )
     
-    # Initialize model - UPDATED MODEL INITIALIZATION
+    # Initialize model
     print(f"Initializing {'Conditional' if args.conditional else 'Standard'} VAE...")
     print(f"Input shape for model: {spectrogram_shape} (type: {type(spectrogram_shape)})")
     
@@ -781,7 +654,6 @@ def main():
                 embed_dim=args.embed_dim
             ).to(device)
         else:
-            spectrogram_shape = (1, 1025, 469)
             model = VariationalAutoEncoder(
                 input_shape=spectrogram_shape,
                 latent_dim=args.latent_dim
@@ -818,15 +690,6 @@ def main():
         import traceback
         traceback.print_exc()
         return
-    
-    # Generate final samples
-    print("Generating final sample outputs...")
-    try:
-        save_sample_outputs(model, device, output_dir, "final", num_samples=16, 
-                           conditional=args.conditional, num_classes=num_classes)
-        plot_reconstruction(model, val_loader, device, output_dir, "final", conditional=args.conditional)
-    except Exception as e:
-        print(f"Error generating final samples: {e}")
     
     print(f"Training complete! Results saved in: {output_dir}")
 

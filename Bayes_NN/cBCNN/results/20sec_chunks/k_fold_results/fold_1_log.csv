@@ -1,1 +1,1 @@
-epoch,train_loss,train_acc,val_loss,val_acc,lr,kl_loss,time_elapsed
+epoch,train_loss,train_acc,val_loss,val_acc,lr,kl_loss,call_type_train_loss,call_type_train_acc,call_type_val_loss,call_type_val_acc,time_elapsed
