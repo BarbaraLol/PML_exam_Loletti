@@ -17,6 +17,23 @@ from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
 from data_loading import create_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint, calculate_conditional_vae_accuracy
 
+def get_beta(epoch, total_epochs, n_cycles=4, min_beta=0.001, max_beta=0.01):
+    """Cyclical beta schedule - alternates between high and low beta values"""
+    cycle_length = total_epochs / n_cycles
+    cycle_position = (epoch % cycle_length) / cycle_length
+    
+    if cycle_position < 0.5:
+        # First half of cycle: high beta (more regularization)
+        return max_beta
+    else:
+        # Second half: low beta (focus on reconstruction)
+        return min_beta
+
+
+def get_beta_monotonic(epoch, total_epochs, min_beta=0.001, max_beta=0.01):
+    """Alternative: gradually increase beta over training"""
+    return min(max_beta, min_beta + (max_beta - min_beta) * epoch / (total_epochs * 0.8))
+
 
 def save_sample_outputs(model, device, output_dir, epoch, num_samples=8, 
                        conditional=False, num_classes=None):
@@ -341,20 +358,22 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     optimizer = optim.AdamW(
         model.parameters(),
         lr=args.lr,
-        weight_decay=1e-5,
+        weight_decay=1e-3,
         betas=(0.9, 0.999)
     ) 
 
     # Learning rate scheduling with warmup
     total_steps = args.epochs * len(train_loader)
-    warmup_steps = int(0.1 * total_steps)  # 10% warmup
+    warmup_steps = int(0.05 * total_steps)  # 5% warmup
     
     def lr_lambda(current_step):
         if current_step < warmup_steps:
             return float(current_step) / float(max(1, warmup_steps))
         # Cosine decay after warmup
-        progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-        return 0.5 * (1.0 + math.cos(math.pi * progress))
+        # progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+        # return 0.5 * (1.0 + math.cos(math.pi * progress))
+        progress = (current_step - warmup_steps) / (total_steps - warmup_steps)
+        return 0.1 + 0.9 * 0.5 * (1.0 + math.cos(math.pi * progress))
     
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
@@ -670,9 +689,9 @@ def main():
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
     parser.add_argument('--batch_size', type=int, default=32, help="Batch size for training")  # Reduced default
     parser.add_argument('--epochs', type=int, default=500, help="Number of training epochs")
-    parser.add_argument('--lr', type=float, default=5e-7, help="Learning rate")
-    parser.add_argument('--latent_dim', type=int, default=1024, help="Latent dimension")  # Reduced default
-    parser.add_argument('--beta', type=float, default=0.00001, help="Beta parameter for β-VAE") 
+    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
+    parser.add_argument('--latent_dim', type=int, default=512, help="Latent dimension")  # Reduced default
+    parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") 
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
     parser.add_argument('--embed_dim', type=int, default=256, help="Label embedding dimension")
     parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")

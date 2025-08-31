@@ -39,6 +39,7 @@ class Encoder(nn.Module):
             nn.Conv2d(1, 32, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2), 
+            nn.Dropout2d(0.1),
 
             # Residual blocks
             # ResidualBlock(32),
@@ -54,23 +55,27 @@ class Encoder(nn.Module):
             nn.Conv2d(32, 64, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2), 
- 
+            nn.Dropout2d(0.1),
 
             nn.Conv2d(64, 128, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2),  
+            nn.Dropout2d(0.1),
 
             nn.Conv2d(128, 256, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2), 
+            nn.Dropout2d(0.1),
 
             nn.Conv2d(256, 512, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2), 
+            nn.Dropout2d(0.1),
 
             nn.Conv2d(512, 512, kernel_size = 2, stride = 2, padding = 1),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2), 
+            nn.Dropout2d(0.2)
         )
 
         # flattening after convolution
@@ -91,9 +96,10 @@ class Encoder(nn.Module):
             print(f"Encoder output shape: {self.encoder_shape}")
             print(f"Flatten size: {self.encoder_flatten}")
 
-        self.fc_mu = nn.Linear(self.encoder_flatten, latent_dim)
-        self.fc_logvar = nn.Linear(self.encoder_flatten, latent_dim)
-
+        # self.fc_mu = nn.Linear(self.encoder_flatten, latent_dim)
+        # self.fc_logvar = nn.Linear(self.encoder_flatten, latent_dim)
+        self.fc_mu = nn.Sequential(nn.Dropout(0.3), nn.Linear(self.encoder_flatten, latent_dim))
+        
         # FC mu and sigma
         self.fc_mu = nn.Linear(self.encoder_flatten, latent_dim)
         self.fc_logvar = nn.Linear(self.encoder_flatten, latent_dim)
