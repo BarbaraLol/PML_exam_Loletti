@@ -245,13 +245,13 @@ class SpectrogramVAEDataset(Dataset):
             spectrogram = torch.nan_to_num(spectrogram, nan=1e-8, posinf=1e-8, neginf=1e-8)
         
         # Convert dB to power scale: 10^(dB/20)
-        spectrogram = torch.pow(10.0, spectrogram / 20.0)
+        # spectrogram = torch.pow(10.0, spectrogram / 20.0)
         
         # Add epsilon to avoid log(0)
-        spectrogram = torch.clamp(spectrogram, min=1e-7)
+        # spectrogram = torch.clamp(spectrogram, min=1e-7)
         
         # Apply log compression (natural log)
-        spectrogram = torch.log(spectrogram)
+        # spectrogram = torch.log(spectrogram)
         
         # Normalize to [0, 1] using dataset statistics
         range_val = self.dataset_max - self.dataset_min
