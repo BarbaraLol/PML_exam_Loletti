@@ -593,6 +593,18 @@ def main():
     if len(file_paths) == 0:
         raise ValueError(f"No .pt files found in {args.data_dir}")
     
+    # Create datasets
+    try:
+        train_dataset, val_dataset, test_dataset, spectrogram_shape, num_classes = create_vae_datasets(
+            args.data_dir, 
+            label_encoder=label_encoder,
+            conditional=args.conditional,
+            augment=args.augment
+        )
+    except Exception as e:
+        print(f"Error creating datasets: {e}")
+        return
+    
     # Setup label encoder for conditional VAE
     label_encoder = None
     if args.conditional and num_classes > 0:
@@ -607,18 +619,6 @@ def main():
             input_shape=spectrogram_shape,
             latent_dim=args.latent_dim
         ).to(device)
-    
-    # Create datasets
-    try:
-        train_dataset, val_dataset, test_dataset, spectrogram_shape, num_classes = create_vae_datasets(
-            args.data_dir, 
-            label_encoder=label_encoder,
-            conditional=args.conditional,
-            augment=args.augment
-        )
-    except Exception as e:
-        print(f"Error creating datasets: {e}")
-        return
     
     print(f"Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
     print(f"Spectrogram shape: {spectrogram_shape}")
