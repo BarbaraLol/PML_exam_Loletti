@@ -30,9 +30,9 @@ python3 train.py \
     --epochs 50 \
     --lr 1e-5 \
     --latent_dim 128 \
-    --beta 0.0001 \
+    --beta 0.01 \
     --embed_dim 64 \
-    --grad_clip 5.0 \
+    --grad_clip 1.0 \
     --output_dir vae_results/20sec_chunks
 
 deactivate
