@@ -26,7 +26,7 @@ source ~/myenv/bin/activate
 python3 train.py \
     --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments \
     --conditional \
-    --batch_size 32 \
+    --batch_size 16 \
     --epochs 50 \
     --lr 1e-4 \
     --latent_dim 32 \
