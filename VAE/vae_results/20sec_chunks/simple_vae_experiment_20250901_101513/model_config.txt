@@ -1,0 +1,11 @@
+Simple VAE Configuration
+========================
+Model Type: Conditional VAE
+Input Shape: (1025, 938)
+Latent Dimension: 128
+Beta: 0.0001
+Number of Classes: 3
+Embedding Dimension: 64
+Total Parameters: 66,035,713
+
+Class Labels: [np.str_('Brood calls'), np.str_('Contact calls'), np.str_('Pleasure calls')]
