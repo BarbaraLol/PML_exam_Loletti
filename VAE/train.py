@@ -359,8 +359,8 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     for epoch in range(args.epochs):
         epoch_start = time.time()
         
-        # *** KEY FIX: Use proper beta scheduling ***
-        current_beta = get_beta(epoch, args.epochs)
+        # current_beta = get_beta(epoch, args.epochs)
+        current_beta = args.beta
         print(f"Epoch {epoch+1}: Using beta = {current_beta}")
         
         # Training phase
