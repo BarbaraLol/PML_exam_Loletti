@@ -1,0 +1,1 @@
+epoch,batch,train_loss,train_recon_loss,train_kl_loss,train_acc,val_loss,val_recon_loss,val_kl_loss,val_acc,lr,beta,grad_norm,time_elapsed

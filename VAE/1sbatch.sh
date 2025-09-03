@@ -8,7 +8,7 @@
 #SBATCH --nodes=1                      # Run on a single node
 #SBATCH --ntasks-per-node=1            # One task per node
 #SBATCH --cpus-per-task=24              # Number of CPU cores per task
-#SBATCH --mem=125G                      # Total memory
+#SBATCH --mem=200G                      # Total memory
 #SBATCH --time=2:00:00                # Time limit (HH:MM:SS)
 
 # --- Load necessary modules (adjust versions as needed) ---
@@ -23,17 +23,6 @@ source ~/myenv/bin/activate
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments --batch_size 16 --output_dir vae_results/5sec_chunks --patience 5
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
 
-python3 train.py \
-    --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments \
-    --conditional \
-    --batch_size 4 \
-    --epochs 50 \
-    --lr 1e-5 \
-    --latent_dim 128 \
-    --beta 1e-6
-    --embed_dim 64 \
-    --grad_clip 0.1 \
-    --weight_decay 1e-4 \
-    --output_dir vae_results/fixed_5sec
+python3 inference_and_generation.py --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth
 
 deactivate
