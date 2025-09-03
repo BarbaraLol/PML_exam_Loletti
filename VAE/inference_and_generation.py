@@ -3,14 +3,54 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
-from audio_generation_model import SpectrogramVAE, ConditionalSpectrogramVAE
+from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
 
 
-def load_trained_vae(model_path, device='cpu'):
-    """Load a trained VAE model from checkpoint"""
+def inspect_checkpoint(model_path):
+    """Inspect checkpoint contents to understand its structure"""
+    print(f"Inspecting checkpoint: {model_path}")
+    checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
+    
+    print("Checkpoint keys:")
+    for key in checkpoint.keys():
+        print(f"  - {key}")
+        if isinstance(checkpoint[key], dict):
+            print(f"    (dict with {len(checkpoint[key])} items)")
+        elif isinstance(checkpoint[key], torch.Tensor):
+            print(f"    (tensor: {checkpoint[key].shape})")
+        else:
+            print(f"    ({type(checkpoint[key])})")
+    
+    return checkpoint
+
+
+def load_trained_vae(model_path, device='cpu', **override_config):
+    """Load a trained VAE model from checkpoint with flexible config handling"""
     print(f"Loading model from: {model_path}")
-    checkpoint = torch.load(model_path, map_location=device)
-    config = checkpoint['model_config']
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    
+    # Try different possible config keys
+    config = None
+    for config_key in ['model_config', 'config', 'args', 'hyperparameters']:
+        if config_key in checkpoint:
+            config = checkpoint[config_key]
+            print(f"Found config under key: {config_key}")
+            break
+    
+    # If no config found, try to infer from model state dict
+    if config is None:
+        print("No config found in checkpoint. Attempting to infer from state dict...")
+        config = infer_config_from_state_dict(checkpoint.get('model_state_dict', checkpoint))
+    
+    # Convert config to dict if it's an argparse namespace
+    if hasattr(config, '__dict__'):
+        config = vars(config)
+    elif not isinstance(config, dict):
+        print(f"Warning: Config type {type(config)} not recognized, using defaults")
+        config = {}
+    
+    # Apply any override parameters
+    config.update(override_config)
     
     print("Model configuration:")
     for key, value in config.items():
@@ -19,22 +59,47 @@ def load_trained_vae(model_path, device='cpu'):
     # Initialize model based on config
     if config.get('conditional', False) and config.get('num_classes', 0) > 0:
         model = ConditionalSpectrogramVAE(
-            input_shape=config['input_shape'],
-            num_classes=config['num_classes'],
-            latent_dim=config['latent_dim'],
-            beta=config['beta']
+            input_shape=config.get('input_shape', (1, 128, 128)),
+            num_classes=config.get('num_classes', 10),
+            latent_dim=config.get('latent_dim', 64),
+            beta=config.get('beta', 1.0)
         )
         print("Loaded Conditional VAE")
     else:
         model = SpectrogramVAE(
-            input_shape=config['input_shape'],
-            latent_dim=config['latent_dim'],
-            beta=config['beta']
+            input_shape=config.get('input_shape', (1, 128, 128)),
+            latent_dim=config.get('latent_dim', 64),
+            beta=config.get('beta', 1.0)
         )
         print("Loaded Standard VAE")
     
+    # Load state dict - try different possible keys
+    state_dict = None
+    for state_key in ['model_state_dict', 'state_dict', 'model']:
+        if state_key in checkpoint:
+            state_dict = checkpoint[state_key]
+            print(f"Found state dict under key: {state_key}")
+            break
+    
+    if state_dict is None:
+        # Maybe the checkpoint IS the state dict
+        if all(isinstance(k, str) and '.' in k for k in checkpoint.keys()):
+            state_dict = checkpoint
+            print("Using entire checkpoint as state dict")
+        else:
+            raise KeyError("Could not find model state dict in checkpoint")
+    
     # Load state dict
-    model.load_state_dict(checkpoint['model_state_dict'])
+    try:
+        model.load_state_dict(state_dict)
+        print("Successfully loaded model state dict")
+    except Exception as e:
+        print(f"Error loading state dict: {e}")
+        print("Available state dict keys:")
+        for key in list(state_dict.keys())[:10]:  # Show first 10 keys
+            print(f"  {key}")
+        raise
+    
     model.to(device)
     model.eval()
     
@@ -256,8 +321,21 @@ def main():
     parser.add_argument('--analyze_latent', action='store_true', help='Analyze latent representations')
     parser.add_argument('--data_dir', default=None, help='Data directory for latent analysis')
     parser.add_argument('--device', default='auto', help='Device to use (auto/cpu/cuda)')
+    parser.add_argument('--inspect', action='store_true', help='Just inspect checkpoint structure and exit')
+    
+    # Config override options
+    parser.add_argument('--latent_dim', type=int, help='Override latent dimension')
+    parser.add_argument('--input_shape', nargs=3, type=int, help='Override input shape (C H W)')
+    parser.add_argument('--beta', type=float, help='Override beta value')
+    parser.add_argument('--conditional', action='store_true', help='Force conditional model')
+    parser.add_argument('--num_classes', type=int, help='Override number of classes')
     
     args = parser.parse_args()
+    
+    # Just inspect checkpoint if requested
+    if args.inspect:
+        inspect_checkpoint(args.model_path)
+        return
     
     # Setup device
     if args.device == 'auto':
@@ -269,10 +347,31 @@ def main():
     # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
     
-    # Load model
-    model, config = load_trained_vae(args.model_path, device)
+    # Prepare config overrides
+    override_config = {}
+    if args.latent_dim is not None:
+        override_config['latent_dim'] = args.latent_dim
+    if args.input_shape is not None:
+        override_config['input_shape'] = tuple(args.input_shape)
+    if args.beta is not None:
+        override_config['beta'] = args.beta
+    if args.conditional:
+        override_config['conditional'] = True
+    if args.num_classes is not None:
+        override_config['num_classes'] = args.num_classes
     
-    print("\nModel Configuration:")
+    # Load model
+    try:
+        model, config = load_trained_vae(args.model_path, device, **override_config)
+    except Exception as e:
+        print(f"\nError loading model: {e}")
+        print("\nTrying to inspect checkpoint structure...")
+        inspect_checkpoint(args.model_path)
+        print("\nPlease use the --inspect flag to see the checkpoint structure,")
+        print("then use override arguments to specify the correct configuration.")
+        return
+    
+    print("\nFinal Model Configuration:")
     print(f"  Type: {'Conditional' if config.get('conditional', False) else 'Standard'} VAE")
     print(f"  Input Shape: {config['input_shape']}")
     print(f"  Latent Dim: {config['latent_dim']}")
@@ -285,22 +384,28 @@ def main():
     print("GENERATING SAMPLES")
     print('='*50)
     
-    samples = generate_samples(model, args.num_samples, args.class_label, device)
-    
-    # Visualize samples
-    sample_titles = [f"Generated {i+1}" for i in range(len(samples))]
-    if args.class_label is not None:
-        sample_titles = [f"Class {args.class_label} - Sample {i+1}" for i in range(len(samples))]
-    
-    visualize_spectrograms(
-        samples, 
-        titles=sample_titles,
-        save_path=os.path.join(args.output_dir, 'generated_samples.png')
-    )
-    
-    # Save samples as numpy arrays
-    np.save(os.path.join(args.output_dir, 'generated_samples.npy'), samples)
-    print(f"Samples saved to: {args.output_dir}/generated_samples.npy")
+    try:
+        samples = generate_samples(model, args.num_samples, args.class_label, device)
+        
+        # Visualize samples
+        sample_titles = [f"Generated {i+1}" for i in range(len(samples))]
+        if args.class_label is not None:
+            sample_titles = [f"Class {args.class_label} - Sample {i+1}" for i in range(len(samples))]
+        
+        visualize_spectrograms(
+            samples, 
+            titles=sample_titles,
+            save_path=os.path.join(args.output_dir, 'generated_samples.png')
+        )
+        
+        # Save samples as numpy arrays
+        np.save(os.path.join(args.output_dir, 'generated_samples.npy'), samples)
+        print(f"Samples saved to: {args.output_dir}/generated_samples.npy")
+        
+    except Exception as e:
+        print(f"Error generating samples: {e}")
+        print("This might indicate a model architecture mismatch.")
+        return
     
     # Explore latent space if requested
     if args.explore_latent:
@@ -308,15 +413,18 @@ def main():
         print("EXPLORING LATENT SPACE")
         print('='*50)
         
-        latent_samples, latent_titles = explore_latent_space(
-            model, device, grid_size=args.grid_size
-        )
-        
-        visualize_spectrograms(
-            latent_samples,
-            titles=latent_titles, 
-            save_path=os.path.join(args.output_dir, 'latent_space_exploration.png')
-        )
+        try:
+            latent_samples, latent_titles = explore_latent_space(
+                model, device, grid_size=args.grid_size
+            )
+            
+            visualize_spectrograms(
+                latent_samples,
+                titles=latent_titles, 
+                save_path=os.path.join(args.output_dir, 'latent_space_exploration.png')
+            )
+        except Exception as e:
+            print(f"Error in latent space exploration: {e}")
     
     # Analyze latent representations if requested
     if args.analyze_latent and args.data_dir:
@@ -325,11 +433,11 @@ def main():
         print('='*50)
         
         # Load data for analysis
-        from data_loading import create_vae_datasets, load_file_paths, encode_labels
-        from sklearn.preprocessing import LabelEncoder
-        from torch.utils.data import DataLoader
-        
         try:
+            from data_loading import create_vae_datasets, load_file_paths, encode_labels
+            from sklearn.preprocessing import LabelEncoder
+            from torch.utils.data import DataLoader
+            
             file_paths = load_file_paths(args.data_dir)
             
             # Setup label encoder if conditional
