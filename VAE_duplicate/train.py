@@ -14,7 +14,7 @@ from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
 
 from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
-from data_loading import create_vae_datasets, encode_labels, load_file_paths
+from data_loading import create_improved_vae_datasets, encode_labels, load_file_paths
 from train_utils import save_checkpoint, calculate_conditional_vae_accuracy, validate_training_args, create_training_summary
 
 
