@@ -73,7 +73,79 @@ def compute_class_weights_for_loss(labels):
         print(f"{label}: {weight_dict[i]:.3f}")
     
     return torch.FloatTensor(class_weights)
+# Add these missing functions to your train.py file (after imports, before main())
 
+def check_cuda_compatibility():
+    """Check CUDA availability and compatibility"""
+    if not torch.cuda.is_available():
+        print("WARNING: CUDA is not available, using CPU")
+        return False
+    
+    try:
+        device_cap = torch.cuda.get_device_capability()
+        print(f"Using device: {torch.cuda.get_device_name(0)}")
+        print(f"CUDA capability: sm_{device_cap[0]}{device_cap[1]}")
+        print(f"PyTorch CUDA version: {torch.version.cuda}")
+        return True
+    except Exception as e:
+        print(f"CUDA check failed: {e}")
+        return False
+
+def setup_csv_logging(results_dir='results/10sec_chunks'):
+    """Setup CSV file for logging training results."""
+    os.makedirs(results_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = os.path.join(results_dir, f'training_log_{timestamp}.csv')
+    
+    # Create CSV with headers
+    with open(csv_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([
+            'epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 
+            'learning_rate', 'early_stop_counter', 'timestamp'
+        ])
+    
+    return csv_path
+
+def log_to_csv(csv_path, epoch, train_loss, train_acc, val_loss, val_acc, 
+               learning_rate, early_stop_counter):
+    """Log epoch results to CSV file."""
+    with open(csv_path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([
+            epoch + 1, f"{train_loss:.6f}", f"{train_acc:.6f}", 
+            f"{val_loss:.6f}", f"{val_acc:.6f}", f"{learning_rate:.8f}",
+            early_stop_counter, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ])
+
+class EarlyStopping:
+    """Early stopping utility to prevent overfitting."""
+    
+    def __init__(self, patience=10, min_delta=1e-4, restore_best_weights=True):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.restore_best_weights = restore_best_weights
+        self.best_loss = float('inf')
+        self.counter = 0
+        self.best_weights = None
+        self.early_stop = False
+    
+    def __call__(self, val_loss, model):
+        if val_loss < self.best_loss - self.min_delta:
+            self.best_loss = val_loss
+            self.counter = 0
+            if self.restore_best_weights:
+                self.best_weights = model.state_dict().copy()
+        else:
+            self.counter += 1
+            
+        if self.counter >= self.patience:
+            self.early_stop = True
+            if self.restore_best_weights and self.best_weights is not None:
+                model.load_state_dict(self.best_weights)
+        
+        return self.early_stop
+        
 # REPLACE your entire main() function with this:
 def main():
     # Configuration
