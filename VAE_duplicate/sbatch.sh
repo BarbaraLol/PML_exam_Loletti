@@ -23,14 +23,15 @@ source ~/myenv/bin/activate
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --batch_size 16 --output_dir vae_results/20sec_chunks_simple --patience 5
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
 
-python train.py \
+python fixed_train_vae.py \
   --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments \
-  --lr 1e-5 \
-  --beta 1e-4 \
-  --latent_dim 128 \
-  --batch_size 8 \
+  --lr 5e-6 \
+  --beta 5e-5 \
+  --latent_dim 64 \
+  --batch_size 4 \
   --epochs 100 \
-#   --conditional  # Add this flag for conditional VAE
+  --grad_clip 0.1 \
+  --output_dir robust_vae_results
 
 
 deactivate
