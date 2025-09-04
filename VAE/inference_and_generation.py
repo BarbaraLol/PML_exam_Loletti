@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
-from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
+from model import SpectrogramVAE, ConditionalSpectrogramVAE
 
 
 def inspect_checkpoint(model_path):
@@ -74,7 +74,7 @@ def load_trained_vae(model_path, device='cpu', **override_config):
     
     # Initialize model based on config
     if config.get('conditional', False) and config.get('num_classes', 0) > 0:
-        model = ConditionalVariationalAutoEncoder(
+        model = ConditionalSpectrogramVAE(
             input_shape=config.get('input_shape', (1, 128, 128)),
             num_classes=config.get('num_classes', 10),
             latent_dim=config.get('latent_dim', 64),
@@ -82,7 +82,7 @@ def load_trained_vae(model_path, device='cpu', **override_config):
         )
         print("Loaded Conditional VAE")
     else:
-        model = VariationalAutoEncoder(
+        model = SpectrogramVAE(
             input_shape=config.get('input_shape', (1, 128, 128)),
             latent_dim=config.get('latent_dim', 64),
             beta=config.get('beta', 1.0)
