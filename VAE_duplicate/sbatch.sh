@@ -20,19 +20,17 @@ module load cuda/12.1
 source ~/myenv/bin/activate
 # --- Run your training script ---
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --conditional --batch_size 8 --output_dir vae_results/20sec_chunks --patience 5
-python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --batch_size 16 --output_dir vae_results/20sec_chunks_simple --patience 5
+# python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --batch_size 16 --output_dir vae_results/20sec_chunks_simple --patience 5
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
 
-# python3 train.py \
-#     --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments \
-#     --conditional \
-#     --batch_size 16 \
-#     --epochs 50 \
-#     --lr 1e-5 \
-#     --latent_dim 128 \
-#     --beta 0.01 \
-#     --embed_dim 64 \
-#     --grad_clip 1.0 \
-#     --output_dir vae_results/20sec_chunks
+python train.py \
+  --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments \
+  --lr 1e-5 \
+  --beta 1e-4 \
+  --latent_dim 128 \
+  --batch_size 8 \
+  --epochs 100 \
+#   --conditional  # Add this flag for conditional VAE
+
 
 deactivate

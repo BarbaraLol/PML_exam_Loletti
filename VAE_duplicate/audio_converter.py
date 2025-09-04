@@ -6,369 +6,411 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 from pathlib import Path
-from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
+from scipy.signal import get_window, butter, filtfilt
+from scipy.ndimage import gaussian_filter1d
+import warnings
+warnings.filterwarnings('ignore')
+
+from model import ImprovedVariationalAutoEncoder, ConditionalVariationalAutoEncoder
 
 
-def load_vae_model(model_path, device='cpu'):
-    """Load the trained VAE model with flexible config handling"""
+def load_improved_vae_model(model_path, device='cpu'):
+    """Load the trained VAE model with improved error handling"""
     print(f"Loading VAE model from: {model_path}")
-    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     
-    # Get config from checkpoint
+    try:
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    except Exception as e:
+        print(f"Error loading checkpoint: {e}")
+        return None, None, None
+    
+    # Extract configuration
     config = None
-    for config_key in ['model_config', 'config', 'args']:
+    for config_key in ['config', 'model_config', 'args']:
         if config_key in checkpoint:
             config = checkpoint[config_key]
             break
     
-    if hasattr(config, '__dict__'):
+    if config is None:
+        print("No config found in checkpoint, using defaults")
+        config = {
+            'input_shape': (1, 128, 938),
+            'latent_dim': 64,
+            'conditional': False,
+            'num_classes': 0,
+            'embed_dim': 64
+        }
+    elif hasattr(config, '__dict__'):
         config = vars(config)
     
-    # Set defaults if config missing
-    if config is None or not isinstance(config, dict):
-        config = {
-            'latent_dim': 256,
-            'input_shape': (1, 1025, 938),
-            'beta': 0.001,
-            'conditional': False,
-            'num_classes': 0
-        }
-    
-    print(f"Model config: latent_dim={config.get('latent_dim')}, conditional={config.get('conditional')}")
+    print(f"Model config: {config}")
     
     # Initialize model
-    if config.get('conditional', False) and config.get('num_classes', 0) > 0:
-        model = ConditionalVariationalAutoEncoder(
-            input_shape=config.get('input_shape', (1, 1025, 938)),
-            num_classes=config.get('num_classes', 3),
-            latent_dim=config.get('latent_dim', 256),
-            embed_dim=config.get('embed_dim', 50)
-        )
-        is_conditional = True
-    else:
-        model = VariationalAutoEncoder(
-            input_shape=config.get('input_shape', (1, 1025, 938)),
-            latent_dim=config.get('latent_dim', 256)
-        )
-        is_conditional = False
-    
-    # Load with strict=False and handle major architecture mismatches
-    state_dict = checkpoint['model_state_dict']
-    
     try:
-        missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
-        
-        if missing_keys:
-            print(f"Warning: {len(missing_keys)} missing keys in state dict")
-        if unexpected_keys:
-            print(f"Warning: {len(unexpected_keys)} unexpected keys in state dict")
-            
-    except RuntimeError as e:
-        if "size mismatch" in str(e):
-            print("Architecture mismatch detected. Using only compatible layers...")
-            
-            # Create a new state dict with only compatible layers
-            model_dict = model.state_dict()
-            compatible_dict = {}
-            
-            for key, param in state_dict.items():
-                if key in model_dict and model_dict[key].shape == param.shape:
-                    compatible_dict[key] = param
-                else:
-                    print(f"Skipping incompatible layer: {key}")
-            
-            print(f"Loading {len(compatible_dict)}/{len(state_dict)} compatible layers")
-            model.load_state_dict(compatible_dict, strict=False)
-            
-            if len(compatible_dict) < len(state_dict) * 0.3:  # Less than 30% compatibility
-                print("WARNING: Very few layers are compatible. Generated audio quality may be poor.")
-                print("Consider using a model checkpoint that matches your current architecture.")
+        if config.get('conditional', False) and config.get('num_classes', 0) > 0:
+            model = ConditionalVariationalAutoEncoder(
+                input_shape=config.get('input_shape', (1, 128, 938)),
+                latent_dim=config.get('latent_dim', 64),
+                num_classes=config.get('num_classes', 3),
+                embed_dim=config.get('embed_dim', 64),
+                beta=config.get('beta', 1e-6)
+            )
+            is_conditional = True
         else:
-            raise e
-    
-    model.to(device)
-    model.eval()
-    
-    return model, is_conditional, config
-
-
-def generate_spectrogram_from_vae(model, is_conditional=False, class_label=None, device='cpu'):
-    """Generate a spectrogram using the trained VAE"""
-    model.eval()
-    
-    with torch.no_grad():
-        if is_conditional and class_label is not None:
-            print(f"Generating spectrogram for class {class_label}")
-            spectrogram = model.sample_class(class_label, 1, device=device)
+            model = ImprovedVariationalAutoEncoder(
+                input_shape=config.get('input_shape', (1, 128, 938)),
+                latent_dim=config.get('latent_dim', 64),
+                beta=config.get('beta', 1e-6)
+            )
+            is_conditional = False
+        
+        # Load state dict
+        if 'model_state_dict' in checkpoint:
+            state_dict = checkpoint['model_state_dict']
         else:
-            print("Generating unconditional spectrogram")
-            spectrogram = model.sample(1, device=device)
-    
-    # Convert to numpy and remove batch dimension
-    spec_np = spectrogram.cpu().numpy()[0, 0]  # Remove batch and channel dims
-    
-    return spec_np
-
-
-def spectrogram_to_audio_griffin_lim(spectrogram, sr=22050, n_fft=2048, hop_length=512, n_iter=60):
-    """Convert spectrogram to audio using Griffin-Lim algorithm"""
-    print(f"Converting spectrogram to audio...")
-    print(f"Spectrogram shape: {spectrogram.shape}")
-    print(f"Sample rate: {sr}, n_fft: {n_fft}, hop_length: {hop_length}")
-    
-    # Ensure spectrogram is in the right format and handle size mismatches
-    magnitude_spec = spectrogram
-    
-    # Resize spectrogram if needed to match expected FFT size
-    expected_freq_bins = (n_fft // 2) + 1  # 1025 for n_fft=2048
-    current_freq_bins = magnitude_spec.shape[0]
-    
-    if current_freq_bins != expected_freq_bins:
-        print(f"Resizing spectrogram from {current_freq_bins} to {expected_freq_bins} frequency bins")
+            state_dict = checkpoint
         
-        # Use numpy interpolation to resize
-        from scipy.interpolate import interp1d
+        # Load with error handling
+        try:
+            model.load_state_dict(state_dict, strict=True)
+            print("Model loaded successfully with strict=True")
+        except RuntimeError as e:
+            print(f"Strict loading failed: {e}")
+            print("Attempting non-strict loading...")
+            missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+            if missing_keys:
+                print(f"Missing keys: {missing_keys}")
+            if unexpected_keys:
+                print(f"Unexpected keys: {unexpected_keys}")
         
-        # Create interpolation function for each time frame
-        old_freq_axis = np.linspace(0, 1, current_freq_bins)
-        new_freq_axis = np.linspace(0, 1, expected_freq_bins)
+        model.to(device)
+        model.eval()
         
-        resized_spec = np.zeros((expected_freq_bins, magnitude_spec.shape[1]))
-        
-        for t in range(magnitude_spec.shape[1]):
-            interp_func = interp1d(old_freq_axis, magnitude_spec[:, t], 
-                                 kind='linear', bounds_error=False, fill_value=0)
-            resized_spec[:, t] = interp_func(new_freq_axis)
-        
-        magnitude_spec = resized_spec
-        print(f"Resized spectrogram shape: {magnitude_spec.shape}")
-    
-    # Apply frequency weighting to emphasize chicken-like sounds
-    freq_weights = np.linspace(0.3, 2.0, magnitude_spec.shape[0])  # Boost higher frequencies
-    magnitude_spec = magnitude_spec * freq_weights[:, np.newaxis]
-    
-    # Ensure positive values and add small epsilon to avoid zeros
-    magnitude_spec = np.maximum(magnitude_spec, 1e-8)
-    
-    # Use Griffin-Lim to reconstruct audio
-    try:
-        audio = librosa.griffinlim(
-            magnitude_spec,
-            n_iter=n_iter,
-            hop_length=hop_length,
-            n_fft=n_fft,
-            length=None
-        )
-        
-        print(f"Generated audio length: {len(audio)} samples ({len(audio)/sr:.2f} seconds)")
-        return audio, sr
+        return model, is_conditional, config
         
     except Exception as e:
-        print(f"Griffin-Lim conversion failed: {e}")
-        # Fallback: create simple synthesis from spectrogram
-        print("Using fallback audio synthesis...")
-        
-        # Simple approach: treat each frequency bin as a sine wave
-        duration = magnitude_spec.shape[1] * hop_length / sr
-        t = np.linspace(0, duration, int(duration * sr))
-        audio_fallback = np.zeros_like(t)
-        
-        # Add contributions from prominent frequency bins
-        for freq_bin in range(0, magnitude_spec.shape[0], 8):  # Sample every 8th bin
-            freq_hz = freq_bin * sr / n_fft
-            if freq_hz < sr / 2:  # Avoid aliasing
-                amplitude = np.mean(magnitude_spec[freq_bin, :]) * 0.1
-                audio_fallback += amplitude * np.sin(2 * np.pi * freq_hz * t)
-        
-        # Normalize and apply envelope
-        audio_fallback = audio_fallback / (np.max(np.abs(audio_fallback)) + 1e-8)
-        envelope = np.exp(-t * 2)  # Decay envelope
-        audio_fallback *= envelope
-        
-        return audio_fallback, sr
+        print(f"Error initializing model: {e}")
+        return None, None, None
 
 
-def spectrogram_to_audio_mel(spectrogram, sr=22050, n_fft=2048, hop_length=512, n_mels=128, n_iter=60):
-    """Convert mel-spectrogram to audio using mel inversion + Griffin-Lim"""
-    print(f"Converting mel-spectrogram to audio...")
-    print(f"Spectrogram shape: {spectrogram.shape}")
+class ImprovedSpectrogramToAudio:
+    """Enhanced spectrogram to audio conversion"""
     
-    # If your spectrograms are mel-scaled, we need to invert the mel transformation
-    try:
-        # Create mel filter bank
-        mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=spectrogram.shape[0])
+    def __init__(self, sr=22050, n_fft=2048, hop_length=512, n_mels=128):
+        self.sr = sr
+        self.n_fft = n_fft
+        self.hop_length = hop_length
+        self.n_mels = n_mels
         
-        # Invert mel transformation (approximate)
-        magnitude_spec = np.dot(mel_basis.T, spectrogram)
-        
-        # Apply Griffin-Lim
-        audio = librosa.griffinlim(
-            magnitude_spec,
-            n_iter=n_iter,
-            hop_length=hop_length,
-            n_fft=n_fft
+        # Precompute mel basis for inversion
+        self.mel_basis = librosa.filters.mel(
+            sr=sr, n_fft=n_fft, n_mels=n_mels, 
+            fmin=80, fmax=8000
         )
         
-        return audio, sr
+        # Pseudo-inverse for mel inversion
+        self.inv_mel_basis = np.linalg.pinv(self.mel_basis)
         
-    except Exception as e:
-        print(f"Mel inversion failed: {e}")
-        print("Falling back to direct Griffin-Lim...")
-        return spectrogram_to_audio_griffin_lim(spectrogram, sr, n_fft, hop_length, n_iter)
-
-
-def enhance_audio_for_chicken_sounds(audio, sr):
-    """Apply audio processing to enhance chicken-like characteristics"""
-    print("Enhancing audio for chicken sounds...")
+        print(f"Audio converter initialized:")
+        print(f"  Sample rate: {sr} Hz")
+        print(f"  FFT size: {n_fft}")
+        print(f"  Hop length: {hop_length}")
+        print(f"  Mel bins: {n_mels}")
     
-    # Apply some filtering to emphasize frequencies typical of chicken sounds
-    # Chickens make sounds mainly in 1-4 kHz range
-    
-    # High-pass filter to remove low rumble
-    audio_filtered = librosa.effects.preemphasis(audio, coef=0.97)
-    
-    # Apply some compression to make it more audible
-    audio_compressed = np.tanh(audio_filtered * 2.0) * 0.8
-    
-    # Add slight pitch variation to make it more natural
-    # This is a simple approach - you could use more sophisticated methods
-    audio_enhanced = audio_compressed
-    
-    return audio_enhanced
-
-
-def save_audio_file(audio, sr, output_path, format='wav'):
-    """Save audio to file"""
-    print(f"Saving audio to: {output_path}")
-    
-    # Normalize audio to prevent clipping
-    audio_normalized = audio / (np.max(np.abs(audio)) + 1e-8)
-    audio_normalized = audio_normalized * 0.8  # Leave some headroom
-    
-    # Save the audio file
-    sf.write(output_path, audio_normalized, sr, format=format.upper())
-    
-    print(f"Audio saved successfully!")
-    print(f"Duration: {len(audio_normalized) / sr:.2f} seconds")
-
-
-def plot_audio_analysis(spectrogram, audio, sr, save_path=None):
-    """Plot analysis of the generated audio"""
-    fig, axes = plt.subplots(3, 1, figsize=(12, 10))
-    
-    # Plot original spectrogram
-    axes[0].imshow(spectrogram, aspect='auto', origin='lower', cmap='viridis')
-    axes[0].set_title('Generated Spectrogram')
-    axes[0].set_xlabel('Time')
-    axes[0].set_ylabel('Frequency')
-    
-    # Plot waveform
-    time = np.linspace(0, len(audio) / sr, len(audio))
-    axes[1].plot(time, audio)
-    axes[1].set_title('Generated Audio Waveform')
-    axes[1].set_xlabel('Time (s)')
-    axes[1].set_ylabel('Amplitude')
-    axes[1].grid(True, alpha=0.3)
-    
-    # Plot audio spectrogram for comparison
-    D = librosa.stft(audio)
-    S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)
-    librosa.display.specshow(S_db, sr=sr, x_axis='time', y_axis='hz', ax=axes[2], cmap='viridis')
-    axes[2].set_title('Reconstructed Audio Spectrogram')
-    
-    plt.tight_layout()
-    
-    if save_path:
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Analysis plot saved to: {save_path}")
-    
-    plt.show()
-
-
-def main():
-    parser = argparse.ArgumentParser(description='Generate Chicken Sounds from VAE')
-    parser.add_argument('--model_path', required=True, help='Path to trained VAE model (.pth)')
-    parser.add_argument('--output_dir', default='generated_audio', help='Output directory for audio files')
-    parser.add_argument('--num_samples', type=int, default=5, help='Number of audio samples to generate')
-    parser.add_argument('--class_label', type=int, default=None, help='Class label for conditional generation')
-    parser.add_argument('--sample_rate', type=int, default=22050, help='Audio sample rate')
-    parser.add_argument('--n_fft', type=int, default=2048, help='FFT size')
-    parser.add_argument('--hop_length', type=int, default=512, help='Hop length for STFT')
-    parser.add_argument('--griffin_lim_iters', type=int, default=60, help='Griffin-Lim iterations')
-    parser.add_argument('--enhance_audio', action='store_true', help='Apply audio enhancement for chicken sounds')
-    parser.add_argument('--method', choices=['griffin_lim', 'mel_inversion'], default='griffin_lim',
-                       help='Method for spectrogram to audio conversion')
-    parser.add_argument('--device', default='auto', help='Device to use (auto/cpu/cuda)')
-    parser.add_argument('--save_analysis', action='store_true', help='Save analysis plots')
-    
-    args = parser.parse_args()
-    
-    # Setup device
-    if args.device == 'auto':
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    else:
-        device = torch.device(args.device)
-    print(f"Using device: {device}")
-    
-    # Create output directory
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(exist_ok=True)
-    
-    try:
-        # Load the VAE model
-        model, is_conditional, config = load_vae_model(args.model_path, device)
+    def denormalize_spectrogram(self, normalized_spec):
+        """Convert normalized spectrogram back to reasonable scale"""
+        # Ensure input is numpy
+        if torch.is_tensor(normalized_spec):
+            normalized_spec = normalized_spec.detach().cpu().numpy()
         
-        print(f"\nGenerating {args.num_samples} chicken sounds...")
+        # Clip to valid range
+        normalized_spec = np.clip(normalized_spec, 0, 1)
         
-        for i in range(args.num_samples):
-            print(f"\n--- Generating Sample {i+1}/{args.num_samples} ---")
+        # Convert from [0,1] back to dB-like scale
+        db_spec = normalized_spec * 80.0 - 60.0  # Map [0,1] to [-60, 20] dB
+        
+        # Convert dB to linear scale
+        linear_spec = librosa.db_to_amplitude(db_spec)
+        
+        return linear_spec
+    
+    def mel_to_stft_spectrogram(self, mel_spec):
+        """Convert mel spectrogram to STFT magnitude spectrogram"""
+        # Invert mel transformation
+        stft_spec = np.dot(self.inv_mel_basis, mel_spec)
+        
+        # Ensure positive values
+        stft_spec = np.maximum(stft_spec, 1e-8)
+        
+        return stft_spec
+    
+    def enhanced_griffin_lim(self, spectrogram, n_iter=100, momentum=0.99):
+        """Enhanced Griffin-Lim algorithm with momentum"""
+        print(f"Converting spectrogram to audio using Enhanced Griffin-Lim...")
+        print(f"Spectrogram shape: {spectrogram.shape}")
+        
+        # Denormalize spectrogram
+        magnitude_spec = self.denormalize_spectrogram(spectrogram)
+        
+        # Convert mel to STFT if needed
+        if magnitude_spec.shape[0] == self.n_mels:
+            print("Converting from mel-scale to linear frequency...")
+            magnitude_spec = self.mel_to_stft_spectrogram(magnitude_spec)
+        
+        # Ensure correct frequency dimension
+        expected_freq_bins = self.n_fft // 2 + 1
+        if magnitude_spec.shape[0] != expected_freq_bins:
+            print(f"Resizing from {magnitude_spec.shape[0]} to {expected_freq_bins} frequency bins...")
+            # Use linear interpolation to resize
+            from scipy.interpolate import interp1d
+            old_freqs = np.linspace(0, 1, magnitude_spec.shape[0])
+            new_freqs = np.linspace(0, 1, expected_freq_bins)
             
-            # Generate spectrogram from VAE
-            spectrogram = generate_spectrogram_from_vae(
-                model, is_conditional, args.class_label, device
+            resized_spec = np.zeros((expected_freq_bins, magnitude_spec.shape[1]))
+            for t in range(magnitude_spec.shape[1]):
+                interp_func = interp1d(old_freqs, magnitude_spec[:, t], 
+                                     kind='linear', bounds_error=False, fill_value=0)
+                resized_spec[:, t] = interp_func(new_freqs)
+            
+            magnitude_spec = resized_spec
+        
+        print(f"Final magnitude shape: {magnitude_spec.shape}")
+        
+        # Initialize with random phase
+        angles = np.random.uniform(0, 2*np.pi, magnitude_spec.shape)
+        complex_spec = magnitude_spec * np.exp(1j * angles)
+        
+        # Enhanced Griffin-Lim iteration with momentum
+        prev_complex = complex_spec.copy()
+        
+        for i in range(n_iter):
+            # ISTFT to time domain
+            audio = librosa.istft(
+                complex_spec,
+                hop_length=self.hop_length,
+                win_length=self.n_fft,
+                length=None
             )
             
-            # Convert spectrogram to audio
-            if args.method == 'mel_inversion':
-                audio, sr = spectrogram_to_audio_mel(
-                    spectrogram, args.sample_rate, args.n_fft, 
-                    args.hop_length, n_iter=args.griffin_lim_iters
-                )
+            # STFT back to frequency domain
+            new_complex = librosa.stft(
+                audio,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                win_length=self.n_fft
+            )
+            
+            # Apply magnitude constraint
+            new_magnitude = np.abs(new_complex)
+            new_magnitude = np.maximum(new_magnitude, 1e-10)
+            new_phase = np.angle(new_complex)
+            
+            # Reconstruct with original magnitude
+            constrained_complex = magnitude_spec * np.exp(1j * new_phase)
+            
+            # Apply momentum
+            if i > 0 and momentum > 0:
+                complex_spec = momentum * complex_spec + (1 - momentum) * constrained_complex
             else:
-                audio, sr = spectrogram_to_audio_griffin_lim(
-                    spectrogram, args.sample_rate, args.n_fft,
-                    args.hop_length, args.griffin_lim_iters
-                )
+                complex_spec = constrained_complex
             
-            # Enhance audio if requested
-            if args.enhance_audio:
-                audio = enhance_audio_for_chicken_sounds(audio, sr)
-            
-            # Save audio file
-            if args.class_label is not None:
-                filename = f"generated_chicken_class{args.class_label}_sample{i+1:02d}.wav"
-            else:
-                filename = f"generated_chicken_sample{i+1:02d}.wav"
-            
-            output_path = output_dir / filename
-            save_audio_file(audio, sr, output_path)
-            
-            # Save analysis plot if requested
-            if args.save_analysis:
-                analysis_path = output_dir / f"analysis_sample{i+1:02d}.png"
-                plot_audio_analysis(spectrogram, audio, sr, analysis_path)
+            # Progress update
+            if i % 20 == 0:
+                print(f"  Griffin-Lim iteration {i}/{n_iter}")
         
-        print(f"\n🐔 Successfully generated {args.num_samples} chicken sounds!")
-        print(f"Audio files saved in: {output_dir}")
-        print(f"\nTo listen to your generated chicken sounds:")
-        print(f"  cd {output_dir}")
-        print(f"  # Use any audio player to play the .wav files")
+        # Final conversion
+        audio = librosa.istft(
+            complex_spec,
+            hop_length=self.hop_length,
+            win_length=self.n_fft
+        )
         
-    except Exception as e:
-        print(f"Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Generated audio length: {len(audio)} samples ({len(audio)/self.sr:.2f} seconds)")
+        
+        return audio
+    
+    def vocode_synthesis(self, spectrogram, formant_shift=1.0):
+        """Vocoder-like synthesis as alternative method"""
+        print("Converting spectrogram using vocoder synthesis...")
+        
+        # Denormalize spectrogram
+        magnitude_spec = self.denormalize_spectrogram(spectrogram)
+        
+        # Convert mel to STFT if needed
+        if magnitude_spec.shape[0] == self.n_mels:
+            magnitude_spec = self.mel_to_stft_spectrogram(magnitude_spec)
+        
+        # Get frequency and time parameters
+        freqs = librosa.fft_frequencies(sr=self.sr, n_fft=self.n_fft)
+        n_frames = magnitude_spec.shape[1]
+        frame_times = librosa.frames_to_time(np.arange(n_frames), 
+                                           sr=self.sr, hop_length=self.hop_length)
+        
+        # Initialize output audio
+        audio_length = int((n_frames - 1) * self.hop_length + self.n_fft)
+        audio = np.zeros(audio_length)
+        
+        # Generate audio frame by frame
+        window = get_window('hann', self.n_fft)
+        
+        for frame_idx in range(n_frames):
+            frame_mag = magnitude_spec[:, frame_idx]
+            
+            # Time vector for this frame
+            frame_start = frame_idx * self.hop_length
+            t_frame = np.arange(self.n_fft) / self.sr
+            
+            # Generate frame audio using additive synthesis
+            frame_audio = np.zeros(self.n_fft)
+            
+            # Add harmonics for prominent frequency bins
+            for freq_idx in range(0, len(freqs), 2):  # Every 2nd bin to reduce computation
+                amplitude = frame_mag[freq_idx]
+                frequency = freqs[freq_idx] * formant_shift
+                
+                if amplitude > 0.01 and 80 <= frequency <= 8000:
+                    # Add sinusoid with envelope
+                    phase = np.random.uniform(0, 2*np.pi)
+                    envelope = np.exp(-t_frame * 5)  # Decay envelope
+                    frame_audio += amplitude * envelope * np.sin(2 * np.pi * frequency * t_frame + phase)
+            
+            # Apply window and overlap-add
+            frame_audio *= window * 0.1  # Scale down
+            
+            # Overlap-add to main audio buffer
+            end_idx = min(frame_start + self.n_fft, len(audio))
+            actual_length = end_idx - frame_start
+            audio[frame_start:end_idx] += frame_audio[:actual_length]
+        
+        return audio
+    
+    def post_process_audio(self, audio, enhance_chicken_sounds=True):
+        """Post-process generated audio for better quality"""
+        print("Post-processing audio...")
+        
+        # Remove DC component
+        audio = audio - np.mean(audio)
+        
+        # Apply bandpass filter for chicken frequency range
+        if enhance_chicken_sounds:
+            nyquist = self.sr // 2
+            low_cut = 200 / nyquist    # Remove very low frequencies
+            high_cut = 6000 / nyquist  # Focus on chicken vocal range
+            
+            try:
+                b, a = butter(4, [low_cut, high_cut], btype='band')
+                audio = filtfilt(b, a, audio)
+            except:
+                print("Bandpass filtering failed, skipping...")
+        
+        # Gentle compression using tanh
+        audio = np.tanh(audio * 2.0) * 0.8
+        
+        # Smooth out harsh transients
+        audio = gaussian_filter1d(audio, sigma=0.5)
+        
+        # Normalize to prevent clipping
+        max_val = np.max(np.abs(audio))
+        if max_val > 0:
+            audio = audio / max_val * 0.7  # Leave headroom
+        
+        # Add subtle envelope to avoid clicks
+        fade_samples = int(0.01 * self.sr)  # 10ms fade
+        if len(audio) > 2 * fade_samples:
+            fade_in = np.linspace(0, 1, fade_samples)
+            fade_out = np.linspace(1, 0, fade_samples)
+            audio[:fade_samples] *= fade_in
+            audio[-fade_samples:] *= fade_out
+        
+        return audio
 
 
-if __name__ == "__main__":
-    main()
+def generate_audio_from_vae(model, device, converter, method='enhanced_griffin_lim', 
+                           class_label=None, num_samples=1):
+    """Generate audio samples from trained VAE"""
+    model.eval()
+    
+    generated_audio = []
+    spectrograms = []
+    
+    with torch.no_grad():
+        for i in range(num_samples):
+            print(f"\nGenerating sample {i+1}/{num_samples}...")
+            
+            # Generate spectrogram
+            if hasattr(model, 'sample_class') and class_label is not None:
+                print(f"Generating for class {class_label}")
+                spectrogram = model.sample_class(class_label, 1, device=device)
+            else:
+                spectrogram = model.sample(1, device=device)
+            
+            # Extract spectrogram
+            spec_np = spectrogram.cpu().numpy()[0, 0]  # Remove batch and channel dims
+            spectrograms.append(spec_np)
+            
+            print(f"Generated spectrogram shape: {spec_np.shape}")
+            print(f"Spectrogram range: [{spec_np.min():.4f}, {spec_np.max():.4f}]")
+            
+            # Convert to audio
+            try:
+                if method == 'enhanced_griffin_lim':
+                    audio = converter.enhanced_griffin_lim(spec_np, n_iter=100, momentum=0.99)
+                elif method == 'vocode':
+                    audio = converter.vocode_synthesis(spec_np, formant_shift=1.2)
+                else:
+                    # Fallback to basic Griffin-Lim
+                    magnitude_spec = converter.denormalize_spectrogram(spec_np)
+                    if magnitude_spec.shape[0] == converter.n_mels:
+                        magnitude_spec = converter.mel_to_stft_spectrogram(magnitude_spec)
+                    audio = librosa.griffinlim(
+                        magnitude_spec,
+                        n_iter=60,
+                        hop_length=converter.hop_length
+                    )
+                
+                # Post-process
+                audio = converter.post_process_audio(audio, enhance_chicken_sounds=True)
+                generated_audio.append(audio)
+                
+                print(f"Audio generated: {len(audio)} samples ({len(audio)/converter.sr:.2f}s)")
+                
+            except Exception as e:
+                print(f"Error converting spectrogram to audio: {e}")
+                # Generate silence as fallback
+                audio = np.zeros(int(10 * converter.sr))
+                generated_audio.append(audio)
+    
+    return generated_audio, spectrograms
+
+
+def create_comprehensive_analysis(spectrograms, audio_list, sr, save_path=None):
+    """Create comprehensive analysis plots"""
+    n_samples = len(spectrograms)
+    
+    fig, axes = plt.subplots(3, n_samples, figsize=(5*n_samples, 12))
+    if n_samples == 1:
+        axes = axes.reshape(3, 1)
+    
+    for i in range(n_samples):
+        spec = spectrograms[i]
+        audio = audio_list[i]
+        
+        # Original generated spectrogram
+        im1 = axes[0, i].imshow(spec, aspect='auto', origin='lower', cmap='viridis')
+        axes[0, i].set_title(f'Generated Spectrogram {i+1}')
+        axes[0, i].set_xlabel('Time Frames')
+        axes[0, i].set_ylabel('Frequency Bins')
+        plt.colorbar(im1, ax=axes[0, i])
+        
+        # Generated audio waveform
+        time_axis = np.linspace(0, len(audio) / sr, len(audio))
+        axes[1, i].plot(time_axis, audio, 'b-', alpha=0.8)
+        axes[1, i].set_title(f'Generated Audio {i+1}')
+        axes[1, i].set_xlabel('Time (s)')
+        axes[1, i].set_ylabel('Amplitude')
+        axes[1, i].grid(True, alpha=0.3)
+        axes[1, i].set_ylim([-1, 1])
+        
+        # Reconstructed spectrogram for comparison
+        if len(audio) > 0:
+            D = librosa.stft(audio, n
