@@ -72,8 +72,8 @@ class BayesianChickCallDetector(nn.Module):
 
         # Bayesian feature extraction with progressive pooling
         # BayesianConv2d doesn't take sample parameter - sampling is handled internally
-        x = F.max_pool2d(F.relu(self.conv1(x))), (2, 2)  # / 2
-        x = F.max_pool2d(F.relu(self.conv2(x))), (2, 2)  # / 4
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))  # / 2
+        x = F.max_pool2d(F.relu(self.conv2(x)), (2, 2))  # / 4
         # x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), (2, 2))  # / 8
         # x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), (2, 2))  # / 16
 
