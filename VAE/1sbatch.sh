@@ -31,14 +31,14 @@ source ~/myenv/bin/activate
 #     --beta 0.001
 
 # Generate 10 sounds with audio enhancement
-python spectrogram_to_audio.py \
+python audio_converter.py \
     --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth \
     --num_samples 10 \
     --enhance_audio \
     --save_analysis
 
 # # For conditional VAE - generate sounds for specific class
-# python spectrogram_to_audio.py \
+# python audio_converter.py \
 #     --model_path your_model.pth \
 #     --class_label 0 \
 #     --num_samples 5 \
