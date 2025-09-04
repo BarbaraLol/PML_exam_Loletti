@@ -1,33 +1,25 @@
 import torch
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, random_split
 import torch.nn.functional as F
 import numpy as np
 import os
-from pathlib import Path
+from torchvision import transforms
 import random
-from sklearn.preprocessing import LabelEncoder
-import librosa
-import soundfile as sf
 
 
-class ImprovedSpectrogramDataset(Dataset):
-    """Improved dataset with robust loading and preprocessing"""
+class SpectrogramVAEDataset(Dataset):
+    """Fixed dataset with robust preprocessing and error handling"""
     
-    def __init__(self, file_paths, label_encoder=None, transform=None, conditional=False, target_shape=(128, 938)):
-        print(f"Initializing improved dataset with {len(file_paths)} files...")
+    def __init__(self, file_paths, label_encoder=None, transform=None, conditional=False):
+        print(f"Initializing dataset with {len(file_paths)} files...")
         
         self.file_paths = []
-        self.target_shape = target_shape  # (freq_bins, time_frames)
-        self.conditional = conditional
-        self.label_encoder = label_encoder
-        self.transform = transform
-        
-        # Validate files
         invalid_files = 0
+        
         for i, fp in enumerate(file_paths):
-            if i % 500 == 0:
+            if i % 500 == 0:  # Print progress every 500 files
                 print(f"Validating file {i+1}/{len(file_paths)}...")
-            
+                
             if self._is_valid_file(fp):
                 self.file_paths.append(fp)
             else:
@@ -38,150 +30,130 @@ class ImprovedSpectrogramDataset(Dataset):
         if len(self.file_paths) == 0:
             raise ValueError("No valid spectrogram files found!")
         
-        # Compute normalization statistics
-        self._compute_normalization_stats()
+        self.label_encoder = label_encoder
+        self.transform = transform
+        self.conditional = conditional
+        
+        # Define target shape for consistency
+        self.target_shape = (1025, 938)  # (freq, time)
+        
+        # Compute dataset statistics with better error handling
+        self._compute_dataset_stats()
     
     def _is_valid_file(self, filepath):
-        """Check if file is valid"""
         try:
             if not os.path.exists(filepath):
                 return False
-            
-            # Try to load metadata
-            data = torch.load(filepath, map_location='cpu', weights_only=False)
+                
+            # Only load metadata, not full tensor
+            data = torch.load(filepath, map_location='cpu')
             
             if not isinstance(data, dict) or 'spectrogram' not in data:
                 return False
             
-            spec = data['spectrogram']
-            if not isinstance(spec, torch.Tensor):
-                return False
-            
-            if spec.dim() < 2 or spec.numel() == 0:
-                return False
-            
-            # Check for reasonable values
-            if torch.isnan(spec).any() or torch.isinf(spec).any():
-                return False
+            # Check shape without loading full tensor
+            if 'spectrogram' in data:
+                if not isinstance(data['spectrogram'], torch.Tensor):
+                    return False
+                if data['spectrogram'].dim() < 2 or data['spectrogram'].numel() == 0:
+                    return False
             
             return True
             
-        except Exception:
+        except Exception as e:
+            print(f"File validation error for {filepath}: {e}")
             return False
     
-    def _compute_normalization_stats(self):
-        """Compute dataset statistics for normalization"""
-        print("Computing normalization statistics...")
+    def _compute_dataset_stats(self):
+        """Compute dataset statistics without concatenating all values"""
+        print("Computing dataset statistics for normalization...")
+    
+        # Initialize statistics
+        min_val = float('inf')
+        max_val = float('-inf')
+        sum_val = 0.0
+        sum_sq_val = 0.0
+        count = 0
         
-        # Sample files for statistics
-        sample_size = min(200, len(self.file_paths))
-        sample_files = random.sample(self.file_paths, sample_size)
+        # Process files in chunks
+        chunk_size = 100
+        num_chunks = len(self.file_paths) // chunk_size + 1
         
-        all_values = []
-        for file_path in sample_files:
-            try:
-                data = torch.load(file_path, map_location='cpu')
-                spec = data['spectrogram'].float()
-                
-                # Resize to target shape
-                spec = self._resize_spectrogram(spec)
-                
-                # Sample values to avoid memory issues
-                flat_values = spec.flatten()
-                if len(flat_values) > 5000:
-                    indices = torch.randperm(len(flat_values))[:5000]
-                    sampled_values = flat_values[indices]
-                else:
-                    sampled_values = flat_values
-                
-                all_values.append(sampled_values)
-                
-            except Exception as e:
-                print(f"Error processing {file_path} for stats: {e}")
-                continue
+        print(f"Processing {len(self.file_paths)} files in {num_chunks} chunks...")
         
-        if all_values:
-            all_values = torch.cat(all_values)
-            self.dataset_mean = float(all_values.mean())
-            self.dataset_std = float(all_values.std())
-            self.dataset_min = float(all_values.min())
-            self.dataset_max = float(all_values.max())
-        else:
-            # Fallback values
-            self.dataset_mean = 0.5
-            self.dataset_std = 0.2
-            self.dataset_min = 0.0
-            self.dataset_max = 1.0
+        for chunk_idx in range(num_chunks):
+            start_idx = chunk_idx * chunk_size
+            end_idx = min((chunk_idx + 1) * chunk_size, len(self.file_paths))
+            chunk_files = self.file_paths[start_idx:end_idx]
+            
+            print(f"Processing chunk {chunk_idx+1}/{num_chunks} ({len(chunk_files)} files)")
+            
+            for file_path in chunk_files:
+                try:
+                    data = torch.load(file_path, map_location='cpu')
+                    spec = data['spectrogram'].float()
+                    
+                    # Normalize to target shape first for consistent statistics
+                    spec = self._resize_spectrogram(spec)
+                    
+                    # Only process 10% of values per file to save memory
+                    flat = spec.flatten()
+                    if flat.numel() > 10000:
+                        indices = torch.randperm(flat.numel())[:10000]
+                        values = flat[indices]
+                    else:
+                        values = flat
+                    
+                    # Update statistics with sampled values
+                    chunk_min = values.min().item()
+                    chunk_max = values.max().item()
+                    chunk_sum = values.sum().item()
+                    chunk_sq_sum = (values ** 2).sum().item()
+                    
+                    min_val = min(min_val, chunk_min)
+                    max_val = max(max_val, chunk_max)
+                    sum_val += chunk_sum
+                    sum_sq_val += chunk_sq_sum
+                    count += len(values)
+                    
+                except Exception as e:
+                    print(f"Error processing {file_path}: {e}")
         
-        print(f"Dataset statistics:")
-        print(f"  Mean: {self.dataset_mean:.4f}")
-        print(f"  Std: {self.dataset_std:.4f}")
-        print(f"  Min: {self.dataset_min:.4f}")
-        print(f"  Max: {self.dataset_max:.4f}")
+        # Calculate final statistics
+        self.dataset_min = min_val
+        self.dataset_max = max_val
+        self.dataset_mean = sum_val / count
+        self.dataset_std = (sum_sq_val / count - self.dataset_mean ** 2) ** 0.5
+        
+        print(f"\nFinal dataset statistics:")
+        print(f"  Min: {self.dataset_min:.6f}")
+        print(f"  Max: {self.dataset_max:.6f}")
+        print(f"  Mean: {self.dataset_mean:.6f}")
+        print(f"  Std: {self.dataset_std:.6f}")
+        print(f"  Total values processed: {count:,}")
     
     def _resize_spectrogram(self, spectrogram):
-        """Resize spectrogram to target shape"""
-        if spectrogram.shape[-2:] == self.target_shape:
+        """Resize spectrogram to target shape consistently"""
+        target_shape = (1025, 938)  # Your expected shape
+        current_shape = spectrogram.shape
+        
+        if current_shape == target_shape:
             return spectrogram
         
-        # Add batch and channel dimensions if needed
-        original_shape = spectrogram.shape
-        if spectrogram.dim() == 2:
-            spec_4d = spectrogram.unsqueeze(0).unsqueeze(0)
-        elif spectrogram.dim() == 3:
-            spec_4d = spectrogram.unsqueeze(0)
-        else:
-            spec_4d = spectrogram
+        # Use interpolation for smooth resizing
+        # Add batch and channel dimensions for interpolation
+        spec_4d = spectrogram.unsqueeze(0).unsqueeze(0)  # [1, 1, freq, time]
         
-        # Resize using interpolation
-        resized = F.interpolate(
+        # Resize using bilinear interpolation
+        resized = torch.nn.functional.interpolate(
             spec_4d,
-            size=self.target_shape,
+            size=target_shape,
             mode='bilinear',
             align_corners=False
         )
         
-        # Return to original dimensionality
-        if len(original_shape) == 2:
-            return resized.squeeze(0).squeeze(0)
-        elif len(original_shape) == 3:
-            return resized.squeeze(0)
-        else:
-            return resized
-    
-    def _normalize_spectrogram(self, spectrogram):
-        """Normalize spectrogram"""
-        # Ensure values are in [0, 1] range
-        spec_min = spectrogram.min()
-        spec_max = spectrogram.max()
-        
-        if spec_max > spec_min:
-            spectrogram = (spectrogram - spec_min) / (spec_max - spec_min)
-        
-        # Additional smoothing to reduce artifacts
-        spectrogram = torch.clamp(spectrogram, 0, 1)
-        
-        return spectrogram
-    
-    def _extract_label(self, filepath):
-        """Extract label from filepath"""
-        try:
-            data = torch.load(filepath, map_location='cpu')
-            if 'label' in data and data['label']:
-                return data['label']
-        except:
-            pass
-        
-        # Fallback: extract from path
-        path_str = str(filepath).lower()
-        if 'chick' in path_str:
-            return 'chick'
-        elif 'adult' in path_str:
-            return 'adult'
-        elif 'noise' in path_str:
-            return 'noise'
-        else:
-            return 'unknown'
+        # Remove added dimensions
+        return resized.squeeze(0).squeeze(0)  # [freq, time]
     
     def __len__(self):
         return len(self.file_paths)
@@ -191,238 +163,334 @@ class ImprovedSpectrogramDataset(Dataset):
         
         for attempt in range(max_retries):
             try:
-                # Select file (with fallback on retry)
-                file_idx = (idx + attempt) % len(self.file_paths)
-                file_path = self.file_paths[file_idx]
+                # Try the requested index first, then fallbacks
+                file_idx = idx if attempt == 0 else (idx + attempt) % len(self.file_paths)
                 
-                # Load data
-                data = torch.load(file_path, map_location='cpu')
+                data = torch.load(self.file_paths[file_idx], map_location='cpu')
                 spectrogram = data['spectrogram'].float()
                 
-                # Preprocess spectrogram
-                spectrogram = self._resize_spectrogram(spectrogram)
-                spectrogram = self._normalize_spectrogram(spectrogram)
+                # Proper preprocessing with error checking
+                spectrogram = self._preprocess_spectrogram(spectrogram)
                 
-                # Add channel dimension if needed
+                # Validate the result
+                if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
+                    raise ValueError("NaN/Inf in preprocessed spectrogram")
+                
+                # Ensure correct shape
+                if spectrogram.shape != self.target_shape:
+                    raise ValueError(f"Shape mismatch: got {spectrogram.shape}, expected {self.target_shape}")
+                
+                # Add channel dimension if needed [1, freq, time]
                 if spectrogram.dim() == 2:
                     spectrogram = spectrogram.unsqueeze(0)
                 
-                # Apply transforms
+                # Apply transforms if any
                 if self.transform:
                     spectrogram = self.transform(spectrogram)
                 
-                # Validate result
-                if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
-                    raise ValueError("NaN/Inf in spectrogram")
-                
                 # Return based on conditional mode
                 if self.conditional:
-                    label = self._extract_label(file_path)
-                    if self.label_encoder is not None:
+                    if 'label' in data and self.label_encoder is not None:
                         try:
-                            encoded_label = self.label_encoder.transform([label])[0]
+                            encoded_label = self.label_encoder.transform([data['label']])[0]
                             return spectrogram, torch.tensor(encoded_label, dtype=torch.long)
-                        except:
+                        except Exception as label_error:
+                            print(f"Label encoding error for {data.get('label', 'unknown')}: {label_error}")
+                            # Return with default label if encoding fails
                             return spectrogram, torch.tensor(0, dtype=torch.long)
                     else:
+                        # Missing label but conditional mode - use default label
+                        print(f"Warning: Missing label in conditional mode for {self.file_paths[file_idx]}")
                         return spectrogram, torch.tensor(0, dtype=torch.long)
                 else:
+                    # Non-conditional case - just return spectrogram
                     return spectrogram
                     
             except Exception as e:
+                print(f"Error loading {self.file_paths[file_idx]} (attempt {attempt+1}): {e}")
                 if attempt == max_retries - 1:
-                    print(f"Failed to load {self.file_paths[file_idx]}: {e}")
-                    # Return dummy data
-                    dummy_spec = torch.rand(1, *self.target_shape) * 0.5 + 0.25
+                    # Last resort: return a valid dummy tensor with correct shape
+                    print(f"Creating dummy data for index {idx}")
+                    
+                    # Use the target shape
+                    dummy_tensor = torch.rand((1,) + self.target_shape) * 0.1
+                    
                     if self.conditional:
-                        return dummy_spec, torch.tensor(0, dtype=torch.long)
+                        return dummy_tensor, torch.tensor(0, dtype=torch.long)
                     else:
-                        return dummy_spec
+                        return dummy_tensor
                 continue
         
-        # This shouldn't be reached
-        dummy_spec = torch.rand(1, *self.target_shape) * 0.5 + 0.25
+        # This should never be reached, but just in case
+        print(f"ERROR: Could not load any data for index {idx}")
+        dummy_tensor = torch.rand((1,) + self.target_shape) * 0.1
         if self.conditional:
-            return dummy_spec, torch.tensor(0, dtype=torch.long)
+            return dummy_tensor, torch.tensor(0, dtype=torch.long)
         else:
-            return dummy_spec
+            return dummy_tensor
+    
+    def _preprocess_spectrogram(self, spectrogram):
+        """Enhanced preprocessing for dB-scaled spectrograms with size normalization"""
+        
+        # FIRST: Ensure consistent size
+        spectrogram = self._resize_spectrogram(spectrogram)
+        
+        # Handle complex spectrograms (if any)
+        if torch.is_complex(spectrogram):
+            spectrogram = torch.abs(spectrogram)
+        
+        # Check for problematic values
+        if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
+            print("Warning: NaN/Inf detected before preprocessing")
+            spectrogram = torch.nan_to_num(spectrogram, nan=1e-8, posinf=1e-8, neginf=1e-8)
+        
+        # Normalize to [0, 1] using dataset statistics
+        range_val = self.dataset_max - self.dataset_min
+        if range_val > 1e-6:
+            spectrogram = (spectrogram - self.dataset_min) / range_val
+        else:
+            # Fallback: standardize and use sigmoid
+            spectrogram = (spectrogram - self.dataset_mean) / max(self.dataset_std, 1e-6)
+            spectrogram = torch.sigmoid(spectrogram)
+        
+        # Final safety check and clamp
+        if torch.isnan(spectrogram).any() or torch.isinf(spectrogram).any():
+            print("WARNING: NaN/Inf in preprocessed spectrogram")
+            spectrogram = torch.zeros_like(spectrogram) + 0.5  # Midpoint value
+        
+        return torch.clamp(spectrogram, 0, 1)
 
 
-class AudioDataAugmentation:
-    """Audio-specific data augmentation for spectrograms"""
+class SpectrogramDataAugmentation:
+    """Light data augmentation for spectrograms"""
     
     @staticmethod
     def get_transforms(augment_prob=0.3):
-        """Get augmentation transforms"""
-        return AudioAugmentationCompose([
-            AddGaussianNoise(prob=augment_prob, noise_level=0.02),
-            FrequencyMask(prob=augment_prob, max_mask_size=8),
-            TimeMask(prob=augment_prob, max_mask_size=15),
-            SpecAugment(prob=augment_prob),
+        """Get augmentation transforms with specified probability"""
+        return transforms.Compose([
+            SpectrogramDataAugmentation.AddNoise(augment_prob),
+            SpectrogramDataAugmentation.FrequencyMask(augment_prob),
+            SpectrogramDataAugmentation.TimeMask(augment_prob),
         ])
-
-
-class AudioAugmentationCompose:
-    """Compose multiple augmentations"""
-    def __init__(self, transforms):
-        self.transforms = transforms
     
-    def __call__(self, spectrogram):
-        for transform in self.transforms:
-            spectrogram = transform(spectrogram)
-        return spectrogram
-
-
-class AddGaussianNoise:
-    """Add Gaussian noise to spectrogram"""
-    def __init__(self, prob=0.3, noise_level=0.02):
-        self.prob = prob
-        self.noise_level = noise_level
-    
-    def __call__(self, spectrogram):
-        if random.random() < self.prob:
-            noise = torch.randn_like(spectrogram) * self.noise_level
-            return torch.clamp(spectrogram + noise, 0, 1)
-        return spectrogram
-
-
-class FrequencyMask:
-    """Mask frequency bands"""
-    def __init__(self, prob=0.2, max_mask_size=8):
-        self.prob = prob
-        self.max_mask_size = max_mask_size
-    
-    def __call__(self, spectrogram):
-        if random.random() < self.prob:
-            freq_size = spectrogram.shape[-2]
-            mask_size = random.randint(1, min(self.max_mask_size, freq_size // 8))
-            mask_start = random.randint(0, freq_size - mask_size)
+    class AddNoise:
+        def __init__(self, prob=0.3, noise_level=0.01):
+            self.prob = prob
+            self.noise_level = noise_level
             
-            spec_masked = spectrogram.clone()
-            spec_masked[..., mask_start:mask_start + mask_size, :] = 0
-            return spec_masked
-        return spectrogram
-
-
-class TimeMask:
-    """Mask time frames"""
-    def __init__(self, prob=0.2, max_mask_size=15):
-        self.prob = prob
-        self.max_mask_size = max_mask_size
+        def __call__(self, spectrogram):
+            if random.random() < self.prob:
+                noise = torch.randn_like(spectrogram) * self.noise_level
+                return torch.clamp(spectrogram + noise, 0, 1)
+            return spectrogram
     
-    def __call__(self, spectrogram):
-        if random.random() < self.prob:
-            time_size = spectrogram.shape[-1]
-            mask_size = random.randint(1, min(self.max_mask_size, time_size // 10))
-            mask_start = random.randint(0, time_size - mask_size)
+    class FrequencyMask:
+        def __init__(self, prob=0.2, max_mask_size=15):
+            self.prob = prob
+            self.max_mask_size = max_mask_size
             
-            spec_masked = spectrogram.clone()
-            spec_masked[..., mask_start:mask_start + mask_size] = 0
-            return spec_masked
-        return spectrogram
-
-
-class SpecAugment:
-    """SpecAugment-style augmentation"""
-    def __init__(self, prob=0.2):
-        self.prob = prob
-    
-    def __call__(self, spectrogram):
-        if random.random() < self.prob:
-            # Apply random scaling
-            scale = random.uniform(0.8, 1.2)
-            spectrogram = spectrogram * scale
-            spectrogram = torch.clamp(spectrogram, 0, 1)
-            
-            # Apply random time warping (simple version)
-            if random.random() < 0.5:
-                # Time stretch/compress
-                time_factor = random.uniform(0.9, 1.1)
-                new_time_size = int(spectrogram.shape[-1] * time_factor)
+        def __call__(self, spectrogram):
+            if random.random() < self.prob:
+                freq_size = spectrogram.shape[-2]
+                mask_size = random.randint(1, min(self.max_mask_size, freq_size // 8))
+                mask_start = random.randint(0, freq_size - mask_size)
                 
-                if new_time_size != spectrogram.shape[-1]:
-                    spectrogram = F.interpolate(
-                        spectrogram.unsqueeze(0),
-                        size=(spectrogram.shape[-2], new_time_size),
-                        mode='bilinear',
-                        align_corners=False
-                    ).squeeze(0)
+                spectrogram_masked = spectrogram.clone()
+                spectrogram_masked[..., mask_start:mask_start + mask_size, :] = 0
+                return spectrogram_masked
+            return spectrogram
+    
+    class TimeMask:
+        def __init__(self, prob=0.2, max_mask_size=25):
+            self.prob = prob
+            self.max_mask_size = max_mask_size
+            
+        def __call__(self, spectrogram):
+            if random.random() < self.prob:
+                # Ensure we maintain exact tensor dimensions
+                if spectrogram.dim() == 3:  # [C, H, W]
+                    time_size = spectrogram.shape[2]
+                else:  # [H, W]
+                    time_size = spectrogram.shape[1]
                     
-                    # Crop or pad to original size
-                    if new_time_size > spectrogram.shape[-1]:
-                        # Crop
-                        start_idx = (new_time_size - spectrogram.shape[-1]) // 2
-                        spectrogram = spectrogram[..., start_idx:start_idx + spectrogram.shape[-1]]
-                    elif new_time_size < spectrogram.shape[-1]:
-                        # Pad
-                        pad_size = spectrogram.shape[-1] - new_time_size
-                        spectrogram = F.pad(spectrogram, (0, pad_size))
-        
-        return spectrogram
+                mask_size = random.randint(1, min(self.max_mask_size, time_size // 8))
+                mask_start = random.randint(0, time_size - mask_size)
+                
+                spectrogram_masked = spectrogram.clone()
+                if spectrogram.dim() == 3:
+                    spectrogram_masked[..., :, mask_start:mask_start + mask_size] = 0
+                else:
+                    spectrogram_masked[..., mask_start:mask_start + mask_size] = 0
+                return spectrogram_masked
+            return spectrogram
 
 
 def load_file_paths(data_dir):
     """Load all .pt file paths from directory"""
-    data_path = Path(data_dir)
-    if not data_path.exists():
+    if not os.path.exists(data_dir):
         raise ValueError(f"Data directory does not exist: {data_dir}")
     
-    file_paths = list(data_path.glob('*.pt'))
+    file_paths = []
+    for f in os.listdir(data_dir):
+        if f.endswith('.pt'):
+            file_paths.append(os.path.join(data_dir, f))
     
     if not file_paths:
         raise ValueError(f"No .pt files found in {data_dir}")
     
-    print(f"Found {len(file_paths)} .pt files in {data_dir}")
+    print(f"Found {len(file_paths)} .pt files")
     return file_paths
 
 
-def extract_labels_from_files(file_paths):
-    """Extract all unique labels from files"""
-    labels = set()
-    
-    for file_path in file_paths[:100]:  # Sample first 100 files
+def encode_labels(file_paths):
+    """Extract labels from files for label encoder"""
+    labels = []
+    for fp in file_paths:
         try:
-            data = torch.load(file_path, map_location='cpu')
-            if isinstance(data, dict) and 'label' in data and data['label']:
-                labels.add(data['label'])
-            else:
-                # Extract from path
-                path_str = str(file_path).lower()
-                if 'chick' in path_str:
-                    labels.add('chick')
-                elif 'adult' in path_str:
-                    labels.add('adult')
-                elif 'noise' in path_str:
-                    labels.add('noise')
-                else:
-                    labels.add('unknown')
+            data = torch.load(fp, map_location='cpu')
+            if isinstance(data, dict) and 'label' in data:
+                labels.append(data['label'])
         except:
             continue
     
-    labels = list(labels)
-    print(f"Found labels: {labels}")
+    unique_labels = list(set(labels))
+    print(f"Found labels: {unique_labels}")
     return labels
 
 
-def create_improved_vae_datasets(data_dir, conditional=False, train_ratio=0.7, val_ratio=0.2, augment=True):
-    """Create improved datasets for VAE training"""
+def inspect_spectrogram_files(data_dir, num_samples=10):
+    """Debug function to inspect your spectrogram files"""
+    print(f"🔍 INSPECTING SPECTROGRAM FILES")
+    print("="*50)
     
-    print("Creating improved VAE datasets...")
-    
-    # Load file paths
     file_paths = load_file_paths(data_dir)
+    sample_files = file_paths[:num_samples]
     
-    # Setup label encoder for conditional VAE
-    label_encoder = None
-    num_classes = 0
+    for i, fp in enumerate(sample_files):
+        try:
+            print(f"\nFile {i+1}: {os.path.basename(fp)}")
+            data = torch.load(fp, map_location='cpu')
+            
+            print(f"  Keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+            
+            if isinstance(data, dict) and 'spectrogram' in data:
+                spec = data['spectrogram']
+                print(f"  Shape: {spec.shape}")
+                print(f"  Dtype: {spec.dtype}")
+                print(f"  Is complex: {torch.is_complex(spec)}")
+                
+                if torch.is_complex(spec):
+                    spec_real = torch.abs(spec)
+                else:
+                    spec_real = spec
+                
+                print(f"  Min: {spec_real.min().item():.6f}")
+                print(f"  Max: {spec_real.max().item():.6f}")
+                print(f"  Mean: {spec_real.mean().item():.6f}")
+                print(f"  Std: {spec_real.std().item():.6f}")
+                print(f"  Unique values: {torch.unique(spec_real).numel()}")
+                
+                # Check if all values are identical
+                if torch.unique(spec_real).numel() == 1:
+                    print(f"WARNING: All values are identical!")
+                
+            if 'label' in data:
+                print(f"  Label: {data['label']}")
+                
+        except Exception as e:
+            print(f"Error loading: {e}")
     
-    if conditional:
-        labels = extract_labels_from_files(file_paths)
-        if labels:
-            label_encoder = LabelEncoder()
-            label_encoder.fit(labels)
-            num_classes = len(label_encoder.classes_)
-            print(f"Conditional VAE: {num_classes} classes - {list(label_encoder.classes_)}")
-        else:
-            print("No labels found, switching to standard VAE")
-            conditional = False
+    print("\n" + "="*50)
+
+
+def get_spectrogram_shape(file_paths):
+    """Get the shape of spectrograms from the first valid file"""
+    for fp in file_paths:
+        try:
+            data = torch.load(fp, map_location='cpu')
+            if isinstance(data, dict) and 'spectrogram' in data:
+                shape = data['spectrogram'].shape
+                print(f"Spectrogram shape: {shape}")
+                return shape
+        except:
+            continue
+    raise ValueError("No valid spectrogram files found")
+
+
+def create_vae_datasets(data_dir, label_encoder=None, conditional=False, 
+                       train_ratio=0.7, val_ratio=0.15, augment=False):
+    """
+    Create train, validation, and test datasets for VAE training with better error handling
+    """
+    
+    # First, inspect a few files to understand the data
+    print("🔍 Inspecting data files...")
+    inspect_spectrogram_files(data_dir, num_samples=5)
+    
+    file_paths = load_file_paths(data_dir)
+    spectrogram_shape = get_spectrogram_shape(file_paths)
+    
+    print(f"Creating datasets with {len(file_paths)} files")
+    print(f"Spectrogram shape: {spectrogram_shape}")
+    
+    # Create base dataset with validation
+    try:
+        base_dataset = SpectrogramVAEDataset(
+            file_paths,
+            label_encoder=label_encoder,
+            conditional=conditional
+        )
+        
+        print(f"Successfully created base dataset with {len(base_dataset)} samples")
+        
+        # Test loading a few samples
+        print("Testing dataset loading...")
+        for i in range(min(3, len(base_dataset))):
+            try:
+                sample = base_dataset[i]
+                if conditional:  # Handle conditional/non-conditional
+                    spec, target = sample
+                    print(f"  Sample {i}: spec shape {spec.shape}, target = {target}")
+                else:
+                    spec = sample
+                    print(f"  Sample {i}: spec shape {spec.shape}")
+                    
+            except Exception as e:
+                print(f"Error loading sample {i}: {e}")
+        
+    except Exception as e:
+        print(f"Failed to create base dataset: {e}")
+        raise
+    
+    # Split dataset
+    total_size = len(base_dataset)
+    train_size = int(train_ratio * total_size)
+    val_size = int(val_ratio * total_size)
+    test_size = total_size - train_size - val_size
+    
+    print(f"Dataset splits: train={train_size}, val={val_size}, test={test_size}")
+    
+    # Set random seed for reproducible splits
+    torch.manual_seed(42)
+    train_dataset, val_dataset, test_dataset = random_split(
+        base_dataset, [train_size, val_size, test_size]
+    )
+    
+    # Apply augmentation to training set only
+    if augment:
+        print("Applying data augmentation to training set")
+        # Create augmented training dataset
+        train_file_paths = [file_paths[i] for i in train_dataset.indices]
+        train_dataset = SpectrogramVAEDataset(
+            train_file_paths,
+            label_encoder=label_encoder,
+            conditional=conditional,
+            transform=SpectrogramDataAugmentation.get_transforms()
+        )
+    
+    num_classes = len(label_encoder.classes_) if label_encoder else 0
+    
+    # Force consistent target shape for return
+    target_shape = (1025, 938)
+    
+    return train_dataset, val_dataset, test_dataset, target_shape, num_classes
