@@ -85,9 +85,8 @@ def main():
     early_stopping_patience = 15  # Stop if no improvement for 15 epochs
     min_delta = 1e-4  # Minimum change to qualify as improvement
 
-    # Verify CUDA compatibility
-    check_cuda_compatibility()
-    device = torch.device("cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     
     # Setup CSV logging
     csv_path = setup_csv_logging()
