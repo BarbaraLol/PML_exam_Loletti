@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the training log data
-df = pd.read_csv('training_log_20250809_115813.csv')
+df = pd.read_csv('training_log_20250904_130304.csv')
 
 # Create subplots
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
