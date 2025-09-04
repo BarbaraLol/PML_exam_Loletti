@@ -52,14 +52,39 @@ def load_vae_model(model_path, device='cpu'):
         )
         is_conditional = False
     
-    # Load with strict=False to handle architecture mismatches
+    # Load with strict=False and handle major architecture mismatches
     state_dict = checkpoint['model_state_dict']
-    missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
     
-    if missing_keys:
-        print(f"Warning: {len(missing_keys)} missing keys in state dict")
-    if unexpected_keys:
-        print(f"Warning: {len(unexpected_keys)} unexpected keys in state dict")
+    try:
+        missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+        
+        if missing_keys:
+            print(f"Warning: {len(missing_keys)} missing keys in state dict")
+        if unexpected_keys:
+            print(f"Warning: {len(unexpected_keys)} unexpected keys in state dict")
+            
+    except RuntimeError as e:
+        if "size mismatch" in str(e):
+            print("Architecture mismatch detected. Using only compatible layers...")
+            
+            # Create a new state dict with only compatible layers
+            model_dict = model.state_dict()
+            compatible_dict = {}
+            
+            for key, param in state_dict.items():
+                if key in model_dict and model_dict[key].shape == param.shape:
+                    compatible_dict[key] = param
+                else:
+                    print(f"Skipping incompatible layer: {key}")
+            
+            print(f"Loading {len(compatible_dict)}/{len(state_dict)} compatible layers")
+            model.load_state_dict(compatible_dict, strict=False)
+            
+            if len(compatible_dict) < len(state_dict) * 0.3:  # Less than 30% compatibility
+                print("WARNING: Very few layers are compatible. Generated audio quality may be poor.")
+                print("Consider using a model checkpoint that matches your current architecture.")
+        else:
+            raise e
     
     model.to(device)
     model.eval()
