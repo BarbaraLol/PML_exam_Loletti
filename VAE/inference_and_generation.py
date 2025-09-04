@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
-from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
+from model import SpectrogramVAE, ConditionalSpectrogramVAE
 
 
 def inspect_checkpoint(model_path):
@@ -56,9 +56,25 @@ def load_trained_vae(model_path, device='cpu', **override_config):
     for key, value in config.items():
         print(f"  {key}: {value}")
     
+    # Try to infer input shape from the first conv layer if not specified
+    if 'input_shape' not in config and 'model_state_dict' in checkpoint:
+        state_dict = checkpoint['model_state_dict']
+        for key, tensor in state_dict.items():
+            if 'encoder.encoder.0.weight' in key and tensor.dim() == 4:
+                # Conv2d weight shape is (out_channels, in_channels, kernel_h, kernel_w)
+                in_channels = tensor.shape[1]
+                print(f"Inferred input channels from first conv layer: {in_channels}")
+                # Use the latent_dim to estimate reasonable spatial dimensions
+                # This is a guess - you may need to adjust based on your actual data
+                config['input_shape'] = (in_channels, 1025, 469)  # Using your original config values
+                break
+    
+    if 'input_shape' not in config:
+        config['input_shape'] = (1, 1025, 469)  # Default fallback
+    
     # Initialize model based on config
     if config.get('conditional', False) and config.get('num_classes', 0) > 0:
-        model = ConditionalVariationalAutoEncoder(
+        model = ConditionalSpectrogramVAE(
             input_shape=config.get('input_shape', (1, 128, 128)),
             num_classes=config.get('num_classes', 10),
             latent_dim=config.get('latent_dim', 64),
@@ -66,7 +82,7 @@ def load_trained_vae(model_path, device='cpu', **override_config):
         )
         print("Loaded Conditional VAE")
     else:
-        model = VariationalAutoEncoder(
+        model = SpectrogramVAE(
             input_shape=config.get('input_shape', (1, 128, 128)),
             latent_dim=config.get('latent_dim', 64),
             beta=config.get('beta', 1.0)
