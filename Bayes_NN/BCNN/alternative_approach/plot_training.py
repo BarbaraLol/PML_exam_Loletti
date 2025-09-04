@@ -1,90 +1,148 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # Read the CSV file
-df = pd.read_csv('results/20sec_chunks/training_log.csv')
+csv_file = 'results/20sec_chunks/training_log.csv'  # Update path as needed
+df = pd.read_csv(csv_file)
 
-# Create a figure with multiple subplots
-fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-fig.suptitle('Training Results Analysis', fontsize=16, fontweight='bold')
+# Create output directory for plots
+output_dir = 'results/20sec_chunks/plots'
+os.makedirs(output_dir, exist_ok=True)
 
-# 1. Loss curves (train vs validation)
-axes[0, 0].plot(df['epoch'], df['train_loss'], 'b-', label='Train Loss', linewidth=2)
-axes[0, 0].plot(df['epoch'], df['val_loss'], 'r-', label='Validation Loss', linewidth=2)
-axes[0, 0].set_xlabel('Epoch')
-axes[0, 0].set_ylabel('Loss')
-axes[0, 0].set_title('Training vs Validation Loss')
-axes[0, 0].legend()
-axes[0, 0].grid(True, alpha=0.3)
+# Set style for better looking plots
+plt.style.use('default')
+plt.rcParams['figure.figsize'] = (10, 6)
+plt.rcParams['font.size'] = 12
 
-# 2. Accuracy curves (train vs validation)
-axes[0, 1].plot(df['epoch'], df['train_acc'], 'b-', label='Train Accuracy', linewidth=2)
-axes[0, 1].plot(df['epoch'], df['val_acc'], 'r-', label='Validation Accuracy', linewidth=2)
-axes[0, 1].set_xlabel('Epoch')
-axes[0, 1].set_ylabel('Accuracy (%)')
-axes[0, 1].set_title('Training vs Validation Accuracy')
-axes[0, 1].legend()
-axes[0, 1].grid(True, alpha=0.3)
-
-# 3. Learning rate schedule
-axes[0, 2].plot(df['epoch'], df['lr'], 'g-', linewidth=2, marker='o', markersize=4)
-axes[0, 2].set_xlabel('Epoch')
-axes[0, 2].set_ylabel('Learning Rate')
-axes[0, 2].set_title('Learning Rate Schedule')
-axes[0, 2].grid(True, alpha=0.3)
-axes[0, 2].set_yscale('log')
-
-# 4. KL Loss over time
-axes[1, 0].plot(df['epoch'], df['kl_loss'], 'purple', linewidth=2)
-axes[1, 0].set_xlabel('Epoch')
-axes[1, 0].set_ylabel('KL Loss')
-axes[1, 0].set_title('KL Divergence Loss')
-axes[1, 0].grid(True, alpha=0.3)
-
-# 5. Training time per epoch
-axes[1, 1].plot(df['epoch'], df['time_elapsed'], 'orange', linewidth=2, marker='s', markersize=4)
-axes[1, 1].set_xlabel('Epoch')
-axes[1, 1].set_ylabel('Time Elapsed (seconds)')
-axes[1, 1].set_title('Cumulative Training Time')
-axes[1, 1].grid(True, alpha=0.3)
-
-# 6. Overfitting analysis (difference between train and val accuracy)
-accuracy_gap = df['train_acc'] - df['val_acc']
-axes[1, 2].plot(df['epoch'], accuracy_gap, 'red', linewidth=2, marker='D', markersize=4)
-axes[1, 2].axhline(y=0, color='black', linestyle='--', alpha=0.5)
-axes[1, 2].set_xlabel('Epoch')
-axes[1, 2].set_ylabel('Train Acc - Val Acc (%)')
-axes[1, 2].set_title('Overfitting Analysis')
-axes[1, 2].grid(True, alpha=0.3)
-
+# 1. Training vs Validation Accuracy
+plt.figure(figsize=(10, 6))
+plt.plot(df['epoch'], df['train_acc'], 'b-', linewidth=2, marker='o', markersize=4, label='Training Accuracy')
+plt.plot(df['epoch'], df['val_acc'], 'r-', linewidth=2, marker='s', markersize=4, label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy (%)')
+plt.title('BCNN: Training vs Validation Accuracy')
+plt.legend()
+plt.grid(True, alpha=0.3)
 plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_accuracy.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_accuracy.pdf'), bbox_inches='tight')
+plt.close()
 
-# Save the plot
-plt.savefig('results/20sec_chunks/training_results.png', dpi=300, bbox_inches='tight', facecolor='white')
-plt.savefig('results/20sec_chunks/training_results.pdf', bbox_inches='tight', facecolor='white')
-print("Plots saved as 'training_results.png' and 'training_results.pdf'")
+# 2. Training vs Validation Loss
+plt.figure(figsize=(10, 6))
+plt.plot(df['epoch'], df['train_loss'], 'b-', linewidth=2, marker='o', markersize=4, label='Training Loss')
+plt.plot(df['epoch'], df['val_loss'], 'r-', linewidth=2, marker='s', markersize=4, label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('BCNN: Training vs Validation Loss')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_loss.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_loss.pdf'), bbox_inches='tight')
+plt.close()
 
-plt.show()
+# 3. Learning Rate Schedule
+plt.figure(figsize=(10, 6))
+plt.plot(df['epoch'], df['lr'], 'g-', linewidth=2, marker='D', markersize=4)
+plt.xlabel('Epoch')
+plt.ylabel('Learning Rate')
+plt.title('BCNN: Learning Rate Schedule')
+plt.yscale('log')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_learning_rate.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_learning_rate.pdf'), bbox_inches='tight')
+plt.close()
+
+# 4. KL Divergence Loss
+plt.figure(figsize=(10, 6))
+plt.plot(df['epoch'], df['kl_loss'], 'purple', linewidth=2, marker='^', markersize=4)
+plt.xlabel('Epoch')
+plt.ylabel('KL Divergence Loss')
+plt.title('BCNN: KL Divergence Evolution')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_kl_loss.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_kl_loss.pdf'), bbox_inches='tight')
+plt.close()
+
+# 5. Overfitting Analysis (Train - Val Accuracy Gap)
+accuracy_gap = df['train_acc'] - df['val_acc']
+plt.figure(figsize=(10, 6))
+plt.plot(df['epoch'], accuracy_gap, 'red', linewidth=2, marker='v', markersize=4)
+plt.axhline(y=0, color='black', linestyle='--', alpha=0.5)
+plt.xlabel('Epoch')
+plt.ylabel('Training - Validation Accuracy (%)')
+plt.title('BCNN: Overfitting Analysis')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_overfitting.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_overfitting.pdf'), bbox_inches='tight')
+plt.close()
+
+# 6. Training Time Analysis
+plt.figure(figsize=(10, 6))
+plt.plot(df['epoch'], df['time_elapsed']/60, 'orange', linewidth=2, marker='h', markersize=4)
+plt.xlabel('Epoch')
+plt.ylabel('Cumulative Training Time (minutes)')
+plt.title('BCNN: Training Time Progress')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_training_time.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_training_time.pdf'), bbox_inches='tight')
+plt.close()
+
+# 7. Combined Loss Components
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+# Classification loss
+ax1.plot(df['epoch'], df['train_loss'], 'b-', linewidth=2, marker='o', markersize=4, label='Train Loss')
+ax1.plot(df['epoch'], df['val_loss'], 'r-', linewidth=2, marker='s', markersize=4, label='Val Loss')
+ax1.set_xlabel('Epoch')
+ax1.set_ylabel('Classification Loss')
+ax1.set_title('Classification Loss')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+# KL loss
+ax2.plot(df['epoch'], df['kl_loss'], 'purple', linewidth=2, marker='^', markersize=4)
+ax2.set_xlabel('Epoch')
+ax2.set_ylabel('KL Divergence Loss')
+ax2.set_title('KL Divergence Loss')
+ax2.grid(True, alpha=0.3)
+
+plt.suptitle('BCNN: Loss Components Analysis', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bcnn_loss_components.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'bcnn_loss_components.pdf'), bbox_inches='tight')
+plt.close()
 
 # Print summary statistics
+print("BCNN TRAINING RESULTS SUMMARY")
 print("=" * 50)
-print("TRAINING SUMMARY STATISTICS")
-print("=" * 50)
-print(f"Best Validation Accuracy: {df['val_acc'].max():.2f}% at epoch {df.loc[df['val_acc'].idxmax(), 'epoch']}")
+print(f"Best Validation Accuracy: {df['val_acc'].max():.2f}% (Epoch {df.loc[df['val_acc'].idxmax(), 'epoch']})")
 print(f"Final Validation Accuracy: {df['val_acc'].iloc[-1]:.2f}%")
-print(f"Best Validation Loss: {df['val_loss'].min():.4f} at epoch {df.loc[df['val_loss'].idxmin(), 'epoch']}")
-print(f"Final Validation Loss: {df['val_loss'].iloc[-1]:.4f}")
-print(f"Total Training Time: {df['time_elapsed'].iloc[-1]:.1f} seconds ({df['time_elapsed'].iloc[-1]/60:.1f} minutes)")
-print(f"Average Time per Epoch: {df['time_elapsed'].iloc[-1]/len(df):.1f} seconds")
-print(f"Learning Rate Reductions: {len(df['lr'].unique())} different rates used")
+print(f"Best Validation Loss: {df['val_loss'].min():.4f} (Epoch {df.loc[df['val_loss'].idxmin(), 'epoch']})")
+print(f"Final Training Accuracy: {df['train_acc'].iloc[-1]:.2f}%")
+print(f"Total Training Time: {df['time_elapsed'].iloc[-1]/60:.1f} minutes")
+print(f"Final KL Loss: {df['kl_loss'].iloc[-1]:.4f}")
+print(f"Epochs Completed: {len(df)}")
 
-# Check for overfitting
+# Overfitting analysis
 final_gap = df['train_acc'].iloc[-1] - df['val_acc'].iloc[-1]
-print(f"Final Accuracy Gap (Train - Val): {final_gap:.2f}%")
-if final_gap > 5:
-    print("Warning: Potential overfitting detected (train accuracy >> val accuracy)")
-elif final_gap < 0:
-    print("Good: Validation accuracy higher than training accuracy")
+print(f"Final Accuracy Gap: {final_gap:.2f}%")
+if final_gap > 8:
+    print("Status: Significant overfitting detected")
+elif final_gap > 5:
+    print("Status: Moderate overfitting observed")
 else:
-    print("Good: Minimal overfitting observed")
+    print("Status: Minimal overfitting")
+
+print(f"\nAll plots saved to: {output_dir}/")
+print("Available files:")
+for filename in sorted(os.listdir(output_dir)):
+    if filename.endswith(('.png', '.pdf')):
+        print(f"  - {filename}")
