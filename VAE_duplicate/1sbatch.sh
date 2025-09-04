@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+#SBATCH --job-name=VAE                 # Job name
+#SBATCH --output=logs/%x_%j.out        # Stdout (%x=job-name, %j=job-id)
+#SBATCH --error=logs/%x_%j.err         # Stderr
+#SBATCH --partition=GPU                # GPU partition
+#SBATCH --gres=gpu:1
+#SBATCH --nodes=1                      # Run on a single node
+#SBATCH --ntasks-per-node=1            # One task per node
+#SBATCH --cpus-per-task=24              # Number of CPU cores per task
+#SBATCH --mem=200G                      # Total memory
+#SBATCH --time=2:00:00                # Time limit (HH:MM:SS)
+
+# --- Load necessary modules (adjust versions as needed) ---
+module purge  # Clean environment
+module load cuda/12.1
+
+# --- Create & activate a fresh virtualenv ---
+#python -m venv ../../venv
+source ~/myenv/bin/activate
+# --- Run your training script ---
+# python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --conditional --batch_size 8 --output_dir vae_results/20sec_chunks --patience 5
+# python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments --batch_size 16 --output_dir vae_results/5sec_chunks --patience 5
+# python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
+
+# python3 inference_and_generation.py --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth
+# python inference_and_generation.py \
+#     --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth \
+#     --latent_dim 256 \
+#     --input_shape 1 1025 938 \
+#     --beta 0.001
+
+# Generate 10 sounds with audio enhancement
+python audio_converter.py \
+    --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth \
+    --num_samples 10 \
+    --enhance_audio \
+    --save_analysis
+
+# # For conditional VAE - generate sounds for specific class
+# python audio_converter.py \
+#     --model_path your_model.pth \
+#     --class_label 0 \
+#     --num_samples 5 \
+#     --enhance_audio
+
+deactivate
