@@ -1,4 +1,16 @@
 # Add these imports at the top of your simple_train.py (after your existing imports)
+import os
+import csv
+from datetime import datetime
+from simple_cnn import SimpleCNN
+from data_loading import SpectrogramDataset, load_file_paths, encode_labels
+from sklearn.preprocessing import LabelEncoder
+import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import random_split, DataLoader
+from train_utils import save_checkpoint, calculate_accuracy, log_epoch_data
+import torch.nn as nn
 import collections
 from sklearn.utils.class_weight import compute_class_weight
 import numpy as np
@@ -240,3 +252,6 @@ def main():
     print(f"Models saved to: {checkpoint_dir}/")
     
     return csv_path, checkpoint_dir
+
+if __name__ == "__main__":
+    csv_path, checkpoint_dir = main()
