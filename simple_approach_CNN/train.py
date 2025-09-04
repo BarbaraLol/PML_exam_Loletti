@@ -209,8 +209,8 @@ def main():
     
     # Model setup
     model = SimpleCNN(input_shape, num_classes).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=initial_lr)
-    
+    # optimizer = optim.Adam(model.parameters(), lr=initial_lr)
+    optimizer = optim.Adam(model.parameters(), lr=initial_lr, weight_decay=1e-4)
     # *** USE CLASS WEIGHTS IN LOSS FUNCTION ***
     criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
     
