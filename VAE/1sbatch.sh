@@ -24,10 +24,24 @@ source ~/myenv/bin/activate
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
 
 # python3 inference_and_generation.py --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth
-python inference_and_generation.py \
+# python inference_and_generation.py \
+#     --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth \
+#     --latent_dim 256 \
+#     --input_shape 1 1025 938 \
+#     --beta 0.001
+
+# Generate 10 sounds with audio enhancement
+python spectrogram_to_audio.py \
     --model_path ./vae_results/10sec_chunks/old/simple_vae_experiment_20250816_202154/best_model.pth \
-    --latent_dim 256 \
-    --input_shape 1 1025 938 \
-    --beta 0.001
+    --num_samples 10 \
+    --enhance_audio \
+    --save_analysis
+
+# # For conditional VAE - generate sounds for specific class
+# python spectrogram_to_audio.py \
+#     --model_path your_model.pth \
+#     --class_label 0 \
+#     --num_samples 5 \
+#     --enhance_audio
 
 deactivate
