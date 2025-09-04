@@ -55,8 +55,8 @@ class BayesianChickCallDetector(nn.Module):
             dummy = torch.zeros(1, 1, *shape)
             
             # Apply the same operations as in forward pass
-            x = F.max_pool2d(F.relu(self.conv1(dummy)))
-            x = F.max_pool2d(F.relu(self.conv2(x)))
+            x = self.pool(F.relu(self.conv1(dummy)))
+            x = self.pool(F.relu(self.conv2(x)))
             # x = F.max_pool2d(F.relu(self.bn3(self.conv3(x))), (2, 2))
             # x = F.max_pool2d(F.relu(self.bn4(self.conv4(x))), (2, 2))
             
