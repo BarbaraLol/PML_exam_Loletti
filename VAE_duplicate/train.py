@@ -15,12 +15,66 @@ from sklearn.preprocessing import LabelEncoder
 
 from model import VariationalAutoEncoder, ConditionalVariationalAutoEncoder
 from data_loading import create_vae_datasets, encode_labels, load_file_paths
-from train_utils import save_checkpoint, calculate_conditional_vae_accuracy
+from train_utils import save_checkpoint
 
-def get_beta(epoch, total_epochs, min_beta=0.0001, max_beta=0.001):
-    """Simple linear increase - much more conservative"""
-    progress = epoch / total_epochs
-    return min_beta + (max_beta - min_beta) * progress
+
+def calculate_vae_metrics(model, data, labels=None, device='cpu'):
+    """Calculate meaningful VAE metrics"""
+    model.eval()
+    with torch.no_grad():
+        if labels is not None:
+            recon_x, mu, logvar = model(data, labels)
+        else:
+            recon_x, mu, logvar = model(data)
+        
+        # Reconstruction quality (SSIM-like correlation)
+        batch_size = data.size(0)
+        reconstruction_quality = 0
+        for i in range(batch_size):
+            original = data[i].flatten()
+            reconstructed = recon_x[i].flatten()
+            
+            # Pearson correlation coefficient
+            corr = torch.corrcoef(torch.stack([original, reconstructed]))[0, 1]
+            if not torch.isnan(corr):
+                reconstruction_quality += corr.item()
+        
+        reconstruction_quality /= batch_size
+        
+        # Latent space regularization (how close to N(0,1))
+        mu_deviation = torch.mean(torch.abs(mu)).item()
+        var_deviation = torch.mean(torch.abs(torch.exp(logvar) - 1)).item()
+        
+        # Reconstruction sharpness (inverse of blur)
+        def calculate_sharpness(tensor):
+            # Calculate gradient magnitude (edge detection)
+            grad_x = torch.diff(tensor, dim=-1)
+            grad_y = torch.diff(tensor, dim=-2)
+            # Use the smaller dimension to avoid shape mismatch
+            min_width = min(grad_x.size(-1), grad_y.size(-1))
+            min_height = min(grad_x.size(-2), grad_y.size(-2))
+            
+            grad_x_cropped = grad_x[..., :min_height, :min_width]
+            grad_y_cropped = grad_y[..., :min_height, :min_width]
+            
+            gradient_mag = torch.sqrt(grad_x_cropped**2 + grad_y_cropped**2)
+            return torch.mean(gradient_mag).item()
+        
+        original_sharpness = calculate_sharpness(data)
+        reconstructed_sharpness = calculate_sharpness(recon_x)
+        
+        # Sharpness preservation ratio
+        sharpness_ratio = reconstructed_sharpness / (original_sharpness + 1e-8)
+        
+        metrics = {
+            'reconstruction_correlation': max(0, reconstruction_quality),  # Clamp to positive
+            'mu_deviation_from_zero': mu_deviation,
+            'var_deviation_from_one': var_deviation,
+            'sharpness_preservation': sharpness_ratio,
+            'latent_space_quality': 1.0 / (1.0 + mu_deviation + var_deviation)  # Combined score
+        }
+        
+        return metrics
 
 
 def save_sample_outputs(model, device, output_dir, epoch, num_samples=8, 
@@ -64,268 +118,41 @@ def save_sample_outputs(model, device, output_dir, epoch, num_samples=8,
                    dpi=150, bbox_inches='tight')
         plt.close()
 
-##################
-# For simple VAE #
-##################
-
-# def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-#     """Enhanced training loop with all requested features"""
-    
-#     # Setup optimizer with weight decay
-#     optimizer = optim.AdamW(
-#         model.parameters(),
-#         lr=args.lr,
-#         weight_decay=1e-5,
-#         betas=(0.9, 0.999)
-#     ) 
-
-#     # Learning rate scheduling with warmup
-#     total_steps = args.epochs * len(train_loader)
-#     warmup_steps = int(0.1 * total_steps)  # 10% warmup
-    
-#     def lr_lambda(current_step):
-#         if current_step < warmup_steps:
-#             return float(current_step) / float(max(1, warmup_steps))
-#         # Cosine decay after warmup
-#         progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-#         return 0.5 * (1.0 + math.cos(math.pi * progress))
-    
-#     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-#     # Training log with additional metrics
-#     log_file = os.path.join(output_dir, "vae_training_log.csv")
-#     latent_stats_file = os.path.join(output_dir, "latent_stats.csv")
-    
-#     # Initialize logs
-#     with open(log_file, 'w') as f:
-#         writer = csv.writer(f)
-#         writer.writerow([
-#             'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss',
-#             'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'beta', 
-#             'grad_norm', 'time_elapsed'
-#         ])
-    
-#     with open(latent_stats_file, 'w') as f:
-#         writer = csv.writer(f)
-#         writer.writerow([
-#             'epoch', 'batch', 'mu_mean', 'mu_std', 'logvar_mean',
-#             'logvar_std', 'actual_var'
-#         ])
-    
-#     # Training state
-#     best_val_loss = float('inf')
-#     start_time = time.time()
-#     global_step = 0
-    
-#     print("Starting training with:")
-#     print(f"- LR warmup ({warmup_steps} steps)")
-#     print(f"- Beta warmup (target β={args.beta})")
-#     print(f"- Gradient clipping (max_norm={args.grad_clip})")
-    
-#     for epoch in range(args.epochs):
-#         epoch_start = time.time()
-        
-#         # Training phase
-#         model.train()
-#         train_total_loss = 0
-#         train_recon_loss = 0
-#         train_kl_loss = 0
-#         train_batches = 0
-        
-#         for batch_idx, batch in enumerate(train_loader):
-#             global_step += 1
-            
-#             try:
-#                 # Prepare batch
-#                 if conditional:
-#                     data, labels = batch
-#                     data, labels = data.to(device), labels.to(device)
-#                 else:
-#                     data = batch.to(device)
-                
-#                 # Beta warmup (linear schedule)
-#                 current_beta = min(args.beta * (global_step / warmup_steps), args.beta)
-                
-#                 optimizer.zero_grad()
-                
-#                 # Forward pass
-#                 if conditional:
-#                     recon_x, mu, logvar = model(data, labels)
-#                 else:
-#                     recon_x, mu, logvar = model(data)
-                
-#                 # Compute loss
-#                 total_loss, recon_loss, kl_loss = model.loss_function(
-#                     recon_x, data, mu, logvar, beta=current_beta
-#                 )
-                
-#                 # Backward pass
-#                 total_loss.backward()
-                
-#                 # Gradient clipping
-#                 grad_norm = torch.nn.utils.clip_grad_norm_(
-#                     model.parameters(), 
-#                     max_norm=args.grad_clip
-#                 )
-                
-#                 optimizer.step()
-#                 scheduler.step()
-                
-#                 # Accumulate losses
-#                 train_total_loss += total_loss.item()
-#                 train_recon_loss += recon_loss.item()
-#                 train_kl_loss += kl_loss.item()
-#                 train_batches += 1
-                
-#                 # Log latent space statistics
-#                 if batch_idx % 100 == 0:
-#                     # Calculate latent stats
-#                     mu_mean = mu.mean().item()
-#                     mu_std = mu.std().item()
-#                     logvar_mean = logvar.mean().item()
-#                     logvar_std = logvar.std().item()
-#                     actual_var = torch.exp(logvar).mean().item()
-                    
-#                     # Save to CSV
-#                     with open(latent_stats_file, 'a') as f:
-#                         writer = csv.writer(f)
-#                         writer.writerow([
-#                             epoch+1, batch_idx, mu_mean, mu_std,
-#                             logvar_mean, logvar_std, actual_var
-#                         ])
-                    
-#                     # Print summary
-#                     current_lr = optimizer.param_groups[0]['lr']
-#                     print(f"\nEpoch {epoch+1} Batch {batch_idx}:")
-#                     print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
-#                     print(f"Train Loss: {total_loss.item():.4f}")
-#                     print(f"  Recon: {recon_loss.item():.4f} | KL: {kl_loss.item():.4f}")
-#                     print(f"Grad Norm: {grad_norm:.4f}")
-#                     print(f"Latent μ: {mu_mean:.4f} ± {mu_std:.4f}")
-#                     print(f"Latent σ²: {actual_var:.4f} (logvar: {logvar_mean:.4f})")
-                
-#             except Exception as e:
-#                 print(f"Training batch error: {e}")
-#                 continue
-        
-#         # Validation phase
-#         model.eval()
-#         val_total_loss = 0
-#         val_recon_loss = 0
-#         val_kl_loss = 0
-#         val_batches = 0
-        
-#         with torch.no_grad():
-#             for batch in val_loader:
-#                 try:
-#                     if conditional:
-#                         data, labels = batch
-#                         data, labels = data.to(device), labels.to(device)
-#                         recon_x, mu, logvar = model(data, labels)
-#                     else:
-#                         data = batch.to(device)
-#                         recon_x, mu, logvar = model(data)
-                    
-#                     # Use final beta for validation
-#                     total_loss, recon_loss, kl_loss = model.loss_function(
-#                         recon_x, data, mu, logvar, beta=args.beta
-#                     )
-                    
-#                     val_total_loss += total_loss.item()
-#                     val_recon_loss += recon_loss.item()
-#                     val_kl_loss += kl_loss.item()
-#                     val_batches += 1
-                    
-#                 except Exception as e:
-#                     print(f"Validation batch error: {e}")
-#                     continue
-        
-#         # Calculate averages
-#         train_total_loss /= train_batches
-#         train_recon_loss /= train_batches
-#         train_kl_loss /= train_batches
-        
-#         val_total_loss /= val_batches
-#         val_recon_loss /= val_batches
-#         val_kl_loss /= val_batches
-        
-#         # Time tracking
-#         epoch_time = time.time() - epoch_start
-#         total_time = time.time() - start_time
-#         current_lr = optimizer.param_groups[0]['lr']
-        
-#         # Save to log
-#         with open(log_file, 'a') as f:
-#             writer = csv.writer(f)
-#             writer.writerow([
-#                 epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
-#                 val_total_loss, val_recon_loss, val_kl_loss, current_lr, current_beta,
-#                 grad_norm.item() if batch_idx % 100 == 0 else float('nan'), total_time
-#             ])
-        
-#         # Print epoch summary
-#         print(f"\nEpoch {epoch+1} Summary:")
-#         print(f"Time: {epoch_time:.2f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
-#         print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
-#         print(f"Train - Total: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
-#         print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
-        
-#         # Save checkpoints
-#         if val_total_loss < best_val_loss:
-#             best_val_loss = val_total_loss
-#             torch.save({
-#                 'epoch': epoch+1,
-#                 'model_state_dict': model.state_dict(),
-#                 'optimizer_state_dict': optimizer.state_dict(),
-#                 'val_loss': val_total_loss,
-#                 'args': vars(args)
-#             }, os.path.join(output_dir, 'best_model.pth'))
-        
-#         # Save samples periodically
-#         if (epoch + 1) % 10 == 0 or epoch == 0:
-#             save_sample_outputs(model, device, output_dir, epoch+1, 
-#                               conditional=conditional, 
-#                               num_classes=getattr(model, 'num_classes', None))
-    
-#     print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
-#     print(f"Best validation loss: {best_val_loss:.4f}")
-
-#######################
-# For conditional VAE #
-#######################
 
 def train_vae(model, train_loader, val_loader, device, args, output_dir, conditional=False):
-    """Enhanced training loop with proper beta scheduling"""
+    """Enhanced training loop with meaningful VAE metrics"""
     
-    # Setup optimizer with higher weight decay
+    # Setup optimizer
     optimizer = optim.AdamW(
         model.parameters(),
         lr=args.lr,
-        weight_decay=1e-3,  # Higher weight decay
+        weight_decay=1e-3,
         betas=(0.9, 0.999)
     ) 
 
-    # Learning rate scheduling with shorter warmup
+    # Learning rate scheduling
     total_steps = args.epochs * len(train_loader)
-    warmup_steps = int(0.05 * total_steps)  # 5% warmup instead of 10%
+    warmup_steps = int(0.05 * total_steps)
     
     def lr_lambda(current_step):
         if current_step < warmup_steps:
             return current_step / warmup_steps
-        # Cosine decay with minimum LR
         progress = (current_step - warmup_steps) / (total_steps - warmup_steps)
         return 0.1 + 0.9 * 0.5 * (1.0 + math.cos(math.pi * progress))
     
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-    # Training log setup
+    # Enhanced training log setup
     if conditional:
         log_file = os.path.join(output_dir, "conditional_vae_training_log.csv")
         with open(log_file, 'w') as f:
             writer = csv.writer(f)
             writer.writerow([
-                'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss', 'train_acc',
-                'val_loss', 'val_recon_loss', 'val_kl_loss', 'val_acc', 'lr', 'beta', 
-                'grad_norm', 'time_elapsed'
+                'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss',
+                'train_recon_corr', 'train_latent_quality', 'train_sharpness',
+                'val_loss', 'val_recon_loss', 'val_kl_loss', 
+                'val_recon_corr', 'val_latent_quality', 'val_sharpness',
+                'lr', 'beta', 'grad_norm', 'time_elapsed'
             ])
     else:
         log_file = os.path.join(output_dir, "vae_training_log.csv")
@@ -333,8 +160,10 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
             writer = csv.writer(f)
             writer.writerow([
                 'epoch', 'batch', 'train_loss', 'train_recon_loss', 'train_kl_loss',
-                'val_loss', 'val_recon_loss', 'val_kl_loss', 'lr', 'beta', 
-                'grad_norm', 'time_elapsed'
+                'train_recon_corr', 'train_latent_quality', 'train_sharpness',
+                'val_loss', 'val_recon_loss', 'val_kl_loss',
+                'val_recon_corr', 'val_latent_quality', 'val_sharpness',
+                'lr', 'beta', 'grad_norm', 'time_elapsed'
             ])
     
     latent_stats_file = os.path.join(output_dir, "latent_stats.csv")
@@ -350,16 +179,15 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     start_time = time.time()
     global_step = 0
     
-    print("Starting training with:")
+    print("Starting training with enhanced VAE metrics:")
     print(f"- Model type: {'Conditional' if conditional else 'Standard'} VAE")
+    print(f"- Metrics: Reconstruction Correlation, Latent Quality, Sharpness Preservation")
     print(f"- LR: {args.lr} with {warmup_steps} warmup steps")  
-    print(f"- Beta scheduling: cyclical between 0.001-0.01")
+    print(f"- Beta: {args.beta}")
     print(f"- Gradient clipping (max_norm={args.grad_clip})")
     
     for epoch in range(args.epochs):
         epoch_start = time.time()
-        
-        # current_beta = get_beta(epoch, args.epochs)
         current_beta = args.beta
         print(f"Epoch {epoch+1}: Using beta = {current_beta}")
         
@@ -368,7 +196,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         train_total_loss = 0
         train_recon_loss = 0
         train_kl_loss = 0
-        train_accuracy = 0
+        train_metrics = {'reconstruction_correlation': 0, 'latent_space_quality': 0, 'sharpness_preservation': 0}
         train_batches = 0
         
         for batch_idx, batch in enumerate(train_loader):
@@ -390,15 +218,16 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 else:
                     recon_x, mu, logvar = model(data)
                 
-                # *** KEY FIX: Use current_beta from scheduling, not warmup ***
+                # Compute loss
                 total_loss, recon_loss, kl_loss = model.loss_function(
                     recon_x, data, mu, logvar, beta=current_beta
                 )
                 
-                # Calculate accuracy for conditional VAE
+                # Calculate meaningful metrics
                 if conditional:
-                    batch_accuracy = calculate_conditional_vae_accuracy(model, data, labels, device)
-                    train_accuracy += batch_accuracy
+                    batch_metrics = calculate_vae_metrics(model, data, labels, device)
+                else:
+                    batch_metrics = calculate_vae_metrics(model, data, None, device)
                 
                 # Backward pass
                 total_loss.backward()
@@ -412,13 +241,17 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 optimizer.step()
                 scheduler.step()
                 
-                # Accumulate losses
+                # Accumulate losses and metrics
                 train_total_loss += total_loss.item()
                 train_recon_loss += recon_loss.item()
                 train_kl_loss += kl_loss.item()
+                
+                for key in train_metrics:
+                    train_metrics[key] += batch_metrics[key]
+                
                 train_batches += 1
                 
-                # Log latent space statistics
+                # Log latent space statistics and print progress
                 if batch_idx % 100 == 0:
                     # Calculate latent stats
                     mu_mean = mu.mean().item()
@@ -435,17 +268,18 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                             logvar_mean, logvar_std, actual_var
                         ])
                     
-                    # Print summary
+                    # Print summary with new metrics
                     current_lr = optimizer.param_groups[0]['lr']
                     print(f"\nEpoch {epoch+1} Batch {batch_idx}:")
                     print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
                     print(f"Train Loss: {total_loss.item():.4f}")
                     print(f"  Recon: {recon_loss.item():.4f} | KL: {kl_loss.item():.4f}")
-                    if conditional:
-                        print(f"  Accuracy: {batch_accuracy:.4f}")
+                    print(f"Quality Metrics:")
+                    print(f"  Reconstruction Corr: {batch_metrics['reconstruction_correlation']:.3f}")
+                    print(f"  Latent Quality: {batch_metrics['latent_space_quality']:.3f}")
+                    print(f"  Sharpness Preservation: {batch_metrics['sharpness_preservation']:.3f}")
                     print(f"Grad Norm: {grad_norm:.4f}")
-                    print(f"Latent μ: {mu_mean:.4f} ± {mu_std:.4f}")
-                    print(f"Latent σ²: {actual_var:.4f} (logvar: {logvar_mean:.4f})")
+                    print(f"Latent Stats: μ={mu_mean:.4f}±{mu_std:.4f}, σ²={actual_var:.4f}")
                 
             except Exception as e:
                 print(f"Training batch error: {e}")
@@ -456,7 +290,7 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         val_total_loss = 0
         val_recon_loss = 0
         val_kl_loss = 0
-        val_accuracy = 0
+        val_metrics = {'reconstruction_correlation': 0, 'latent_space_quality': 0, 'sharpness_preservation': 0}
         val_batches = 0
         
         with torch.no_grad():
@@ -466,14 +300,12 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                         data, labels = batch
                         data, labels = data.to(device), labels.to(device)
                         recon_x, mu, logvar = model(data, labels)
-                        
-                        batch_val_accuracy = calculate_conditional_vae_accuracy(model, data, labels, device)
-                        val_accuracy += batch_val_accuracy
+                        batch_val_metrics = calculate_vae_metrics(model, data, labels, device)
                     else:
                         data = batch.to(device)
                         recon_x, mu, logvar = model(data)
+                        batch_val_metrics = calculate_vae_metrics(model, data, None, device)
                     
-                    # *** KEY FIX: Use current_beta for validation too ***
                     total_loss, recon_loss, kl_loss = model.loss_function(
                         recon_x, data, mu, logvar, beta=current_beta
                     )
@@ -481,6 +313,10 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                     val_total_loss += total_loss.item()
                     val_recon_loss += recon_loss.item()
                     val_kl_loss += kl_loss.item()
+                    
+                    for key in val_metrics:
+                        val_metrics[key] += batch_val_metrics[key]
+                    
                     val_batches += 1
                     
                 except Exception as e:
@@ -491,46 +327,46 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
         train_total_loss /= train_batches
         train_recon_loss /= train_batches
         train_kl_loss /= train_batches
-        if conditional:
-            train_accuracy /= train_batches
+        for key in train_metrics:
+            train_metrics[key] /= train_batches
         
         val_total_loss /= val_batches
         val_recon_loss /= val_batches
         val_kl_loss /= val_batches
-        if conditional:
-            val_accuracy /= val_batches
+        for key in val_metrics:
+            val_metrics[key] /= val_batches
         
         # Time tracking
         epoch_time = time.time() - epoch_start
         total_time = time.time() - start_time
         current_lr = optimizer.param_groups[0]['lr']
         
-        # Save to CSV
+        # Save to CSV with enhanced metrics
         with open(log_file, 'a') as f:
             writer = csv.writer(f)
-            if conditional:
-                writer.writerow([
-                    epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss, train_accuracy,
-                    val_total_loss, val_recon_loss, val_kl_loss, val_accuracy, current_lr, current_beta,
-                    grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
-                ])
-            else:
-                writer.writerow([
-                    epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
-                    val_total_loss, val_recon_loss, val_kl_loss, current_lr, current_beta,
-                    grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
-                ])
+            writer.writerow([
+                epoch+1, batch_idx, train_total_loss, train_recon_loss, train_kl_loss,
+                train_metrics['reconstruction_correlation'], train_metrics['latent_space_quality'], 
+                train_metrics['sharpness_preservation'],
+                val_total_loss, val_recon_loss, val_kl_loss,
+                val_metrics['reconstruction_correlation'], val_metrics['latent_space_quality'],
+                val_metrics['sharpness_preservation'],
+                current_lr, current_beta,
+                grad_norm.item() if 'grad_norm' in locals() else float('nan'), total_time
+            ])
         
-        # Print epoch summary
+        # Print enhanced epoch summary
         print(f"\nEpoch {epoch+1} Summary:")
         print(f"Time: {epoch_time:.2f}s | Total: {total_time//60:.0f}m {total_time%60:.0f}s")
         print(f"LR: {current_lr:.2e} | β: {current_beta:.4f}")
-        print(f"Train - Total: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
-        if conditional:
-            print(f"      - Accuracy: {train_accuracy:.4f}")
-        print(f"Val   - Total: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
-        if conditional:
-            print(f"      - Accuracy: {val_accuracy:.4f}")
+        print(f"Train - Loss: {train_total_loss:.4f} | Recon: {train_recon_loss:.4f} | KL: {train_kl_loss:.4f}")
+        print(f"      - Recon Corr: {train_metrics['reconstruction_correlation']:.3f} | "
+              f"Latent Quality: {train_metrics['latent_space_quality']:.3f} | "
+              f"Sharpness: {train_metrics['sharpness_preservation']:.3f}")
+        print(f"Val   - Loss: {val_total_loss:.4f} | Recon: {val_recon_loss:.4f} | KL: {val_kl_loss:.4f}")
+        print(f"      - Recon Corr: {val_metrics['reconstruction_correlation']:.3f} | "
+              f"Latent Quality: {val_metrics['latent_space_quality']:.3f} | "
+              f"Sharpness: {val_metrics['sharpness_preservation']:.3f}")
         
         # Save checkpoints
         if val_total_loss < best_val_loss:
@@ -540,10 +376,9 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'val_loss': val_total_loss,
+                'val_metrics': val_metrics,
                 'args': vars(args)
             }
-            if conditional:
-                checkpoint_data['val_accuracy'] = val_accuracy
             
             torch.save(checkpoint_data, os.path.join(output_dir, 'best_model.pth'))
         
@@ -555,23 +390,28 @@ def train_vae(model, train_loader, val_loader, device, args, output_dir, conditi
     
     print(f"\nTraining completed in {total_time//60:.0f}m {total_time%60:.0f}s")
     print(f"Best validation loss: {best_val_loss:.4f}")
+    print(f"Final Quality Metrics:")
+    print(f"  Reconstruction Correlation: {val_metrics['reconstruction_correlation']:.3f}")
+    print(f"  Latent Space Quality: {val_metrics['latent_space_quality']:.3f}")
+    print(f"  Sharpness Preservation: {val_metrics['sharpness_preservation']:.3f}")
 
 
+# Keep the rest of your main() function exactly the same...
 def main():
     parser = argparse.ArgumentParser(description='Train Simple Spectrogram VAE')
     parser.add_argument('--data_dir', required=True, help="Path to spectrogram directory")
     parser.add_argument('--batch_size', type=int, default=16, help="Batch size for training")  
-    parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")  # Reduced
-    parser.add_argument('--lr', type=float, default=5e-5, help="Learning rate")  # Reduced
-    parser.add_argument('--latent_dim', type=int, default=256, help="Latent dimension")  # Reduced
+    parser.add_argument('--epochs', type=int, default=100, help="Number of training epochs")
+    parser.add_argument('--lr', type=float, default=5e-5, help="Learning rate")
+    parser.add_argument('--latent_dim', type=int, default=256, help="Latent dimension")
     parser.add_argument('--beta', type=float, default=0.01, help="Beta parameter for β-VAE") 
     parser.add_argument('--conditional', action='store_true', help="Use conditional VAE")
-    parser.add_argument('--embed_dim', type=int, default=128, help="Label embedding dimension")  # Reduced
+    parser.add_argument('--embed_dim', type=int, default=128, help="Label embedding dimension")
     parser.add_argument('--output_dir', default='simple_vae_results', help="Directory to save outputs")
     parser.add_argument('--patience', type=int, default=15, help="Patience for early stopping")
     parser.add_argument('--augment', action='store_true', help="Apply data augmentation")
     parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay for optimizer")
-    parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")  # Increased
+    parser.add_argument('--grad_clip', type=float, default=1.0, help="Gradient clipping max norm")
     args = parser.parse_args()
 
     # Setup device

@@ -19,20 +19,20 @@ module load cuda/12.1
 #python -m venv ../../venv
 source ~/myenv/bin/activate
 # --- Run your training script ---
-# python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --conditional --batch_size 8 --output_dir vae_results/20sec_chunks --patience 5
+python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --conditional --batch_size 8 --output_dir vae_results/20sec_chunks --patience 5
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments --batch_size 16 --output_dir vae_results/5sec_chunks --patience 5
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
 
-python3 train.py \
-    --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_5sec/audio_segments \
-    --conditional \
-    --batch_size 16 \
-    --epochs 50 \
-    --lr 1e-5 \
-    --latent_dim 128 \
-    --beta 0.01 \
-    --embed_dim 64 \
-    --grad_clip 1.0 \
-    --output_dir vae_results/20sec_chunks
+# python3 train.py \
+#     --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments \
+#     --conditional \
+#     --batch_size 16 \
+#     --epochs 50 \
+#     --lr 1e-5 \
+#     --latent_dim 128 \
+#     --beta 0.01 \
+#     --embed_dim 64 \
+#     --grad_clip 1.0 \
+#     --output_dir vae_results/20sec_chunks
 
 deactivate
