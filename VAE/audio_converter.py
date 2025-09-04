@@ -116,30 +116,76 @@ def spectrogram_to_audio_griffin_lim(spectrogram, sr=22050, n_fft=2048, hop_leng
     print(f"Spectrogram shape: {spectrogram.shape}")
     print(f"Sample rate: {sr}, n_fft: {n_fft}, hop_length: {hop_length}")
     
-    # Ensure spectrogram is in the right format
-    # Your spectrograms are normalized to [0, 1], so we need to convert back
-    
-    # Method 1: Treat as magnitude spectrogram
+    # Ensure spectrogram is in the right format and handle size mismatches
     magnitude_spec = spectrogram
     
-    # Optionally apply some processing to make it more audio-like
-    # Add some emphasis to higher frequencies (chickens have high-frequency content)
-    freq_weights = np.linspace(0.5, 1.5, magnitude_spec.shape[0])
+    # Resize spectrogram if needed to match expected FFT size
+    expected_freq_bins = (n_fft // 2) + 1  # 1025 for n_fft=2048
+    current_freq_bins = magnitude_spec.shape[0]
+    
+    if current_freq_bins != expected_freq_bins:
+        print(f"Resizing spectrogram from {current_freq_bins} to {expected_freq_bins} frequency bins")
+        
+        # Use numpy interpolation to resize
+        from scipy.interpolate import interp1d
+        
+        # Create interpolation function for each time frame
+        old_freq_axis = np.linspace(0, 1, current_freq_bins)
+        new_freq_axis = np.linspace(0, 1, expected_freq_bins)
+        
+        resized_spec = np.zeros((expected_freq_bins, magnitude_spec.shape[1]))
+        
+        for t in range(magnitude_spec.shape[1]):
+            interp_func = interp1d(old_freq_axis, magnitude_spec[:, t], 
+                                 kind='linear', bounds_error=False, fill_value=0)
+            resized_spec[:, t] = interp_func(new_freq_axis)
+        
+        magnitude_spec = resized_spec
+        print(f"Resized spectrogram shape: {magnitude_spec.shape}")
+    
+    # Apply frequency weighting to emphasize chicken-like sounds
+    freq_weights = np.linspace(0.3, 2.0, magnitude_spec.shape[0])  # Boost higher frequencies
     magnitude_spec = magnitude_spec * freq_weights[:, np.newaxis]
     
-    # Convert to linear scale if it was in dB (adjust based on your preprocessing)
-    # magnitude_spec = np.power(10, magnitude_spec)  # Uncomment if your spectrograms are in dB
+    # Ensure positive values and add small epsilon to avoid zeros
+    magnitude_spec = np.maximum(magnitude_spec, 1e-8)
     
     # Use Griffin-Lim to reconstruct audio
-    audio = librosa.griffinlim(
-        magnitude_spec,
-        n_iter=n_iter,
-        hop_length=hop_length,
-        n_fft=n_fft,
-        length=None
-    )
-    
-    return audio, sr
+    try:
+        audio = librosa.griffinlim(
+            magnitude_spec,
+            n_iter=n_iter,
+            hop_length=hop_length,
+            n_fft=n_fft,
+            length=None
+        )
+        
+        print(f"Generated audio length: {len(audio)} samples ({len(audio)/sr:.2f} seconds)")
+        return audio, sr
+        
+    except Exception as e:
+        print(f"Griffin-Lim conversion failed: {e}")
+        # Fallback: create simple synthesis from spectrogram
+        print("Using fallback audio synthesis...")
+        
+        # Simple approach: treat each frequency bin as a sine wave
+        duration = magnitude_spec.shape[1] * hop_length / sr
+        t = np.linspace(0, duration, int(duration * sr))
+        audio_fallback = np.zeros_like(t)
+        
+        # Add contributions from prominent frequency bins
+        for freq_bin in range(0, magnitude_spec.shape[0], 8):  # Sample every 8th bin
+            freq_hz = freq_bin * sr / n_fft
+            if freq_hz < sr / 2:  # Avoid aliasing
+                amplitude = np.mean(magnitude_spec[freq_bin, :]) * 0.1
+                audio_fallback += amplitude * np.sin(2 * np.pi * freq_hz * t)
+        
+        # Normalize and apply envelope
+        audio_fallback = audio_fallback / (np.max(np.abs(audio_fallback)) + 1e-8)
+        envelope = np.exp(-t * 2)  # Decay envelope
+        audio_fallback *= envelope
+        
+        return audio_fallback, sr
 
 
 def spectrogram_to_audio_mel(spectrogram, sr=22050, n_fft=2048, hop_length=512, n_mels=128, n_iter=60):
