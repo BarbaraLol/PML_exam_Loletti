@@ -19,4 +19,5 @@ module load cuda/12.1
 #python -m venv ../../venv
 source ~/myenv/bin/activate
 # --- Run your training script ---
-python3 simple_train.py
+# python3 simple_train.py
+python3 train.py
