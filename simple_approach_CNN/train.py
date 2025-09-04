@@ -149,7 +149,7 @@ class EarlyStopping:
 # REPLACE your entire main() function with this:
 def main():
     # Configuration
-    data_dir = '../Chicks_Automatic_Detection_dataset/Processed_Data_20sec/audio_segments/'
+    data_dir = '../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments/'
     num_epochs = 100
     batch_size = 32
     initial_lr = 1e-3
