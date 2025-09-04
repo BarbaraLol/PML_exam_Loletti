@@ -109,10 +109,13 @@ def main():
             
             # FIXED: Proper KL scaling
             nll_loss = criterion(outputs, target)
-            kl_loss = kl_divergence_from_nn(model) / len(train_dataset)  # Scale by dataset size
+            # kl_loss = kl_divergence_from_nn(model) / len(train_dataset)  # Scale by dataset size
+            num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            kl_loss = kl_divergence_from_nn(model) / num_params
             
             # FIXED: KL weight scheduling (start low, increase gradually)
-            kl_weight = min(1.0, (epoch + 1) / 10)  # Ramp up over 10 epochs
+            # kl_weight = min(1.0, (epoch + 1) / 10)  # Ramp up over 10 epochs
+            kl_weight = min(0.1, (epoch + 1) / 50)
             total_loss = nll_loss + kl_weight * kl_loss
             
             total_loss.backward()
