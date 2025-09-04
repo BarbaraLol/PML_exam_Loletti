@@ -8,15 +8,15 @@ class SimpleCNN(nn.Module):
         
         self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        # self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
-        self.dropout = nn.Dropout(0.25)
+        self.dropout = nn.Dropout(0.5)
         
         self._to_linear = None
         self._get_conv_output_size(input_shape)
         
-        self.fc1 = nn.Linear(self._to_linear, 128)
-        self.fc2 = nn.Linear(128, num_classes)
+        self.fc1 = nn.Linear(self._to_linear, 64)
+        self.fc2 = nn.Linear(64, num_classes)
         self._initialize_weights()
         
     def _initialize_weights(self):
@@ -34,15 +34,16 @@ class SimpleCNN(nn.Module):
             dummy = torch.zeros(1, *shape)
             dummy = self.pool(F.relu(self.conv1(dummy.unsqueeze(1))))
             dummy = self.pool(F.relu(self.conv2(dummy)))
-            dummy = self.pool(F.relu(self.conv3(dummy)))
+            # dummy = self.pool(F.relu(self.conv3(dummy)))
             self._to_linear = dummy.view(1, -1).shape[1]
     
     def forward(self, x):
         x = x.unsqueeze(1)
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
+        # x = self.pool(F.relu(self.conv3(x)))
         x = self.dropout(x)
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         return self.fc2(x)
