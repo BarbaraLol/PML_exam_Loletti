@@ -23,7 +23,7 @@ source ~/myenv/bin/activate
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments --batch_size 16 --output_dir vae_results/20sec_chunks_simple --patience 5
 # python3 train.py --data_dir ../Chicks_Automatic_Detection_dataset/Processed_Data_10sec/audio_segments --conditional --batch_size 16 --output_dir vae_results/10sec_chunks --patience 5
 
-python fixed_train_vae.py \
+python train.py \
   --data_dir ../Chicks_Automatic_Detection_dataset/Registrazioni/audio_segments \
   --lr 5e-6 \
   --beta 5e-5 \

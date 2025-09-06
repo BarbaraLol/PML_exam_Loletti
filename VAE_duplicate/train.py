@@ -514,15 +514,15 @@ def main():
         # Save best model
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            # torch.save({
-            #     'epoch': epoch+1,
-            #     'model_state_dict': model.state_dict(),
-            #     'optimizer_state_dict': optimizer.state_dict(),
-            #     'val_loss': val_loss,
-            #     'args': vars(args)
-            # }, os.path.join(output_dir, 'best_robust_model.pth'))
-            # print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
-        
+#            torch.save({
+#                'epoch': epoch+1,
+#                'model_state_dict': model.state_dict(),
+#                'optimizer_state_dict': optimizer.state_dict(),
+#                'val_loss': val_loss,
+#                'args': vars(args)
+#            }, os.path.join(output_dir, 'best_robust_model.pth'))
+#            print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
+#      
         # Early stopping
         if train_batches < len(train_loader) * 0.5:
             print("Early stopping: Too many failed batches")
