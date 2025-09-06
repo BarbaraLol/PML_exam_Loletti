@@ -8,9 +8,9 @@ BCNN/results/final_model.pth
 BCNN/__pycache__/
 BCNN/cuda_12.8.0_570.86.10_linux.run
 VAE/__pycache__/
-cBCNN/
-CBB_BNN/
-CBB_BNN_final_no_augmentation/
+/Bayes_NN/cBCNN/
+/Bayes_NN/CBB_BNN/
+/Bayes_NN/CBB_BNN_final_no_augmentation/
 
 
 **/logs/
