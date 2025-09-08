@@ -363,6 +363,33 @@ def robust_validate_epoch(model, val_loader, device, beta):
     
     return total_loss, recon_loss, kl_loss
 
+def save_sample_spectrograms(model, device, output_dir, epoch, num_samples=8):
+    """Save generated spectrogram samples as images"""
+    try:
+        model.eval()
+        with torch.no_grad():
+            samples = model.sample(num_samples, device=device)
+            samples_np = samples.cpu().numpy()
+            
+            fig, axes = plt.subplots(2, 4, figsize=(20, 10))
+            axes = axes.flatten()
+            
+            for i in range(min(num_samples, len(axes))):
+                ax = axes[i]
+                spec_vis = samples_np[i, 0] if samples_np[i].ndim == 3 else samples_np[i]
+                im = ax.imshow(spec_vis, aspect='auto', origin='lower', cmap='viridis')
+                ax.set_title(f'Generated Sample {i+1}', fontsize=12)
+                plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+            
+            plt.suptitle(f'VAE Generated Spectrograms - Epoch {epoch}', fontsize=16)
+            plt.tight_layout()
+            
+            save_path = os.path.join(output_dir, f'spectrograms_epoch_{epoch:03d}.png')
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            plt.close()
+            print(f"  → Spectrograms saved: {save_path}")
+    except Exception as e:
+        print(f"Error saving spectrograms: {e}")
 
 def main():
     parser = argparse.ArgumentParser(description='Fixed Robust VAE Training')
@@ -514,14 +541,17 @@ def main():
         # Save best model
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-#            torch.save({
-#                'epoch': epoch+1,
-#                'model_state_dict': model.state_dict(),
-#                'optimizer_state_dict': optimizer.state_dict(),
-#                'val_loss': val_loss,
-#                'args': vars(args)
-#            }, os.path.join(output_dir, 'best_robust_model.pth'))
-#            print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
+           torch.save({
+               'epoch': epoch+1,
+               'model_state_dict': model.state_dict(),
+               'optimizer_state_dict': optimizer.state_dict(),
+               'val_loss': val_loss,
+               'args': vars(args)
+           }, os.path.join(output_dir, 'best_robust_model.pth'))
+           print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
+
+        if (epoch + 1) % 10 == 0:  # Every 10 epochs
+            save_sample_spectrograms(model, device, output_dir, epoch+1)
 
         # Early stopping
         if train_batches < len(train_loader) * 0.5:
